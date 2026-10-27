@@ -3,7 +3,6 @@ import { useDraggable } from "@dnd-kit/core";
 import type { Thread } from "@/stores/threadStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useUIStore } from "@/stores/uiStore";
-import { useAccountStore } from "@/stores/accountStore";
 import { useActiveLabel } from "@/hooks/useRouteNavigation";
 import { formatRelativeDate } from "@/utils/date";
 import { PecStatusBadge } from "./PecBadge";
@@ -34,9 +33,6 @@ interface ThreadCardProps {
   hasFollowUp?: boolean;
 }
 
-/** Per-account dot colors in the unified view (Apple Mail-like palette). */
-export const ACCOUNT_COLORS = ["#0a84ff", "#ff9f0a", "#30d158", "#bf5af2", "#ff375f", "#64d2ff"];
-
 export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick, onContextMenu, category, showCategoryBadge, hasFollowUp }: ThreadCardProps) {
   const isMultiSelected = useThreadStore((s) => s.selectedThreadIds.has(thread.id));
   const hasMultiSelect = useThreadStore((s) => s.selectedThreadIds.size > 0);
@@ -45,13 +41,6 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
   const activeLabel = useActiveLabel();
   const emailDensity = useUIStore((s) => s.emailDensity);
   const isSpam = thread.labelIds.includes("SPAM");
-  // Selectors must return primitives (zustand v5 compares by reference)
-  const accountIdx = useAccountStore((s) =>
-    s.unifiedView && s.accounts.length > 1 ? s.accounts.findIndex((a) => a.id === thread.accountId) : -1,
-  );
-  const accountEmail = useAccountStore((s) => s.accounts.find((a) => a.id === thread.accountId)?.email ?? "");
-  const accountTag =
-    accountIdx >= 0 ? { color: ACCOUNT_COLORS[accountIdx % ACCOUNT_COLORS.length]!, email: accountEmail } : null;
 
   // Read selectedThreadIds lazily for drag — avoids subscribing all cards to the Set reference
   const dragData: DragData = useMemo(() => ({
@@ -127,20 +116,13 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
           {/* First row: sender + date */}
           <div className="flex items-center justify-between gap-2">
             <span
-              className={`text-sm truncate flex items-center gap-1.5 ${
+              className={`text-sm truncate ${
                 thread.isRead
                   ? "text-text-secondary"
                   : "font-semibold text-text-primary"
               }`}
             >
-              {accountTag && (
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: accountTag.color }}
-                  title={accountTag.email}
-                />
-              )}
-              <span className="truncate">{thread.fromName ?? thread.fromAddress ?? "Sconosciuto"}</span>
+              {thread.fromName ?? thread.fromAddress ?? "Sconosciuto"}
             </span>
             <span className="text-xs text-text-tertiary whitespace-nowrap shrink-0">
               {formatRelativeDate(thread.lastMessageAt)}

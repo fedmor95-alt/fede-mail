@@ -13,7 +13,7 @@
 
 ## Cosa fa
 
-- **Inbox unificata.** «Tutte le caselle» mostra la posta di tutti gli account in un'unica lista, con un pallino colorato per account. Ricerca e composizione lavorano sulla stessa vista: la ricerca guarda in tutte le caselle e nel campo «Da» si sceglie l'account da cui inviare.
+- **Inbox unificata.** «Tutte le caselle» mostra la posta di tutti gli account in un'unica lista. Ricerca e composizione lavorano sulla stessa vista: la ricerca guarda in tutte le caselle e nel campo «Da» si sceglie l'account da cui inviare.
 - **Push.** Ogni account tiene aperta una connessione IMAP IDLE sulla Posta in arrivo e la posta nuova arriva in pochi secondi. Se la connessione cade, si ricollega da sola. Se il server non supporta IDLE, l'app controlla la posta ogni 20 secondi.
 - **Gmail leggero.** Scarica solo intestazioni e anteprime dei 1.500 thread più recenti. Il testo di un messaggio si scarica quando lo apri, insieme ai messaggi vicini. La posta più vecchia si trova con la ricerca, che interroga anche i server di Gmail.
 - **PEC.**
