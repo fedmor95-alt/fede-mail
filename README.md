@@ -1,189 +1,129 @@
 <p align="center">
-  <img src="assets/icon.png?v1" alt="Velo" width="200" height="200" style="border-radius: 24px;" />
+  <img src="assets/icon.png?v1" alt="Fede Mail" width="160" height="160" />
 </p>
 
-<h1 align="center">Velo</h1>
+<h1 align="center">Fede Mail</h1>
 
 <p align="center">
-  <strong>Email at the speed of thought.</strong>
-</p>
-
-<p align="center">
-  A blazing-fast, keyboard-first desktop email client built with Tauri, React, and Rust.<br />
-  Local-first. Privacy-focused. AI-powered.
-</p>
-
-<p align="center">
-  <a href="#features">Features</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
-  <a href="#installation">Installation</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
-  <a href="docs/keyboard-shortcuts.md">Shortcuts</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
-  <a href="docs/architecture.md">Architecture</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
-  <a href="docs/development.md">Development</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
-  <a href="CONTRIBUTING.md">Contributing</a>
+  Client di posta desktop per Windows e Fedora, con push, inbox unificata e PEC.<br />
+  Basato su <a href="https://github.com/avihaymenahem/velo">Velo</a> (Apache-2.0), costruito con Tauri, React e Rust.
 </p>
 
 ---
 
-<p align="center">
-  <img width="1920" height="1032" alt="Screenshot 2026-02-17 223320" src="https://github.com/user-attachments/assets/dd096d15-4c1e-438c-99f9-c38b50a8a437" />
-</p>
+## Cosa fa
 
----
+- **Inbox unificata.** «Tutte le caselle» mostra la posta di tutti gli account in un'unica lista, con un pallino colorato per account. Ricerca e composizione lavorano sulla stessa vista: la ricerca guarda in tutte le caselle e nel campo «Da» si sceglie l'account da cui inviare.
+- **Push.** Ogni account tiene aperta una connessione IMAP IDLE sulla Posta in arrivo e la posta nuova arriva in pochi secondi. Se la connessione cade, si ricollega da sola. Se il server non supporta IDLE, l'app controlla la posta ogni 20 secondi.
+- **Gmail leggero.** Scarica solo intestazioni e anteprime dei 1.500 thread più recenti. Il testo di un messaggio si scarica quando lo apri, insieme ai messaggi vicini. La posta più vecchia si trova con la ricerca, che interroga anche i server di Gmail.
+- **PEC.**
+  - La busta di trasporto viene aperta e il messaggio originale (`postacert.eml`) è mostrato con i suoi allegati e l'etichetta «PEC».
+  - Le ricevute di accettazione, consegna e mancata consegna vengono collegate al messaggio inviato tramite il `msgid` di `daticert.xml` / `X-Riferimento-Message-ID`.
+  - La lista mostra lo stato: Accettata, Consegnata o Errore.
+  - Le ricevute non compaiono in Posta in arrivo. Per mostrarle: Impostazioni → «Mostra ricevute PEC in Posta in arrivo».
+- **Aspetto.** Pannelli pieni in stile Apple Mail e sei temi: Mail, Grafite, Carta, Nord, Salvia e Notte. Ogni tema ha una variante chiara e una scura, che segue il sistema.
 
-## Why Velo?
+### Scorciatoie principali
 
-Most email clients are slow, bloated, or send your data to someone else's server. Velo is different:
+| Tasto | Azione |
+|---|---|
+| ↑ / ↓ | Messaggio precedente / successivo |
+| Backspace / Canc | Elimina |
+| E | Archivia |
+| Ctrl+Z | Annulla l'ultima eliminazione o archiviazione (entro 6 secondi) |
+| Ctrl+Shift + / − / 0 | Testo più grande / più piccolo / normale |
+| Ctrl+Shift+E | Mostra / nasconde la barra laterale |
+| C, R, A, F | Scrivi, Rispondi, Rispondi a tutti, Inoltra |
 
-- **Local-first** -- Your emails live in a local SQLite database. No middleman servers. Read your mail offline.
-- **Keyboard-driven** -- Superhuman-inspired shortcuts let you fly through your inbox without touching the mouse.
-- **AI-enhanced** -- Summarize threads, generate replies, and search your inbox in natural language -- with your choice of AI provider.
-- **Native performance** -- Rust backend via Tauri v2. Small binary, low memory, instant startup.
-- **Private by default** -- Remote images blocked, HTML sanitized, emails rendered in sandboxed iframes. Your data stays on your machine.
+L'elenco completo è in Impostazioni → Scorciatoie.
 
----
+## Configurazione
 
-## Features
+### Google (Gmail e Google Workspace)
 
-### Email
+L'app usa un client OAuth «Desktop» di un progetto Google Cloud:
 
-- Multi-account support: Gmail (API) and IMAP/SMTP (Outlook, Yahoo, iCloud, Fastmail, and more) with instant switching
-- Threaded conversations with collapsible messages
-- Full-text search with Gmail-style operators (`from:`, `to:`, `subject:`, `has:attachment`, `label:`, etc.)
-- Command palette (`/` or `Ctrl+K`) for quick actions
-- Drag-and-drop labels, multi-select, pin threads, mute threads, context menus
-- Split inbox with category tabs (Primary, Updates, Promotions, Social, Newsletters)
-- Inline reply, contact sidebar with Gravatar
+1. Il progetto deve avere attive la **Gmail API** (e la **Calendar API**, se serve il calendario).
+2. La schermata di consenso deve essere **In produzione**: in modalità Test i token scadono dopo 7 giorni.
+3. Al primo avvio si incollano in Velo l'ID client e il client secret: Impostazioni → Account → Google.
+4. Si aggiunge l'account con «Aggiungi account» → Google.
 
-### Composer
+Il push di Gmail usa l'ambito `https://mail.google.com/`. Gli account aggiunti prima di questa modifica vanno ri-autorizzati da Impostazioni → Account → «Riautorizza».
 
-- TipTap v3 rich text editor (bold, italic, lists, code, links, images)
-- Undo send, schedule send, auto-save drafts
-- Multiple signatures, reusable templates with variables
-- Send-as email aliases with from-address selector
-- Drag-and-drop attachments with inline preview
-- Frequency-ranked contact autocomplete
+### PEC Aruba
 
-### Smart Inbox
+Si aggiunge con «Aggiungi account» → IMAP (il dominio `pec.it` viene riconosciuto automaticamente):
 
-- Snooze threads with presets or custom date/time
-- Filters to auto-label, archive, trash, star, or mark read
-- AI + rule-based auto-categorization (Primary, Updates, Promotions, Social, Newsletters)
-- One-click unsubscribe (RFC 8058) and subscription manager
-- Newsletter bundling with delivery schedules
-- Smart folders / saved searches with dynamic query tokens
-- Quick steps -- custom action chains for batch thread processing
-- Follow-up reminders when you haven't received a reply
+| | Server | Porta | Sicurezza |
+|---|---|---|---|
+| IMAP | `imaps.pec.aruba.it` | 993 | SSL/TLS |
+| SMTP | `smtps.pec.aruba.it` | 465 | SSL/TLS |
 
-### AI
+Nome utente: l'indirizzo PEC completo. La password resta cifrata nel database locale.
 
-Three providers with selectable models -- choose one or mix and match:
+### Dove stanno i dati
 
-| Provider | Models |
-|----------|--------|
-| **Anthropic Claude** | Haiku 4.5, Sonnet 4, Opus 4 |
-| **OpenAI** | GPT-4o Mini, GPT-4o, GPT-4.1 Nano, GPT-4.1 Mini, GPT-4.1 |
-| **Google Gemini** | 2.5 Flash, 2.5 Pro |
+- Database e cache: `%APPDATA%\com.velomail.app\` (Windows), `~/.local/share/com.velomail.app/` (Linux)
+- Log, compresi gli errori dell'interfaccia: `%LOCALAPPDATA%\com.velomail.app\logs\Velo.log`
 
-Thread summaries, smart reply suggestions, AI compose & reply, text transform (improve/shorten/formalize), Ask My Inbox (natural language search). Pick which model to use per provider in Settings. All results cached locally.
+## Sviluppo
 
-### Calendar
-
-Google Calendar sync with month, week, and day views. Create events without leaving Velo.
-
-### UI & Design
-
-- Glassmorphism with animated gradient background
-- Dark / light / system theme with 8 accent color presets
-- Flexible reading pane (right, bottom, hidden), resizable panels
-- Configurable density and font scaling
-- Pop-out thread windows, custom titlebar, splash screen
-- System tray with taskbar badge count
-
-### Privacy & Security
-
-- OAuth PKCE for Gmail -- no client secret, no backend servers
-- Encrypted password/app-password storage for IMAP accounts (AES-256-GCM)
-- Remote image blocking with per-sender allowlist
-- Phishing link detection with 10 heuristic scoring rules
-- SPF/DKIM/DMARC authentication display with badges and warnings
-- DOMPurify + sandboxed iframe rendering
-- AES-256-GCM encrypted token storage
-
-### System Integration
-
-- `mailto:` deep links, global compose shortcut
-- Autostart (hidden in tray), single instance
-- [Customizable keyboard shortcuts](docs/keyboard-shortcuts.md)
-
----
-
-## Installation
-
-Download the latest release for your platform:
-
-**[Download Velo](https://github.com/avihaymenahem/velo/releases/latest)** -- Windows `.msi` / `.exe` &nbsp;&bull;&nbsp; macOS `.dmg` &nbsp;&bull;&nbsp; Linux `.deb` / `.AppImage`
-
-No build tools or programming knowledge required -- just download, install, and run.
-
-### Account setup
-
-**Gmail:** Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/) (enable Gmail API + Calendar API), then enter your Client ID in Velo's Settings. No client secret needed (PKCE).
-
-**IMAP/SMTP:** Click "Add IMAP Account" in the account switcher. Enter your email and password -- Velo auto-discovers server settings for popular providers (Outlook, Yahoo, iCloud, Fastmail, etc.). For other providers, enter IMAP/SMTP server details manually. No Google Cloud project needed.
-
-**AI (optional):** Add an API key for [Anthropic](https://console.anthropic.com/), [OpenAI](https://platform.openai.com/), or [Google Gemini](https://aistudio.google.com/) in Settings. Then select which model to use for each provider.
-
-### Building from source
-
-For developers who want to build Velo themselves or contribute:
+Servono Node 20+, Rust stable e i [prerequisiti di Tauri](https://tauri.app/start/prerequisites/).
 
 ```bash
-git clone https://github.com/avihaymenahem/velo.git
-cd velo
-npm install
-npm run tauri dev
+npm ci
+npm run tauri dev      # app in sviluppo
+npm run test           # test frontend (vitest)
+cargo test --manifest-path src-tauri/Cargo.toml --lib   # test Rust
+npm run tauri build    # installer locale
 ```
 
-**Prerequisites:** [Node.js](https://nodejs.org/) v18+, [Rust](https://www.rust-lang.org/tools/install), [Tauri v2 deps](https://v2.tauri.app/start/prerequisites/)
+Su Windows, prima di ricompilare va chiusa del tutto l'app (anche dall'icona di notifica): altrimenti `velo.exe` resta bloccato.
 
-See [Development Guide](docs/development.md) for all commands, testing, and build instructions.
+## Rilascio e aggiornamenti automatici
 
----
+L'app installata controlla `https://github.com/fedmor95-alt/fede-mail/releases/latest/download/latest.json`. Quando trova una versione più nuova, la scarica, verifica la firma e propone di installarla.
 
-## Tech Stack
+### Chiave di firma (una volta sola)
 
-| | |
-|--|--|
-| **Framework** | Tauri v2 (Rust) + React 19 + TypeScript |
-| **Styling** | Tailwind CSS v4 |
-| **State** | Zustand 5 (8 stores) |
-| **Editor** | TipTap v3 |
-| **Email** | Gmail API, IMAP/SMTP (via async-imap + lettre in Rust) |
-| **Database** | SQLite + FTS5 (33 tables) |
-| **AI** | Claude, GPT, Gemini |
-| **Testing** | Vitest + Testing Library |
-
-See [Architecture](docs/architecture.md) for detailed design, data flow, and project structure.
-
----
-
-## Building
+La chiave è stata generata in locale con:
 
 ```bash
-npm run tauri build
+openssl rand -hex 24 > ~/.tauri/fede-mail.key.password
+npx tauri signer generate --ci -p "$(cat ~/.tauri/fede-mail.key.password)" -w ~/.tauri/fede-mail.key
 ```
 
-**Windows** `.msi` / `.exe` &nbsp;&bull;&nbsp; **macOS** `.dmg` / `.app` &nbsp;&bull;&nbsp; **Linux** `.deb` / `.AppImage`
+- **Chiave privata e password:** `%USERPROFILE%\.tauri\fede-mail.key` e `fede-mail.key.password`. Non vanno mai nel repository, perché chi le ha può distribuire aggiornamenti. Tienine una copia di sicurezza, per esempio nel gestore di password.
+- **Chiave pubblica:** è in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey`.
+- **Segreti GitHub:** `TAURI_SIGNING_PRIVATE_KEY` con il contenuto della chiave privata e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` con la password. Si impostano da Settings → Secrets and variables → Actions, oppure da terminale:
 
----
+  ```bash
+  gh secret set TAURI_SIGNING_PRIVATE_KEY --repo fedmor95-alt/fede-mail < ~/.tauri/fede-mail.key
+  gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --repo fedmor95-alt/fede-mail < ~/.tauri/fede-mail.key.password
+  ```
 
-## License
+Se la chiave privata va persa, le versioni già installate non accettano più aggiornamenti. In quel caso bisogna generare una nuova chiave e reinstallare l'app a mano.
 
-[Apache-2.0](LICENSE)
+### Pubblicare una versione
 
----
+La versione si legge solo da `package.json`.
 
-<p align="center">
-  Built with Rust and React.<br />
-  Made by <a href="https://github.com/avihaymenahem">Avihay</a>.
-</p>
+```bash
+npm version patch            # oppure minor / major: crea il commit e il tag vX.Y.Z
+git push --follow-tags
+```
+
+Il tag avvia `.github/workflows/release.yml`, che:
+
+1. esegue i test;
+2. compila l'installer Windows (NSIS) e i pacchetti Linux (rpm per Fedora, più AppImage);
+3. firma gli artefatti di aggiornamento;
+4. pubblica la release su GitHub con `latest.json`.
+
+Dopo qualche minuto le app installate si aggiornano da sole.
+
+Su Fedora l'rpm si installa con `sudo dnf install ./Fede*.rpm`. L'aggiornamento automatico di Tauri funziona per l'installer Windows e per l'AppImage. L'rpm si aggiorna reinstallando il nuovo pacchetto.
+
+## Crediti e licenza
+
+Fede Mail è una versione modificata di [Velo](https://github.com/avihaymenahem/velo) di Avihay Menahem e dei contributori di Velo. Come l'originale, è distribuita con licenza [Apache 2.0](LICENSE). Le modifiche sono elencate in [NOTICE](NOTICE). Il README originale di Velo, con la documentazione completa delle funzioni ereditate, è in [docs/README-velo.md](docs/README-velo.md).

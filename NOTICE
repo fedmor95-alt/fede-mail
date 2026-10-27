@@ -1,0 +1,19 @@
+Fede Mail
+Copyright 2026 Federico Morello
+
+This product is a modified version of Velo
+(https://github.com/avihaymenahem/velo), Copyright Avihay Menahem and
+the Velo contributors, licensed under the Apache License, Version 2.0.
+
+Main changes from Velo, made by Federico Morello (2026):
+- IMAP IDLE push for every account, with Gmail used through XOAUTH2 as a
+  new-mail signal; fix for XOAUTH2 handshakes that hung on the greeting
+- Gmail sync limited to message headers, with bodies loaded on demand
+- Unified inbox, search and composer across accounts
+- Support for Italian certified mail (PEC): envelopes, receipts and
+  delivery status
+- Italian user interface, flat themes, undo and text size shortcuts
+- Auto-update and release builds pointed at this fork
+
+The original Velo README is kept in docs/README-velo.md.
+See LICENSE for the full license text.
