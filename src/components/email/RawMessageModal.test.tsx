@@ -28,7 +28,7 @@ describe("RawMessageModal", () => {
       />,
     );
 
-    expect(screen.getByText("Loading message source...")).toBeInTheDocument();
+    expect(screen.getByText("Caricamento sorgente del messaggio...")).toBeInTheDocument();
   });
 
   it("displays raw message content after loading", async () => {
@@ -65,7 +65,7 @@ describe("RawMessageModal", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Failed to load message source: Network error/),
+        screen.getByText(/Impossibile caricare il sorgente del messaggio: Network error/),
       ).toBeInTheDocument();
     });
   });
@@ -83,7 +83,7 @@ describe("RawMessageModal", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Copy")).toBeInTheDocument();
+      expect(screen.getByText("Copia")).toBeInTheDocument();
     });
   });
 
@@ -106,14 +106,14 @@ describe("RawMessageModal", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Copy")).toBeInTheDocument();
+      expect(screen.getByText("Copia")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("Copy"));
+    fireEvent.click(screen.getByText("Copia"));
 
     expect(writeTextMock).toHaveBeenCalledWith(rawSource);
     await waitFor(() => {
-      expect(screen.getByText("Copied")).toBeInTheDocument();
+      expect(screen.getByText("Copiato")).toBeInTheDocument();
     });
   });
 
@@ -127,7 +127,7 @@ describe("RawMessageModal", () => {
       />,
     );
 
-    expect(screen.queryByText("Message Source")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sorgente del messaggio")).not.toBeInTheDocument();
     expect(mockFetchRawMessage).not.toHaveBeenCalled();
   });
 

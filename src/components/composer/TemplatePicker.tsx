@@ -55,7 +55,7 @@ export function TemplatePicker({ editor }: TemplatePickerProps) {
         className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
       >
         <FileText size={12} />
-        Templates
+        Modelli
         <ChevronDown size={10} />
       </button>
 

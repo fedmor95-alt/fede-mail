@@ -28,18 +28,18 @@ function getSchedulePresets(): { label: string; detail: string; timestamp: numbe
 
   return [
     {
-      label: "Tomorrow morning",
-      detail: tomorrowMorning.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + " 9:00 AM",
+      label: "Domani mattina",
+      detail: tomorrowMorning.toLocaleDateString("it-IT", { weekday: "short", month: "short", day: "numeric" }) + " 09:00",
       timestamp: Math.floor(tomorrowMorning.getTime() / 1000),
     },
     {
-      label: "Tomorrow afternoon",
-      detail: tomorrowAfternoon.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + " 1:00 PM",
+      label: "Domani pomeriggio",
+      detail: tomorrowAfternoon.toLocaleDateString("it-IT", { weekday: "short", month: "short", day: "numeric" }) + " 13:00",
       timestamp: Math.floor(tomorrowAfternoon.getTime() / 1000),
     },
     {
-      label: "Monday morning",
-      detail: monday.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + " 9:00 AM",
+      label: "Lunedì mattina",
+      detail: monday.toLocaleDateString("it-IT", { weekday: "short", month: "short", day: "numeric" }) + " 09:00",
       timestamp: Math.floor(monday.getTime() / 1000),
     },
   ];
@@ -52,10 +52,10 @@ export function ScheduleSendDialog({ onSchedule, onClose }: ScheduleSendDialogPr
     <DateTimePickerDialog
       isOpen={true}
       onClose={onClose}
-      title="Schedule send"
+      title="Programma invio"
       presets={presets}
       onSelect={onSchedule}
-      submitLabel="Schedule"
+      submitLabel="Programma"
       zIndex="z-[60]"
     />
   );

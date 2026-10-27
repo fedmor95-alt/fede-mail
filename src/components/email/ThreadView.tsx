@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { MessageItem } from "./MessageItem";
 import { ActionBar } from "./ActionBar";
-import { getMessagesForThread, type DbMessage } from "@/services/db/messages";
+import { type DbMessage } from "@/services/db/messages";
+import { getMessagesWithBodies } from "@/services/messageBodies";
 import { useAccountStore } from "@/stores/accountStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useThreadStore, type Thread } from "@/stores/threadStore";
@@ -42,7 +43,7 @@ async function handlePopOut(thread: Thread) {
 
     const win = new WebviewWindow(windowLabel, {
       url,
-      title: thread.subject ?? "Thread",
+      title: thread.subject ?? "Conversazione",
       width: 800,
       height: 700,
       center: true,
@@ -54,6 +55,17 @@ async function handlePopOut(thread: Thread) {
     });
   } catch (err) {
     console.error("Failed to open pop-out window:", err);
+  }
+}
+
+/** Download the bodies of the threads around the open one, so arrow-key
+ * navigation shows them without waiting for the network. */
+function prefetchNeighbours(threadId: string) {
+  const { threads } = useThreadStore.getState();
+  const idx = threads.findIndex((t) => t.id === threadId);
+  if (idx === -1) return;
+  for (const t of [threads[idx + 1], threads[idx + 2], threads[idx - 1]]) {
+    if (t) getMessagesWithBodies(t.accountId, t.id).catch(() => {});
   }
 }
 
@@ -80,10 +92,13 @@ export function ThreadView({ thread }: ThreadViewProps) {
   useEffect(() => {
     if (!activeAccountId) return;
     setLoading(true);
-    getMessagesForThread(activeAccountId, thread.id)
+    getMessagesWithBodies(activeAccountId, thread.id)
       .then(setMessages)
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        prefetchNeighbours(thread.id);
+      });
   }, [activeAccountId, thread.id]);
 
   // Check per-sender allowlist (single batch query instead of N queries)
@@ -196,15 +211,15 @@ export function ThreadView({ thread }: ThreadViewProps) {
       const date = new Date(msg.date).toLocaleString();
       const from = msg.from_name
         ? `${escapeHtml(msg.from_name)} &lt;${escapeHtml(msg.from_address ?? "")}&gt;`
-        : escapeHtml(msg.from_address ?? "Unknown");
+        : escapeHtml(msg.from_address ?? "Sconosciuto");
       const to = escapeHtml(msg.to_addresses ?? "");
       const body = msg.body_html ? sanitizeHtml(msg.body_html) : escapeHtml(msg.body_text ?? "");
       return `
         <div style="margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #e5e5e5">
           <div style="margin-bottom:8px;color:#666;font-size:12px">
-            <strong>From:</strong> ${from}<br/>
-            <strong>To:</strong> ${to}<br/>
-            <strong>Date:</strong> ${date}
+            <strong>Da:</strong> ${from}<br/>
+            <strong>A:</strong> ${to}<br/>
+            <strong>Data:</strong> ${date}
           </div>
           <div>${body}</div>
         </div>`;
@@ -215,7 +230,7 @@ export function ThreadView({ thread }: ThreadViewProps) {
     doc.write(`<!DOCTYPE html><html><head><title>${safeSubject || "Email"}</title>
       <style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:800px;margin:20px auto;color:#333;font-size:14px}
       h1{font-size:18px;margin-bottom:8px}img{max-width:100%}</style></head>
-      <body><h1>${safeSubject || "(No subject)"}</h1>${messagesHtml}</body></html>`);
+      <body><h1>${safeSubject || "(Nessun oggetto)"}</h1>${messagesHtml}</body></html>`);
     doc.close();
 
     iframe.contentWindow?.focus();
@@ -401,15 +416,15 @@ export function ThreadView({ thread }: ThreadViewProps) {
         {/* Thread subject */}
         <div className="px-6 py-3 border-b border-border-primary">
           <h1 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-            {thread.subject ?? "(No subject)"}
+            {thread.subject ?? "(Nessun oggetto)"}
             {thread.isMuted && (
-              <span className="text-warning shrink-0" title="Muted">
+              <span className="text-warning shrink-0" title="Silenziata">
                 <VolumeX size={16} />
               </span>
             )}
           </h1>
           <div className="text-xs text-text-tertiary mt-1">
-            {messages.length} message{messages.length !== 1 ? "s" : ""} in this thread
+            {messages.length} {messages.length !== 1 ? "messaggi" : "messaggio"} in questa conversazione
           </div>
         </div>
 
@@ -459,7 +474,7 @@ export function ThreadView({ thread }: ThreadViewProps) {
               noReply={noReply}
               onSent={() => {
                 // Reload messages after sending
-                getMessagesForThread(activeAccountId, thread.id)
+                getMessagesWithBodies(activeAccountId, thread.id)
                   .then(setMessages)
                   .catch(console.error);
               }}
@@ -519,13 +534,13 @@ function buildQuote(msg: DbMessage): string {
   const date = new Date(msg.date).toLocaleString();
   const from = msg.from_name
     ? `${escapeHtml(msg.from_name)} &lt;${escapeHtml(msg.from_address ?? "")}&gt;`
-    : escapeHtml(msg.from_address ?? "Unknown");
+    : escapeHtml(msg.from_address ?? "Sconosciuto");
   const body = msg.body_html ? sanitizeHtml(msg.body_html) : escapeHtml(msg.body_text ?? "");
-  return `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666">On ${date}, ${from} wrote:<br>${body}</div>`;
+  return `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666">Il ${date}, ${from} ha scritto:<br>${body}</div>`;
 }
 
 function buildForwardQuote(msg: DbMessage): string {
   const date = new Date(msg.date).toLocaleString();
   const body = msg.body_html ? sanitizeHtml(msg.body_html) : escapeHtml(msg.body_text ?? "");
-  return `<br><br>---------- Forwarded message ---------<br>From: ${escapeHtml(msg.from_name ?? "")} &lt;${escapeHtml(msg.from_address ?? "")}&gt;<br>Date: ${date}<br>Subject: ${escapeHtml(msg.subject ?? "")}<br>To: ${escapeHtml(msg.to_addresses ?? "")}<br><br>${body}`;
+  return `<br><br>---------- Messaggio inoltrato ---------<br>Da: ${escapeHtml(msg.from_name ?? "")} &lt;${escapeHtml(msg.from_address ?? "")}&gt;<br>Data: ${date}<br>Oggetto: ${escapeHtml(msg.subject ?? "")}<br>A: ${escapeHtml(msg.to_addresses ?? "")}<br><br>${body}`;
 }

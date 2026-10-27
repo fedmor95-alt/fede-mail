@@ -35,8 +35,8 @@ describe("LabelEditor", () => {
 
   it("renders empty state", () => {
     render(<LabelEditor />);
-    expect(screen.getByText("No user labels")).toBeInTheDocument();
-    expect(screen.getByText("+ Add label")).toBeInTheDocument();
+    expect(screen.getByText("Nessuna etichetta personale")).toBeInTheDocument();
+    expect(screen.getByText("+ Aggiungi etichetta")).toBeInTheDocument();
   });
 
   it("renders labels list", () => {
@@ -49,28 +49,28 @@ describe("LabelEditor", () => {
     expect(screen.getByText("Personal")).toBeInTheDocument();
   });
 
-  it("shows form when + Add label is clicked", () => {
+  it("shows form when + Aggiungi etichetta is clicked", () => {
     render(<LabelEditor />);
-    fireEvent.click(screen.getByText("+ Add label"));
-    expect(screen.getByPlaceholderText("Label name")).toBeInTheDocument();
-    expect(screen.getByText("Save")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta"));
+    expect(screen.getByPlaceholderText("Nome etichetta")).toBeInTheDocument();
+    expect(screen.getByText("Salva")).toBeInTheDocument();
+    expect(screen.getByText("Annulla")).toBeInTheDocument();
   });
 
   it("hides form when Cancel is clicked", () => {
     render(<LabelEditor />);
-    fireEvent.click(screen.getByText("+ Add label"));
-    expect(screen.getByPlaceholderText("Label name")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Cancel"));
-    expect(screen.queryByPlaceholderText("Label name")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta"));
+    expect(screen.getByPlaceholderText("Nome etichetta")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Annulla"));
+    expect(screen.queryByPlaceholderText("Nome etichetta")).not.toBeInTheDocument();
   });
 
   it("calls createLabel on save with name", async () => {
     mockCreateLabel.mockResolvedValue(undefined);
     render(<LabelEditor />);
-    fireEvent.click(screen.getByText("+ Add label"));
-    fireEvent.change(screen.getByPlaceholderText("Label name"), { target: { value: "New Label" } });
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta"));
+    fireEvent.change(screen.getByPlaceholderText("Nome etichetta"), { target: { value: "New Label" } });
+    fireEvent.click(screen.getByText("Salva"));
 
     await waitFor(() => {
       expect(mockCreateLabel).toHaveBeenCalledWith("acc1", "New Label", undefined);
@@ -84,12 +84,12 @@ describe("LabelEditor", () => {
     render(<LabelEditor />);
 
     // Click the edit button (pencil icon)
-    const editButtons = screen.getAllByTitle("Edit");
+    const editButtons = screen.getAllByTitle("Modifica");
     fireEvent.click(editButtons[0]!);
 
-    const input = screen.getByPlaceholderText("Label name") as HTMLInputElement;
+    const input = screen.getByPlaceholderText("Nome etichetta") as HTMLInputElement;
     expect(input.value).toBe("Work");
-    expect(screen.getByText("Update")).toBeInTheDocument();
+    expect(screen.getByText("Aggiorna")).toBeInTheDocument();
   });
 
   it("calls updateLabel on save when editing", async () => {
@@ -99,9 +99,9 @@ describe("LabelEditor", () => {
     ]);
     render(<LabelEditor />);
 
-    fireEvent.click(screen.getAllByTitle("Edit")[0]!);
-    fireEvent.change(screen.getByPlaceholderText("Label name"), { target: { value: "Updated" } });
-    fireEvent.click(screen.getByText("Update"));
+    fireEvent.click(screen.getAllByTitle("Modifica")[0]!);
+    fireEvent.change(screen.getByPlaceholderText("Nome etichetta"), { target: { value: "Updated" } });
+    fireEvent.click(screen.getByText("Aggiorna"));
 
     await waitFor(() => {
       expect(mockUpdateLabel).toHaveBeenCalledWith("acc1", "L1", {
@@ -118,7 +118,7 @@ describe("LabelEditor", () => {
     ]);
     render(<LabelEditor />);
 
-    fireEvent.click(screen.getAllByTitle("Delete")[0]!);
+    fireEvent.click(screen.getAllByTitle("Elimina")[0]!);
 
     await waitFor(() => {
       expect(mockDeleteLabel).toHaveBeenCalledWith("acc1", "L1");
@@ -132,8 +132,8 @@ describe("LabelEditor", () => {
     ]);
     render(<LabelEditor />);
 
-    const moveUpButtons = screen.getAllByTitle("Move up");
-    const moveDownButtons = screen.getAllByTitle("Move down");
+    const moveUpButtons = screen.getAllByTitle("Sposta su");
+    const moveDownButtons = screen.getAllByTitle("Sposta giù");
 
     expect(moveUpButtons[0]!).toBeDisabled();
     expect(moveDownButtons[1]!).toBeDisabled();
@@ -149,7 +149,7 @@ describe("LabelEditor", () => {
     ]);
     render(<LabelEditor />);
 
-    const moveDownButtons = screen.getAllByTitle("Move down");
+    const moveDownButtons = screen.getAllByTitle("Sposta giù");
     fireEvent.click(moveDownButtons[0]!);
 
     await waitFor(() => {
@@ -163,7 +163,7 @@ describe("LabelEditor", () => {
       { id: "L1", accountId: "acc1", name: "Work", type: "user", colorBg: null, colorFg: null, sortOrder: 0 },
     ]);
     render(<LabelEditor />);
-    fireEvent.click(screen.getAllByTitle("Delete")[0]!);
+    fireEvent.click(screen.getAllByTitle("Elimina")[0]!);
 
     await waitFor(() => {
       expect(screen.getByText("API error")).toBeInTheDocument();
@@ -172,13 +172,13 @@ describe("LabelEditor", () => {
 
   it("disables save button when name is empty", () => {
     render(<LabelEditor />);
-    fireEvent.click(screen.getByText("+ Add label"));
-    expect(screen.getByText("Save")).toBeDisabled();
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta"));
+    expect(screen.getByText("Salva")).toBeDisabled();
   });
 
   it("selects a color in the color picker", () => {
     render(<LabelEditor />);
-    fireEvent.click(screen.getByText("+ Add label"));
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta"));
 
     // Click a color swatch (the red one #fb4c2f)
     const colorButton = screen.getByTitle("#fb4c2f");
@@ -196,13 +196,13 @@ describe("LabelEditor", () => {
     render(<LabelEditor />);
 
     // Click edit on the first label
-    fireEvent.click(screen.getAllByTitle("Edit")[0]!);
+    fireEvent.click(screen.getAllByTitle("Modifica")[0]!);
 
     // Form should be visible
-    const input = screen.getByPlaceholderText("Label name") as HTMLInputElement;
+    const input = screen.getByPlaceholderText("Nome etichetta") as HTMLInputElement;
     expect(input.value).toBe("First");
 
-    // The "+ Add label" button should not be visible while editing
-    expect(screen.queryByText("+ Add label")).not.toBeInTheDocument();
+    // The "+ Aggiungi etichetta" button should not be visible while editing
+    expect(screen.queryByText("+ Aggiungi etichetta")).not.toBeInTheDocument();
   });
 });

@@ -80,6 +80,6 @@ describe("TaskItem", () => {
         onToggleComplete={vi.fn()}
       />,
     );
-    expect(screen.getByText("Tomorrow")).toBeInTheDocument();
+    expect(screen.getByText("Domani")).toBeInTheDocument();
   });
 });

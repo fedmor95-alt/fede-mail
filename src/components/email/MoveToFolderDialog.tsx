@@ -37,9 +37,9 @@ interface Destination {
 }
 
 const SYSTEM_DESTINATIONS: Destination[] = [
-  { id: "INBOX", label: "Inbox", icon: Inbox, type: "system" },
-  { id: "__archive__", label: "Archive", icon: Archive, type: "system" },
-  { id: "TRASH", label: "Trash", icon: Trash2, type: "system" },
+  { id: "INBOX", label: "Posta in arrivo", icon: Inbox, type: "system" },
+  { id: "__archive__", label: "Archivio", icon: Archive, type: "system" },
+  { id: "TRASH", label: "Cestino", icon: Trash2, type: "system" },
   { id: "SPAM", label: "Spam", icon: Ban, type: "system" },
 ];
 
@@ -200,7 +200,7 @@ export function MoveToFolderDialog({
                 setQuery(e.target.value);
                 setSelectedIdx(0);
               }}
-              placeholder="Move to..."
+              placeholder="Sposta in..."
               className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary outline-none"
               autoFocus
             />
@@ -214,7 +214,7 @@ export function MoveToFolderDialog({
           >
             {filtered.length === 0 && (
               <div className="px-3 py-4 text-center text-xs text-text-tertiary">
-                No matching folders or labels
+                Nessuna cartella o etichetta corrispondente
               </div>
             )}
             {filtered.map((dest, idx) => {
@@ -244,7 +244,7 @@ export function MoveToFolderDialog({
                   <span className="truncate">{dest.label}</span>
                   {dest.type === "system" && (
                     <span className="ml-auto text-[10px] text-text-tertiary uppercase tracking-wider">
-                      System
+                      Sistema
                     </span>
                   )}
                 </button>
@@ -258,19 +258,19 @@ export function MoveToFolderDialog({
               <kbd className="px-1 py-0.5 rounded bg-bg-tertiary text-text-tertiary">
                 ↑↓
               </kbd>{" "}
-              navigate
+              naviga
             </span>
             <span>
               <kbd className="px-1 py-0.5 rounded bg-bg-tertiary text-text-tertiary">
                 ↵
               </kbd>{" "}
-              select
+              seleziona
             </span>
             <span>
               <kbd className="px-1 py-0.5 rounded bg-bg-tertiary text-text-tertiary">
                 esc
               </kbd>{" "}
-              close
+              chiudi
             </span>
           </div>
         </div>

@@ -23,25 +23,25 @@ type SizeFilter = "all" | "small" | "medium" | "large";
 type ViewMode = "grid" | "list";
 
 const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
-  { value: "all", label: "All types" },
-  { value: "images", label: "Images" },
-  { value: "pdfs", label: "PDFs" },
-  { value: "documents", label: "Documents" },
-  { value: "spreadsheets", label: "Spreadsheets" },
-  { value: "archives", label: "Archives" },
-  { value: "other", label: "Other" },
+  { value: "all", label: "Tutti i tipi" },
+  { value: "images", label: "Immagini" },
+  { value: "pdfs", label: "PDF" },
+  { value: "documents", label: "Documenti" },
+  { value: "spreadsheets", label: "Fogli di calcolo" },
+  { value: "archives", label: "Archivi" },
+  { value: "other", label: "Altro" },
 ];
 
 const DATE_OPTIONS: { value: DateFilter; label: string }[] = [
-  { value: "all", label: "Any time" },
-  { value: "today", label: "Today" },
-  { value: "week", label: "Past week" },
-  { value: "month", label: "Past month" },
-  { value: "year", label: "Past year" },
+  { value: "all", label: "Qualsiasi data" },
+  { value: "today", label: "Oggi" },
+  { value: "week", label: "Ultima settimana" },
+  { value: "month", label: "Ultimo mese" },
+  { value: "year", label: "Ultimo anno" },
 ];
 
 const SIZE_OPTIONS: { value: SizeFilter; label: string }[] = [
-  { value: "all", label: "Any size" },
+  { value: "all", label: "Qualsiasi dimensione" },
   { value: "small", label: "< 1 MB" },
   { value: "medium", label: "1–10 MB" },
   { value: "large", label: "> 10 MB" },
@@ -159,7 +159,7 @@ export function AttachmentLibrary() {
     try {
       const filePath = await save({
         defaultPath: att.filename ?? "attachment",
-        filters: [{ name: "All Files", extensions: ["*"] }],
+        filters: [{ name: "Tutti i file", extensions: ["*"] }],
       });
       if (!filePath) return;
 
@@ -193,7 +193,7 @@ export function AttachmentLibrary() {
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Paperclip size={18} className="text-text-secondary" />
-            <h1 className="text-base font-semibold text-text-primary">Attachments</h1>
+            <h1 className="text-base font-semibold text-text-primary">Allegati</h1>
             <span className="text-xs text-text-tertiary">({filtered.length})</span>
           </div>
 
@@ -205,7 +205,7 @@ export function AttachmentLibrary() {
             <input
               ref={searchRef}
               type="text"
-              placeholder="Search attachments..."
+              placeholder="Cerca allegati..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 pr-3 py-1.5 text-xs rounded-md border border-border-primary bg-bg-secondary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent w-48"
@@ -228,7 +228,7 @@ export function AttachmentLibrary() {
             onChange={(e) => setSenderFilter(e.target.value)}
             className="text-xs rounded-md border border-border-primary bg-bg-secondary text-text-primary px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent max-w-40"
           >
-            <option value="all">All senders</option>
+            <option value="all">Tutti i mittenti</option>
             {senders.map((s) => (
               <option key={s.from_address} value={s.from_address}>
                 {s.from_name || s.from_address} ({s.count})
@@ -261,14 +261,14 @@ export function AttachmentLibrary() {
             <button
               onClick={() => setViewMode("grid")}
               className={`p-1.5 ${viewMode === "grid" ? "bg-accent/10 text-accent" : "text-text-tertiary hover:text-text-primary"}`}
-              title="Grid view"
+              title="Vista a griglia"
             >
               <LayoutGrid size={14} />
             </button>
             <button
               onClick={() => setViewMode("list")}
               className={`p-1.5 ${viewMode === "list" ? "bg-accent/10 text-accent" : "text-text-tertiary hover:text-text-primary"}`}
-              title="List view"
+              title="Vista a elenco"
             >
               <List size={14} />
             </button>
@@ -280,13 +280,13 @@ export function AttachmentLibrary() {
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-text-tertiary">Loading attachments...</p>
+            <p className="text-sm text-text-tertiary">Caricamento allegati...</p>
           </div>
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Paperclip}
-            title={attachments.length === 0 ? "No attachments yet" : "No matching attachments"}
-            subtitle={attachments.length === 0 ? "Attachments from your emails will appear here" : "Try adjusting your filters or search query"}
+            title={attachments.length === 0 ? "Ancora nessun allegato" : "Nessun allegato corrispondente"}
+            subtitle={attachments.length === 0 ? "Gli allegati delle tue email appariranno qui" : "Prova a modificare i filtri o la ricerca"}
           />
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">

@@ -72,7 +72,7 @@ export const useUIStore = create<UIState>((set) => ({
   defaultReplyMode: "reply",
   markAsReadBehavior: "instant",
   fontScale: "default",
-  colorTheme: "indigo",
+  colorTheme: "mail",
   sendAndArchive: false,
   inboxViewMode: "unified",
   taskSidebarVisible: false,

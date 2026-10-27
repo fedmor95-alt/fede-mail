@@ -6,7 +6,7 @@ interface TaskQuickAddProps {
   placeholder?: string;
 }
 
-export function TaskQuickAdd({ onAdd, placeholder = "Add a task..." }: TaskQuickAddProps) {
+export function TaskQuickAdd({ onAdd, placeholder = "Aggiungi un'attività..." }: TaskQuickAddProps) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 

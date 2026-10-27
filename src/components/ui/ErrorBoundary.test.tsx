@@ -36,9 +36,9 @@ describe("ErrorBoundary", () => {
         <ThrowingComponent message="Test error" />
       </ErrorBoundary>,
     );
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("Qualcosa è andato storto")).toBeInTheDocument();
     expect(screen.getByText("Test error")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Riprova" })).toBeInTheDocument();
   });
 
   it("renders custom fallback when provided", () => {
@@ -48,7 +48,7 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
     expect(screen.getByText("Custom fallback")).toBeInTheDocument();
-    expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument();
+    expect(screen.queryByText("Qualcosa è andato storto")).not.toBeInTheDocument();
   });
 
   it("logs the error with the boundary name", () => {
@@ -77,7 +77,7 @@ describe("ErrorBoundary", () => {
     );
   });
 
-  it("recovers when 'Try again' is clicked and child no longer throws", () => {
+  it("recovers when 'Riprova' is clicked and child no longer throws", () => {
     let shouldThrow = true;
 
     function MaybeThrow() {
@@ -91,15 +91,15 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("Qualcosa è andato storto")).toBeInTheDocument();
 
     // Fix the error condition
     shouldThrow = false;
 
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Riprova" }));
 
     expect(screen.getByText("Recovered")).toBeInTheDocument();
-    expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument();
+    expect(screen.queryByText("Qualcosa è andato storto")).not.toBeInTheDocument();
   });
 
   it("shows fallback again if child still throws after retry", () => {
@@ -109,12 +109,12 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("Qualcosa è andato storto")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Riprova" }));
 
     // Still broken, so fallback should reappear
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("Qualcosa è andato storto")).toBeInTheDocument();
     expect(screen.getByText("Persistent error")).toBeInTheDocument();
   });
 });

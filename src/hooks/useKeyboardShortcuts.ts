@@ -1,16 +1,16 @@
 import { useEffect, useRef } from "react";
-import { useUIStore } from "@/stores/uiStore";
+import { useUIStore, type FontScale } from "@/stores/uiStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useComposerStore } from "@/stores/composerStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
 import { navigateToLabel, navigateToThread, navigateBack, getActiveLabel, getSelectedThreadId } from "@/router/navigate";
-import { archiveThread, trashThread, permanentDeleteThread, starThread, spamThread } from "@/services/emailActions";
+import { archiveThread, trashThread, permanentDeleteThread, starThread, spamThread, undoLastAction } from "@/services/emailActions";
 import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb, muteThread as muteThreadDb, unmuteThread as unmuteThreadDb } from "@/services/db/threads";
 import { deleteDraftsForThread } from "@/services/gmail/draftDeletion";
 import { getGmailClient } from "@/services/gmail/tokenManager";
-import { getMessagesForThread } from "@/services/db/messages";
+import { getMessagesWithBodies } from "@/services/messageBodies";
 import { parseUnsubscribeUrl } from "@/components/email/MessageItem";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { triggerSync } from "@/services/gmail/syncManager";
@@ -125,6 +125,17 @@ export function useKeyboardShortcuts() {
           // Send email shortcut handled by composer
           return;
         }
+        // Ctrl+Z: take back the last delete/archive (outside text fields)
+        if (!isInputFocused && !e.shiftKey && e.key.toLowerCase() === "z") {
+          if (undoLastAction()) e.preventDefault();
+          return;
+        }
+        // Ctrl+Shift + / - / 0: text size (code-based, works on any layout)
+        if (e.shiftKey && ["Equal", "NumpadAdd", "BracketRight", "Minus", "NumpadSubtract", "Slash", "Digit0", "Numpad0"].includes(e.code)) {
+          e.preventDefault();
+          stepFontScale(e.code === "Digit0" || e.code === "Numpad0" ? 0 : e.code === "Minus" || e.code === "NumpadSubtract" || e.code === "Slash" ? -1 : 1);
+          return;
+        }
         return;
       }
 
@@ -196,6 +207,20 @@ export function useKeyboardShortcuts() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+}
+
+const FONT_SCALES: FontScale[] = ["small", "default", "large", "xlarge"];
+
+/** Move the text size one step (or back to default with 0). */
+function stepFontScale(direction: -1 | 0 | 1): void {
+  const ui = useUIStore.getState();
+  if (direction === 0) {
+    ui.setFontScale("default");
+    return;
+  }
+  const idx = FONT_SCALES.indexOf(ui.fontScale);
+  const next = FONT_SCALES[Math.max(0, Math.min(FONT_SCALES.length - 1, idx + direction))]!;
+  ui.setFontScale(next);
 }
 
 async function executeAction(actionId: string): Promise<void> {
@@ -404,7 +429,7 @@ async function executeAction(actionId: string): Promise<void> {
     case "action.unsubscribe": {
       if (selectedId && activeAccountId) {
         try {
-          const msgs = await getMessagesForThread(activeAccountId, selectedId);
+          const msgs = await getMessagesWithBodies(activeAccountId, selectedId);
           const unsubMsg = msgs.find((m) => m.list_unsubscribe);
           if (unsubMsg) {
             const url = parseUnsubscribeUrl(unsubMsg.list_unsubscribe!);

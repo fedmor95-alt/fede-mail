@@ -301,12 +301,94 @@ async function executeViaProvider(
 }
 
 export async function executeEmailAction(
-  accountId: string,
-  action: EmailAction,
+  callerAccountId: string,
+  initialAction: EmailAction,
 ): Promise<ActionResult> {
+  let action = initialAction;
+  // Unified view: a multi-selection can span accounts, so thread actions run
+  // against the account that owns the thread, not the caller's active one.
+  const threadId = "threadId" in action ? action.threadId : undefined;
+  const accountId =
+    (threadId && useThreadStore.getState().threadMap?.get(threadId)?.accountId) || callerAccountId;
+
+  // IMAP needs the message ids (folder + UID) to act on the server; callers
+  // such as keyboard shortcuts only pass the thread id.
+  if ("messageIds" in action && action.messageIds.length === 0 && threadId) {
+    const db = await getDb();
+    const rows = await db.select<{ id: string }[]>(
+      "SELECT id FROM messages WHERE account_id = $1 AND thread_id = $2",
+      [accountId, threadId],
+    );
+    action = { ...action, messageIds: rows.map((r) => r.id) };
+  }
+
   // 1. Optimistic UI update
   applyOptimisticUpdate(action);
 
+  // Delete/archive wait a few seconds before touching the DB and server, so
+  // Ctrl+Z (or the toast's "Annulla") can still take them back.
+  if (action.type === "trash" || action.type === "archive") {
+    const deferred = action;
+    scheduleUndoable(deferred, () =>
+      commitEmailAction(accountId, deferred).catch((err) => {
+        console.error("Deferred action failed:", err);
+        return { success: false, error: String(err) };
+      }),
+    );
+    return { success: true };
+  }
+  return commitEmailAction(accountId, action);
+}
+
+// ---------------------------------------------------------------------------
+// Undo (Ctrl+Z) for delete/archive
+// ---------------------------------------------------------------------------
+
+const UNDO_WINDOW_MS = 6000;
+type DeferredRun = () => Promise<ActionResult>;
+let undoBatch: { kind: "trash" | "archive"; runs: DeferredRun[]; timer: ReturnType<typeof setTimeout> } | null = null;
+
+function flushUndoBatch(): Promise<ActionResult[]> {
+  if (!undoBatch) return Promise.resolve([]);
+  clearTimeout(undoBatch.timer);
+  const runs = undoBatch.runs;
+  undoBatch = null;
+  window.dispatchEvent(new Event("velo-undo-done"));
+  return Promise.all(runs.map((run) => run()));
+}
+
+function scheduleUndoable(action: EmailAction & { type: "trash" | "archive" }, run: DeferredRun): void {
+  // A different kind of action starts a new batch; the old one commits now.
+  if (undoBatch && undoBatch.kind !== action.type) flushUndoBatch();
+  if (!undoBatch) {
+    undoBatch = { kind: action.type, runs: [], timer: setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS) };
+  } else {
+    clearTimeout(undoBatch.timer);
+    undoBatch.timer = setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS);
+  }
+  undoBatch.runs.push(run);
+  window.dispatchEvent(
+    new CustomEvent("velo-undo-available", { detail: { kind: action.type, count: undoBatch.runs.length } }),
+  );
+}
+
+/** Take back the pending delete/archive batch. Returns false if nothing to undo. */
+export function undoLastAction(): boolean {
+  if (!undoBatch) return false;
+  clearTimeout(undoBatch.timer);
+  undoBatch = null;
+  window.dispatchEvent(new Event("velo-undo-done"));
+  // Nothing reached the DB yet, so reloading the list brings the threads back.
+  window.dispatchEvent(new Event("velo-sync-done"));
+  return true;
+}
+
+/** Commit any pending delete/archive right away (e.g. before the window closes). */
+export function flushPendingUndo(): Promise<ActionResult[]> {
+  return flushUndoBatch();
+}
+
+async function commitEmailAction(accountId: string, action: EmailAction): Promise<ActionResult> {
   // 2. Local DB update
   try {
     await applyLocalDbUpdate(accountId, action);

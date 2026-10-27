@@ -32,11 +32,11 @@ describe("CategoryTabs", () => {
       />,
     );
 
-    expect(screen.getByText("Primary")).toBeInTheDocument();
-    expect(screen.getByText("Updates")).toBeInTheDocument();
-    expect(screen.getByText("Promotions")).toBeInTheDocument();
+    expect(screen.getByText("Principale")).toBeInTheDocument();
+    expect(screen.getByText("Aggiornamenti")).toBeInTheDocument();
+    expect(screen.getByText("Promozioni")).toBeInTheDocument();
     expect(screen.getByText("Social")).toBeInTheDocument();
-    expect(screen.getByText("Newsletters")).toBeInTheDocument();
+    expect(screen.getByText("Newsletter")).toBeInTheDocument();
   });
 
   it("highlights the active category", () => {
@@ -47,10 +47,10 @@ describe("CategoryTabs", () => {
       />,
     );
 
-    const updatesBtn = screen.getByText("Updates").closest("button");
+    const updatesBtn = screen.getByText("Aggiornamenti").closest("button");
     expect(updatesBtn?.className).toContain("text-accent");
 
-    const primaryBtn = screen.getByText("Primary").closest("button");
+    const primaryBtn = screen.getByText("Principale").closest("button");
     expect(primaryBtn?.className).toContain("text-text-tertiary");
   });
 

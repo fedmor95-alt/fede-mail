@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { SHOW_PEC_RECEIPTS_SETTING, setShowPecReceipts } from "@/services/pec/pecStatus";
 import { useParams } from "@tanstack/react-router";
 import { useUIStore } from "@/stores/uiStore";
 import { navigateToLabel, navigateToSettings } from "@/router/navigate";
@@ -64,16 +65,24 @@ import appIcon from "@/assets/icon.png";
 type SettingsTab = "general" | "notifications" | "composing" | "mail-rules" | "people" | "accounts" | "shortcuts" | "ai" | "about";
 
 const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "composing", label: "Composing", icon: PenLine },
-  { id: "mail-rules", label: "Mail Rules", icon: Filter },
-  { id: "people", label: "People", icon: Users },
-  { id: "accounts", label: "Accounts", icon: UserCircle },
-  { id: "shortcuts", label: "Shortcuts", icon: Keyboard },
-  { id: "ai", label: "AI", icon: Sparkles },
-  { id: "about", label: "About", icon: Info },
+  { id: "general", label: "Generale", icon: Settings },
+  { id: "notifications", label: "Notifiche", icon: Bell },
+  { id: "composing", label: "Scrittura", icon: PenLine },
+  { id: "mail-rules", label: "Regole posta", icon: Filter },
+  { id: "people", label: "Persone", icon: Users },
+  { id: "accounts", label: "Account", icon: UserCircle },
+  { id: "shortcuts", label: "Scorciatoie", icon: Keyboard },
+  { id: "ai", label: "IA", icon: Sparkles },
+  { id: "about", label: "Info", icon: Info },
 ];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  Primary: "Principale",
+  Updates: "Aggiornamenti",
+  Promotions: "Promozioni",
+  Social: "Social",
+  Newsletters: "Newsletter",
+};
 
 export function SettingsPage() {
   const theme = useUIStore((s) => s.theme);
@@ -109,6 +118,7 @@ export function SettingsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncPeriodDays, setSyncPeriodDays] = useState("365");
   const [blockRemoteImages, setBlockRemoteImages] = useState(true);
+  const [showPecReceipts, setShowPecReceiptsState] = useState(false);
   const [phishingDetectionEnabled, setPhishingDetectionEnabled] = useState(true);
   const [phishingSensitivity, setPhishingSensitivity] = useState<"low" | "default" | "high">("default");
   const [autostartEnabled, setAutostartEnabled] = useState(false);
@@ -157,6 +167,7 @@ export function SettingsPage() {
       setClientSecret(secret ?? "");
       const blockImg = await getSetting("block_remote_images");
       setBlockRemoteImages(blockImg !== "false");
+      setShowPecReceiptsState((await getSetting(SHOW_PEC_RECEIPTS_SETTING)) === "true");
       const phishingEnabled = await getSetting("phishing_detection_enabled");
       setPhishingDetectionEnabled(phishingEnabled !== "false");
       const phishingSens = await getSetting("phishing_sensitivity");
@@ -356,23 +367,23 @@ export function SettingsPage() {
   const activeTabDef = tabs.find((t) => t.id === activeTab);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bg-primary/50">
+    <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bg-primary">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-border-primary shrink-0 bg-bg-primary/60 backdrop-blur-sm">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border-primary shrink-0 bg-bg-primary backdrop-blur-sm">
         <button
           onClick={() => navigateToLabel("inbox")}
           className="p-1.5 -ml-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
-          title="Back to Inbox"
+          title="Torna alla Posta in arrivo"
         >
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-base font-semibold text-text-primary">Settings</h1>
+        <h1 className="text-base font-semibold text-text-primary">Impostazioni</h1>
       </div>
 
       {/* Body: sidebar nav + content */}
       <div className="flex flex-1 min-h-0">
         {/* Vertical tab sidebar */}
-        <nav className="w-48 border-r border-border-primary py-2 overflow-y-auto shrink-0 bg-bg-primary/30">
+        <nav className="w-48 border-r border-border-primary py-2 overflow-y-auto shrink-0 bg-bg-primary">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -408,8 +419,8 @@ export function SettingsPage() {
             <div className="space-y-8">
               {activeTab === "general" && (
                 <>
-                  <Section title="Appearance">
-                    <SettingRow label="Theme">
+                  <Section title="Aspetto">
+                    <SettingRow label="Tema">
                       <select
                         value={theme}
                         onChange={(e) => {
@@ -419,12 +430,12 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="system">System</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+                        <option value="system">Sistema</option>
+                        <option value="light">Chiaro</option>
+                        <option value="dark">Scuro</option>
                       </select>
                     </SettingRow>
-                    <SettingRow label="Reading pane">
+                    <SettingRow label="Pannello di lettura">
                       <select
                         value={readingPanePosition}
                         onChange={(e) => {
@@ -432,12 +443,12 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="right">Right</option>
-                        <option value="bottom">Bottom</option>
-                        <option value="hidden">Off</option>
+                        <option value="right">Destra</option>
+                        <option value="bottom">In basso</option>
+                        <option value="hidden">Nascosto</option>
                       </select>
                     </SettingRow>
-                    <SettingRow label="Email density">
+                    <SettingRow label="Densità email">
                       <select
                         value={emailDensity}
                         onChange={(e) => {
@@ -445,12 +456,12 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="compact">Compact</option>
-                        <option value="default">Default</option>
-                        <option value="spacious">Spacious</option>
+                        <option value="compact">Compatta</option>
+                        <option value="default">Predefinita</option>
+                        <option value="spacious">Ampia</option>
                       </select>
                     </SettingRow>
-                    <SettingRow label="Font size">
+                    <SettingRow label="Dimensione carattere">
                       <select
                         value={fontScale}
                         onChange={(e) => {
@@ -458,13 +469,13 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="small">Small</option>
-                        <option value="default">Default</option>
-                        <option value="large">Large</option>
-                        <option value="xlarge">Extra Large</option>
+                        <option value="small">Piccola</option>
+                        <option value="default">Predefinita</option>
+                        <option value="large">Grande</option>
+                        <option value="xlarge">Molto grande</option>
                       </select>
                     </SettingRow>
-                    <SettingRow label="Accent color">
+                    <SettingRow label="Colore principale">
                       <div className="flex items-center gap-2">
                         {COLOR_THEMES.map((t) => {
                           const isSelected = colorTheme === t.id;
@@ -493,7 +504,7 @@ export function SettingsPage() {
                         })}
                       </div>
                     </SettingRow>
-                    <SettingRow label="Inbox view mode">
+                    <SettingRow label="Modalità di visualizzazione Posta in arrivo">
                       <select
                         value={inboxViewMode}
                         onChange={(e) => {
@@ -501,13 +512,13 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="unified">Unified</option>
-                        <option value="split">Split (Categories)</option>
+                        <option value="unified">Unificata</option>
+                        <option value="split">Divisa (categorie)</option>
                       </select>
                     </SettingRow>
                     <ToggleRow
-                      label="Reduce motion"
-                      description="Disable animated background effects (fixes flickering on some GPUs)"
+                      label="Riduci animazioni"
+                      description="Disattiva gli effetti animati dello sfondo (risolve lo sfarfallio su alcune GPU)"
                       checked={reduceMotion}
                       onToggle={() => setReduceMotion(!reduceMotion)}
                     />
@@ -515,19 +526,19 @@ export function SettingsPage() {
 
                   <SidebarNavEditor />
 
-                  <Section title="Startup">
+                  <Section title="Avvio">
                     <ToggleRow
-                      label="Launch at login"
-                      description="Start Velo automatically when you log in (minimized to tray)"
+                      label="Apri all'accesso"
+                      description="Avvia Velo automaticamente quando accedi (ridotto a icona nell'area di notifica)"
                       checked={autostartEnabled}
                       onToggle={handleAutostartToggle}
                     />
                   </Section>
 
-                  <Section title="Privacy & Security">
+                  <Section title="Privacy e sicurezza">
                     <ToggleRow
-                      label="Block remote images"
-                      description="Hides tracking pixels and remote images until you choose to load them"
+                      label="Blocca immagini remote"
+                      description="Nasconde i pixel di tracciamento e le immagini remote finché non scegli di caricarli"
                       checked={blockRemoteImages}
                       onToggle={async () => {
                         const newVal = !blockRemoteImages;
@@ -536,8 +547,18 @@ export function SettingsPage() {
                       }}
                     />
                     <ToggleRow
-                      label="Phishing link detection"
-                      description="Scan message links for phishing indicators and show warnings"
+                      label="Mostra ricevute PEC in Posta in arrivo"
+                      description="Le ricevute di accettazione e consegna restano comunque nella conversazione del messaggio inviato"
+                      checked={showPecReceipts}
+                      onToggle={async () => {
+                        const newVal = !showPecReceipts;
+                        setShowPecReceiptsState(newVal);
+                        await setShowPecReceipts(newVal);
+                      }}
+                    />
+                    <ToggleRow
+                      label="Rilevamento link di phishing"
+                      description="Analizza i link dei messaggi alla ricerca di segnali di phishing e mostra degli avvisi"
                       checked={phishingDetectionEnabled}
                       onToggle={async () => {
                         const newVal = !phishingDetectionEnabled;
@@ -546,7 +567,7 @@ export function SettingsPage() {
                       }}
                     />
                     {phishingDetectionEnabled && (
-                      <SettingRow label="Detection sensitivity">
+                      <SettingRow label="Sensibilità del rilevamento">
                         <select
                           value={phishingSensitivity}
                           onChange={async (e) => {
@@ -556,20 +577,20 @@ export function SettingsPage() {
                           }}
                           className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                         >
-                          <option value="low">Low (fewer warnings)</option>
-                          <option value="default">Default</option>
-                          <option value="high">High (more warnings)</option>
+                          <option value="low">Bassa (meno avvisi)</option>
+                          <option value="default">Predefinita</option>
+                          <option value="high">Alta (più avvisi)</option>
                         </select>
                       </SettingRow>
                     )}
                   </Section>
 
-                  <Section title="Storage">
+                  <Section title="Archiviazione">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-sm text-text-secondary">Attachment cache</span>
+                        <span className="text-sm text-text-secondary">Cache degli allegati</span>
                         <p className="text-xs text-text-tertiary mt-0.5">
-                          {cacheSizeMb !== null ? `${cacheSizeMb} MB used` : "Calculating..."}
+                          {cacheSizeMb !== null ? `${cacheSizeMb} MB utilizzati` : "Calcolo in corso..."}
                         </p>
                       </div>
                       <Button
@@ -589,10 +610,10 @@ export function SettingsPage() {
                         disabled={clearingCache}
                         className="bg-bg-tertiary text-text-primary border border-border-primary"
                       >
-                        {clearingCache ? "Clearing..." : "Clear Cache"}
+                        {clearingCache ? "Svuotamento..." : "Svuota cache"}
                       </Button>
                     </div>
-                    <SettingRow label="Max cache size">
+                    <SettingRow label="Dimensione massima della cache">
                       <select
                         value={cacheMaxMb}
                         onChange={async (e) => {
@@ -615,15 +636,15 @@ export function SettingsPage() {
 
               {activeTab === "notifications" && (
                 <>
-                  <Section title="Notifications">
+                  <Section title="Notifiche">
                     <ToggleRow
-                      label="Enable notifications"
+                      label="Attiva notifiche"
                       checked={notificationsEnabled}
                       onToggle={handleNotificationsToggle}
                     />
                     <ToggleRow
-                      label="Smart notifications"
-                      description="Only notify for selected categories and VIP senders"
+                      label="Notifiche intelligenti"
+                      description="Notifica solo per le categorie selezionate e i mittenti VIP"
                       checked={smartNotifications}
                       onToggle={async () => {
                         const newVal = !smartNotifications;
@@ -635,9 +656,9 @@ export function SettingsPage() {
 
                   {smartNotifications && (
                     <>
-                      <Section title="Category Filters">
+                      <Section title="Filtri per categoria">
                         <div>
-                          <span className="text-sm text-text-secondary">Notify for categories</span>
+                          <span className="text-sm text-text-secondary">Notifica per le categorie</span>
                           <div className="flex flex-wrap gap-2 mt-2">
                             {(["Primary", "Updates", "Promotions", "Social", "Newsletters"] as const).map((cat) => (
                               <button
@@ -655,16 +676,16 @@ export function SettingsPage() {
                                     : "bg-bg-tertiary text-text-tertiary border-border-primary hover:text-text-primary"
                                 }`}
                               >
-                                {cat}
+                                {CATEGORY_LABELS[cat] ?? cat}
                               </button>
                             ))}
                           </div>
                         </div>
                       </Section>
 
-                      <Section title="VIP Senders">
+                      <Section title="Mittenti VIP">
                         <p className="text-xs text-text-tertiary mb-2">
-                          These senders always trigger notifications regardless of category
+                          Questi mittenti generano sempre una notifica, a prescindere dalla categoria
                         </p>
                         <div className="space-y-1.5">
                           {vipSenders.map((vip) => (
@@ -682,7 +703,7 @@ export function SettingsPage() {
                                 }}
                                 className="text-xs text-danger hover:text-danger/80 ml-2 shrink-0"
                               >
-                                Remove
+                                Rimuovi
                               </button>
                             </div>
                           ))}
@@ -692,7 +713,7 @@ export function SettingsPage() {
                             type="email"
                             value={newVipEmail}
                             onChange={(e) => setNewVipEmail(e.target.value)}
-                            placeholder="email@example.com"
+                            placeholder="email@esempio.com"
                             className="flex-1 px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-xs text-text-primary outline-none focus:border-accent"
                             onKeyDown={async (e) => {
                               if (e.key !== "Enter" || !newVipEmail.trim()) return;
@@ -717,7 +738,7 @@ export function SettingsPage() {
                             }}
                             disabled={!newVipEmail.trim()}
                           >
-                            Add
+                            Aggiungi
                           </Button>
                         </div>
                       </Section>
@@ -728,28 +749,28 @@ export function SettingsPage() {
 
               {activeTab === "composing" && (
                 <>
-                  <Section title="Sending">
-                    <SettingRow label="Undo send delay">
+                  <Section title="Invio">
+                    <SettingRow label="Ritardo per annullare l'invio">
                       <select
                         value={undoSendDelay}
                         onChange={(e) => handleUndoDelayChange(e.target.value)}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="5">5 seconds</option>
-                        <option value="10">10 seconds</option>
-                        <option value="30">30 seconds</option>
+                        <option value="5">5 secondi</option>
+                        <option value="10">10 secondi</option>
+                        <option value="30">30 secondi</option>
                       </select>
                     </SettingRow>
                     <ToggleRow
-                      label="Send and archive"
-                      description="Automatically archive threads after sending a reply"
+                      label="Invia e archivia"
+                      description="Archivia automaticamente le conversazioni dopo aver inviato una risposta"
                       checked={sendAndArchive}
                       onToggle={() => setSendAndArchive(!sendAndArchive)}
                     />
                   </Section>
 
-                  <Section title="Behavior">
-                    <SettingRow label="Default reply action">
+                  <Section title="Comportamento">
+                    <SettingRow label="Azione di risposta predefinita">
                       <select
                         value={defaultReplyMode}
                         onChange={(e) => {
@@ -757,11 +778,11 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="reply">Reply</option>
-                        <option value="replyAll">Reply All</option>
+                        <option value="reply">Rispondi</option>
+                        <option value="replyAll">Rispondi a tutti</option>
                       </select>
                     </SettingRow>
-                    <SettingRow label="Mark as read">
+                    <SettingRow label="Segna come letto">
                       <select
                         value={markAsReadBehavior}
                         onChange={(e) => {
@@ -769,18 +790,18 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="instant">Instantly</option>
-                        <option value="2s">After 2 seconds</option>
-                        <option value="manual">Manually</option>
+                        <option value="instant">Subito</option>
+                        <option value="2s">Dopo 2 secondi</option>
+                        <option value="manual">Manualmente</option>
                       </select>
                     </SettingRow>
                   </Section>
 
-                  <Section title="Signatures">
+                  <Section title="Firme">
                     <SignatureEditor />
                   </Section>
 
-                  <Section title="Templates">
+                  <Section title="Modelli">
                     <TemplateEditor />
                   </Section>
                 </>
@@ -788,38 +809,38 @@ export function SettingsPage() {
 
               {activeTab === "mail-rules" && (
                 <>
-                  <Section title="Labels">
+                  <Section title="Etichette">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Create, rename, recolor, delete, or reorder your Gmail labels.
+                      Crea, rinomina, cambia colore, elimina o riordina le tue etichette Gmail.
                     </p>
                     <LabelEditor />
                   </Section>
 
-                  <Section title="Filters">
+                  <Section title="Filtri">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Filters automatically apply actions to new incoming emails during sync.
+                      I filtri applicano automaticamente delle azioni alle nuove email in arrivo durante la sincronizzazione.
                     </p>
                     <FilterEditor />
                   </Section>
 
-                  <Section title="Smart Labels">
+                  <Section title="Etichette smart">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Describe what emails should get a label using plain English. AI automatically labels matching emails during sync.
+                      Descrivi con parole tue quali email devono ricevere un'etichetta. L'IA etichetta automaticamente le email corrispondenti durante la sincronizzazione.
                     </p>
                     <SmartLabelEditor />
                   </Section>
 
-                  <Section title="Smart Folders">
+                  <Section title="Cartelle smart">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Smart folders are saved searches that automatically show matching emails. Use search operators like <code className="bg-bg-tertiary px-1 rounded">is:unread</code>, <code className="bg-bg-tertiary px-1 rounded">from:</code>, <code className="bg-bg-tertiary px-1 rounded">has:attachment</code>, <code className="bg-bg-tertiary px-1 rounded">after:</code>.
+                      Le cartelle smart sono ricerche salvate che mostrano automaticamente le email corrispondenti. Usa operatori di ricerca come <code className="bg-bg-tertiary px-1 rounded">is:unread</code>, <code className="bg-bg-tertiary px-1 rounded">from:</code>, <code className="bg-bg-tertiary px-1 rounded">has:attachment</code>, <code className="bg-bg-tertiary px-1 rounded">after:</code>.
                     </p>
                     <SmartFolderEditor />
                   </Section>
 
-                  <Section title="Quick Steps">
+                  <Section title="Passaggi rapidi">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Quick steps let you chain multiple actions together into a single click.
-                      Apply them from the right-click menu on any thread.
+                      I passaggi rapidi permettono di concatenare più azioni in un solo clic.
+                      Applicali dal menu contestuale (clic destro) di qualsiasi conversazione.
                     </p>
                     <QuickStepEditor />
                   </Section>
@@ -828,16 +849,16 @@ export function SettingsPage() {
 
               {activeTab === "people" && (
                 <>
-                  <Section title="Contacts">
+                  <Section title="Contatti">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Contacts are automatically added when you send or receive emails. Edit display names or remove contacts below.
+                      I contatti vengono aggiunti automaticamente quando invii o ricevi email. Modifica i nomi visualizzati o rimuovi i contatti qui sotto.
                     </p>
                     <ContactEditor />
                   </Section>
 
-                  <Section title="Subscriptions">
+                  <Section title="Iscrizioni">
                     <p className="text-xs text-text-tertiary mb-3">
-                      View all detected newsletter and promotional senders. Unsubscribe using RFC 8058 one-click POST, mailto, or browser fallback.
+                      Visualizza tutti i mittenti di newsletter e promozioni rilevati. Annulla l'iscrizione con POST a un clic (RFC 8058), mailto o, in alternativa, dal browser.
                     </p>
                     <SubscriptionManager />
                   </Section>
@@ -846,10 +867,10 @@ export function SettingsPage() {
 
               {activeTab === "accounts" && (
                 <>
-                  <Section title="Mail Accounts">
+                  <Section title="Account di posta">
                     {accounts.filter((a) => a.provider !== "caldav").length === 0 ? (
                       <p className="text-sm text-text-tertiary">
-                        No mail accounts connected
+                        Nessun account di posta collegato
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -877,26 +898,26 @@ export function SettingsPage() {
                                   disabled={reauthStatus[account.id] === "authorizing"}
                                   className="text-xs text-accent hover:text-accent-hover transition-colors disabled:opacity-50"
                                 >
-                                  {reauthStatus[account.id] === "authorizing" && "Waiting..."}
-                                  {reauthStatus[account.id] === "done" && "Done!"}
-                                  {reauthStatus[account.id] === "error" && "Failed"}
-                                  {(!reauthStatus[account.id] || reauthStatus[account.id] === "idle") && "Re-authorize"}
+                                  {reauthStatus[account.id] === "authorizing" && "In attesa..."}
+                                  {reauthStatus[account.id] === "done" && "Fatto!"}
+                                  {reauthStatus[account.id] === "error" && "Non riuscito"}
+                                  {(!reauthStatus[account.id] || reauthStatus[account.id] === "idle") && "Riautorizza"}
                                 </button>
                                 <button
                                   onClick={() => handleResyncAccount(account.id)}
                                   disabled={resyncStatus[account.id] === "syncing"}
                                   className="text-xs text-accent hover:text-accent-hover transition-colors disabled:opacity-50"
                                 >
-                                  {resyncStatus[account.id] === "syncing" && "Resyncing..."}
-                                  {resyncStatus[account.id] === "done" && "Done!"}
-                                  {resyncStatus[account.id] === "error" && "Failed"}
-                                  {(!resyncStatus[account.id] || resyncStatus[account.id] === "idle") && "Resync"}
+                                  {resyncStatus[account.id] === "syncing" && "Risincronizzazione..."}
+                                  {resyncStatus[account.id] === "done" && "Fatto!"}
+                                  {resyncStatus[account.id] === "error" && "Non riuscito"}
+                                  {(!resyncStatus[account.id] || resyncStatus[account.id] === "idle") && "Risincronizza"}
                                 </button>
                                 <button
                                   onClick={() => handleRemoveAccount(account.id)}
                                   className="text-xs text-danger hover:text-danger/80 transition-colors"
                                 >
-                                  Remove
+                                  Rimuovi
                                 </button>
                               </div>
                             </div>
@@ -907,7 +928,7 @@ export function SettingsPage() {
                   </Section>
 
                   {accounts.some((a) => a.provider === "caldav") && (
-                    <Section title="Calendar Accounts">
+                    <Section title="Account calendario">
                       <div className="space-y-2">
                         {accounts.filter((a) => a.provider === "caldav").map((account) => (
                           <div
@@ -929,7 +950,7 @@ export function SettingsPage() {
                               onClick={() => handleRemoveAccount(account.id)}
                               className="text-xs text-danger hover:text-danger/80 transition-colors"
                             >
-                              Remove
+                              Rimuovi
                             </button>
                           </div>
                         ))}
@@ -949,7 +970,7 @@ export function SettingsPage() {
                         type="text"
                         value={clientId}
                         onChange={(e) => setClientId(e.target.value)}
-                        placeholder="Google OAuth Client ID"
+                        placeholder="Client ID OAuth di Google"
                       />
                       <TextField
                         label="Client Secret"
@@ -957,7 +978,7 @@ export function SettingsPage() {
                         type="password"
                         value={clientSecret}
                         onChange={(e) => setClientSecret(e.target.value)}
-                        placeholder="Google OAuth Client Secret"
+                        placeholder="Client Secret OAuth di Google"
                       />
                       <Button
                         variant="primary"
@@ -965,15 +986,15 @@ export function SettingsPage() {
                         onClick={handleSaveApiSettings}
                         disabled={!clientId.trim()}
                       >
-                        {apiSettingsSaved ? "Saved!" : "Save"}
+                        {apiSettingsSaved ? "Salvato!" : "Salva"}
                       </Button>
                     </div>
                   </Section>
 
-                  <Section title="Sync">
+                  <Section title="Sincronizzazione">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-text-secondary">
-                        Check for new mail
+                        Controlla nuova posta
                       </span>
                       <Button
                         variant="primary"
@@ -982,16 +1003,16 @@ export function SettingsPage() {
                         onClick={handleManualSync}
                         disabled={isSyncing || accounts.length === 0}
                       >
-                        {isSyncing ? "Syncing..." : "Sync now"}
+                        {isSyncing ? "Sincronizzazione..." : "Sincronizza ora"}
                       </Button>
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-sm text-text-secondary">
-                          Full resync
+                          Sincronizzazione completa
                         </span>
                         <p className="text-xs text-text-tertiary mt-0.5">
-                          Re-download all emails from scratch
+                          Riscarica tutte le email da zero
                         </p>
                       </div>
                       <Button
@@ -1002,13 +1023,13 @@ export function SettingsPage() {
                         disabled={isSyncing || accounts.length === 0}
                         className="bg-bg-tertiary text-text-primary border border-border-primary"
                       >
-                        {isSyncing ? "Syncing..." : "Full resync"}
+                        {isSyncing ? "Sincronizzazione..." : "Sincronizzazione completa"}
                       </Button>
                     </div>
                   </Section>
 
-                  <Section title="Sync Period">
-                    <SettingRow label="Sync emails from">
+                  <Section title="Periodo di sincronizzazione">
+                    <SettingRow label="Sincronizza le email di">
                       <select
                         value={syncPeriodDays}
                         onChange={async (e) => {
@@ -1018,14 +1039,14 @@ export function SettingsPage() {
                         }}
                         className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
                       >
-                        <option value="30">Last 30 days</option>
-                        <option value="90">Last 90 days</option>
-                        <option value="180">Last 180 days</option>
-                        <option value="365">Last 1 year</option>
+                        <option value="30">Ultimi 30 giorni</option>
+                        <option value="90">Ultimi 90 giorni</option>
+                        <option value="180">Ultimi 180 giorni</option>
+                        <option value="365">Ultimo anno</option>
                       </select>
                     </SettingRow>
                     <p className="text-xs text-text-tertiary">
-                      Changes apply on the next full resync.
+                      Le modifiche si applicano alla prossima sincronizzazione completa.
                     </p>
                   </Section>
 
@@ -1041,9 +1062,9 @@ export function SettingsPage() {
                 <>
                   <Section title="Provider">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Choose which AI provider to use for summarization, compose assistance, and smart categorization.
+                      Scegli quale provider IA usare per i riassunti, l'assistenza alla scrittura e la categorizzazione intelligente.
                     </p>
-                    <SettingRow label="AI Provider">
+                    <SettingRow label="Provider IA">
                       <select
                         value={aiProvider}
                         onChange={async (e) => {
@@ -1059,31 +1080,31 @@ export function SettingsPage() {
                         <option value="claude">Claude (Anthropic)</option>
                         <option value="openai">OpenAI</option>
                         <option value="gemini">Gemini (Google)</option>
-                        <option value="ollama">Local AI (Ollama / LMStudio)</option>
+                        <option value="ollama">IA locale (Ollama / LMStudio)</option>
                         <option value="copilot">GitHub Copilot</option>
                       </select>
                     </SettingRow>
                     <p className="text-xs text-text-tertiary">
-                      {aiProvider === "claude" && `Uses ${PROVIDER_MODELS.claude.find((m) => m.id === claudeModel)?.label ?? claudeModel}.`}
-                      {aiProvider === "openai" && `Uses ${PROVIDER_MODELS.openai.find((m) => m.id === openaiModel)?.label ?? openaiModel}.`}
-                      {aiProvider === "gemini" && `Uses ${PROVIDER_MODELS.gemini.find((m) => m.id === geminiModel)?.label ?? geminiModel}.`}
-                      {aiProvider === "ollama" && "Connect to a local Ollama or LMStudio server. No API key required."}
-                      {aiProvider === "copilot" && `Uses ${PROVIDER_MODELS.copilot.find((m) => m.id === copilotModel)?.label ?? copilotModel}. Requires a GitHub PAT with models:read permission.`}
+                      {aiProvider === "claude" && `Usa ${PROVIDER_MODELS.claude.find((m) => m.id === claudeModel)?.label ?? claudeModel}.`}
+                      {aiProvider === "openai" && `Usa ${PROVIDER_MODELS.openai.find((m) => m.id === openaiModel)?.label ?? openaiModel}.`}
+                      {aiProvider === "gemini" && `Usa ${PROVIDER_MODELS.gemini.find((m) => m.id === geminiModel)?.label ?? geminiModel}.`}
+                      {aiProvider === "ollama" && "Collegati a un server Ollama o LMStudio locale. Nessuna chiave API richiesta."}
+                      {aiProvider === "copilot" && `Usa ${PROVIDER_MODELS.copilot.find((m) => m.id === copilotModel)?.label ?? copilotModel}. Richiede un PAT GitHub con il permesso models:read.`}
                     </p>
                   </Section>
 
                   {aiProvider === "ollama" ? (
-                    <Section title="Local Server">
+                    <Section title="Server locale">
                       <div className="space-y-3">
                         <TextField
-                          label="Server URL"
+                          label="URL del server"
                           size="md"
                           value={ollamaServerUrl}
                           onChange={(e) => setOllamaServerUrl(e.target.value)}
                           placeholder="http://localhost:11434"
                         />
                         <TextField
-                          label="Model Name"
+                          label="Nome del modello"
                           size="md"
                           value={ollamaModel}
                           onChange={(e) => setOllamaModel(e.target.value)}
@@ -1103,7 +1124,7 @@ export function SettingsPage() {
                             }}
                             disabled={!ollamaServerUrl.trim() || !ollamaModel.trim()}
                           >
-                            {aiKeySaved ? "Saved!" : "Save"}
+                            {aiKeySaved ? "Salvato!" : "Salva"}
                           </Button>
                           <Button
                             variant="secondary"
@@ -1124,26 +1145,26 @@ export function SettingsPage() {
                             disabled={!ollamaServerUrl.trim() || !ollamaModel.trim() || aiTesting}
                             className="bg-bg-tertiary text-text-primary border border-border-primary"
                           >
-                            {aiTesting ? "Testing..." : "Test Connection"}
+                            {aiTesting ? "Verifica in corso..." : "Verifica connessione"}
                           </Button>
                           {aiTestResult === "success" && (
-                            <span className="text-xs text-success">Connected!</span>
+                            <span className="text-xs text-success">Connesso!</span>
                           )}
                           {aiTestResult === "fail" && (
-                            <span className="text-xs text-danger">Connection failed</span>
+                            <span className="text-xs text-danger">Connessione non riuscita</span>
                           )}
                         </div>
                       </div>
                     </Section>
                   ) : (
-                    <Section title="API Key">
+                    <Section title="Chiave API">
                       <div className="space-y-3">
                         <TextField
                           label={
-                            aiProvider === "claude" ? "Anthropic API Key"
-                            : aiProvider === "openai" ? "OpenAI API Key"
-                            : aiProvider === "copilot" ? "GitHub Personal Access Token"
-                            : "Google AI API Key"
+                            aiProvider === "claude" ? "Chiave API Anthropic"
+                            : aiProvider === "openai" ? "Chiave API OpenAI"
+                            : aiProvider === "copilot" ? "Token di accesso personale GitHub"
+                            : "Chiave API Google AI"
                           }
                           size="md"
                           type="password"
@@ -1166,7 +1187,7 @@ export function SettingsPage() {
                             : "AI..."
                           }
                         />
-                        <SettingRow label="Model">
+                        <SettingRow label="Modello">
                           <select
                             value={
                               aiProvider === "claude" ? claudeModel
@@ -1228,7 +1249,7 @@ export function SettingsPage() {
                               : geminiApiKey.trim())
                             }
                           >
-                            {aiKeySaved ? "Saved!" : "Save Key"}
+                            {aiKeySaved ? "Salvata!" : "Salva chiave"}
                           </Button>
                           <Button
                             variant="secondary"
@@ -1254,23 +1275,23 @@ export function SettingsPage() {
                             }
                             className="bg-bg-tertiary text-text-primary border border-border-primary"
                           >
-                            {aiTesting ? "Testing..." : "Test Connection"}
+                            {aiTesting ? "Verifica in corso..." : "Verifica connessione"}
                           </Button>
                           {aiTestResult === "success" && (
-                            <span className="text-xs text-success">Connected!</span>
+                            <span className="text-xs text-success">Connesso!</span>
                           )}
                           {aiTestResult === "fail" && (
-                            <span className="text-xs text-danger">Connection failed</span>
+                            <span className="text-xs text-danger">Connessione non riuscita</span>
                           )}
                         </div>
                       </div>
                     </Section>
                   )}
 
-                  <Section title="Features">
+                  <Section title="Funzionalità">
                     <ToggleRow
-                      label="Enable AI features"
-                      description="Master toggle for all AI functionality"
+                      label="Attiva funzioni IA"
+                      description="Interruttore generale per tutte le funzioni IA"
                       checked={aiEnabled}
                       onToggle={async () => {
                         const newVal = !aiEnabled;
@@ -1279,8 +1300,8 @@ export function SettingsPage() {
                       }}
                     />
                     <ToggleRow
-                      label="Auto-categorize inbox"
-                      description="Use AI to refine rule-based categorization"
+                      label="Categorizza automaticamente la posta in arrivo"
+                      description="Usa l'IA per affinare la categorizzazione basata su regole"
                       checked={aiAutoCategorize}
                       onToggle={async () => {
                         const newVal = !aiAutoCategorize;
@@ -1289,8 +1310,8 @@ export function SettingsPage() {
                       }}
                     />
                     <ToggleRow
-                      label="Auto-summarize threads"
-                      description="Show AI summaries on multi-message threads"
+                      label="Riassumi automaticamente le conversazioni"
+                      description="Mostra i riassunti IA nelle conversazioni con più messaggi"
                       checked={aiAutoSummarize}
                       onToggle={async () => {
                         const newVal = !aiAutoSummarize;
@@ -1300,10 +1321,10 @@ export function SettingsPage() {
                     />
                   </Section>
 
-                  <Section title="Auto-Draft Replies">
+                  <Section title="Bozze di risposta automatiche">
                     <ToggleRow
-                      label="Auto-draft replies"
-                      description="Pre-populate the reply editor with an AI-generated draft"
+                      label="Bozze di risposta automatiche"
+                      description="Precompila l'editor di risposta con una bozza generata dall'IA"
                       checked={aiAutoDraftEnabled}
                       onToggle={async () => {
                         const newVal = !aiAutoDraftEnabled;
@@ -1312,8 +1333,8 @@ export function SettingsPage() {
                       }}
                     />
                     <ToggleRow
-                      label="Learn writing style"
-                      description="Analyze your sent emails to match your tone and voice"
+                      label="Impara lo stile di scrittura"
+                      description="Analizza le email inviate per adattarsi al tuo tono e al tuo stile"
                       checked={aiWritingStyleEnabled}
                       onToggle={async () => {
                         const newVal = !aiWritingStyleEnabled;
@@ -1324,9 +1345,9 @@ export function SettingsPage() {
                     {aiWritingStyleEnabled && (
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-sm text-text-secondary">Writing style profile</span>
+                          <span className="text-sm text-text-secondary">Profilo dello stile di scrittura</span>
                           <p className="text-xs text-text-tertiary mt-0.5">
-                            Reanalyze your writing style from recent sent emails
+                            Rianalizza il tuo stile di scrittura dalle email inviate di recente
                           </p>
                         </div>
                         <Button
@@ -1352,24 +1373,24 @@ export function SettingsPage() {
                           disabled={styleAnalyzing}
                           className="bg-bg-tertiary text-text-primary border border-border-primary"
                         >
-                          {styleAnalyzing ? "Analyzing..." : styleAnalyzeDone ? "Done!" : "Reanalyze"}
+                          {styleAnalyzing ? "Analisi in corso..." : styleAnalyzeDone ? "Fatto!" : "Rianalizza"}
                         </Button>
                       </div>
                     )}
                   </Section>
 
-                  <Section title="Categories">
+                  <Section title="Categorie">
                     <p className="text-xs text-text-tertiary mb-1">
-                      Incoming emails are automatically sorted using rule-based heuristics (Gmail labels, sender domain, headers). When AI is enabled, it refines results for better accuracy.
+                      Le email in arrivo vengono ordinate automaticamente con regole euristiche (etichette Gmail, dominio del mittente, intestazioni). Quando l'IA è attiva, affina i risultati per una maggiore precisione.
                     </p>
                     <p className="text-xs text-text-tertiary mb-3">
-                      Enable auto-archive to skip the inbox for specific categories.
+                      Attiva l'archiviazione automatica per saltare la posta in arrivo per categorie specifiche.
                     </p>
                     {(["Updates", "Promotions", "Social", "Newsletters"] as const).map((cat) => (
                       <ToggleRow
                         key={cat}
-                        label={`Auto-archive ${cat}`}
-                        description={`Skip inbox for ${cat.toLowerCase()} emails`}
+                        label={`Archivia automaticamente: ${CATEGORY_LABELS[cat] ?? cat}`}
+                        description={`Salta la posta in arrivo per le email di tipo ${(CATEGORY_LABELS[cat] ?? cat).toLowerCase()}`}
                         checked={autoArchiveCategories.has(cat)}
                         onToggle={async () => {
                           const next = new Set(autoArchiveCategories);
@@ -1382,9 +1403,9 @@ export function SettingsPage() {
                     ))}
                   </Section>
 
-                  <Section title="Bundling & Delivery Schedules">
+                  <Section title="Raggruppamento e orari di consegna">
                     <p className="text-xs text-text-tertiary mb-3">
-                      Collapse categories into a single row in the inbox. Optionally set a delivery schedule to batch emails.
+                      Comprimi le categorie in un'unica riga nella posta in arrivo. In alternativa, imposta un orario di consegna per raggruppare le email.
                     </p>
                     <BundleSettings />
                   </Section>
@@ -1434,13 +1455,13 @@ function SendAsAliasesSection() {
   };
 
   return (
-    <Section title="Send-As Aliases">
+    <Section title="Alias di invio">
       <p className="text-xs text-text-tertiary mb-3">
-        These aliases are synced from your Gmail settings. You can select which alias to use as the default sender.
+        Questi alias vengono sincronizzati dalle impostazioni di Gmail. Puoi scegliere quale alias usare come mittente predefinito.
       </p>
       {aliases.length === 0 ? (
         <p className="text-sm text-text-tertiary">
-          No aliases found. Aliases are fetched from Gmail on startup.
+          Nessun alias trovato. Gli alias vengono recuperati da Gmail all'avvio.
         </p>
       ) : (
         <div className="space-y-2">
@@ -1458,12 +1479,12 @@ function SendAsAliasesSection() {
                   <div className="flex items-center gap-2 mt-0.5">
                     {alias.isPrimary && (
                       <span className="text-[0.625rem] bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">
-                        Primary
+                        Principale
                       </span>
                     )}
                     {alias.isDefault && (
                       <span className="text-[0.625rem] bg-success/15 text-success px-1.5 py-0.5 rounded-full">
-                        Default
+                        Predefinito
                       </span>
                     )}
                     {alias.verificationStatus !== "accepted" && (
@@ -1479,7 +1500,7 @@ function SendAsAliasesSection() {
                   onClick={() => handleSetDefault(alias)}
                   className="text-xs text-accent hover:text-accent-hover transition-colors shrink-0 ml-3"
                 >
-                  Set as default
+                  Imposta come predefinito
                 </button>
               )}
             </div>
@@ -1528,13 +1549,13 @@ function SyncOfflineSection() {
   };
 
   return (
-    <Section title="Sync & Offline">
+    <Section title="Sincronizzazione e offline">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-text-secondary">Pending operations</span>
+            <span className="text-sm text-text-secondary">Operazioni in sospeso</span>
             <p className="text-xs text-text-tertiary mt-0.5">
-              Changes waiting to sync to the server
+              Modifiche in attesa di essere sincronizzate con il server
             </p>
           </div>
           <span className="text-sm font-mono text-text-primary">{pendingCount}</span>
@@ -1542,9 +1563,9 @@ function SyncOfflineSection() {
 
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-text-secondary">Failed operations</span>
+            <span className="text-sm text-text-secondary">Operazioni non riuscite</span>
             <p className="text-xs text-text-tertiary mt-0.5">
-              Changes that could not be synced after multiple retries
+              Modifiche che non è stato possibile sincronizzare dopo vari tentativi
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1556,14 +1577,14 @@ function SyncOfflineSection() {
                   disabled={loading}
                   className="text-xs text-accent hover:text-accent-hover transition-colors disabled:opacity-50"
                 >
-                  Retry
+                  Riprova
                 </button>
                 <button
                   onClick={handleClearFailed}
                   disabled={loading}
                   className="text-xs text-danger hover:opacity-80 transition-colors disabled:opacity-50"
                 >
-                  Clear
+                  Cancella
                 </button>
               </>
             )}
@@ -1595,7 +1616,7 @@ function DeveloperTab() {
       const edgMatch = /Edg\/(\S+)/.exec(ua);
       const chromeMatch = /Chrome\/(\S+)/.exec(ua);
       const webkitMatch = /AppleWebKit\/(\S+)/.exec(ua);
-      setWebviewVersion(edgMatch?.[1] ?? chromeMatch?.[1] ?? webkitMatch?.[1] ?? "Unknown");
+      setWebviewVersion(edgMatch?.[1] ?? chromeMatch?.[1] ?? webkitMatch?.[1] ?? "Sconosciuta");
 
       // Detect platform via Tauri OS plugin (reliable native arch detection)
       const { platform, arch } = await import("@tauri-apps/plugin-os");
@@ -1653,24 +1674,24 @@ function DeveloperTab() {
 
   return (
     <>
-      <Section title="App Info">
-        <InfoRow label="App version" value={appVersion || "..."} />
-        <InfoRow label="Tauri version" value={tauriVersion || "..."} />
-        <InfoRow label="WebView version" value={webviewVersion || "..."} />
-        <InfoRow label="Platform" value={platformLabel} />
+      <Section title="Informazioni sull'app">
+        <InfoRow label="Versione dell'app" value={appVersion || "..."} />
+        <InfoRow label="Versione di Tauri" value={tauriVersion || "..."} />
+        <InfoRow label="Versione di WebView" value={webviewVersion || "..."} />
+        <InfoRow label="Piattaforma" value={platformLabel} />
       </Section>
 
-      <Section title="Updates">
+      <Section title="Aggiornamenti">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-text-secondary">Software updates</span>
+            <span className="text-sm text-text-secondary">Aggiornamenti software</span>
             {updateVersion && (
               <p className="text-xs text-accent mt-0.5">
-                v{updateVersion} available
+                v{updateVersion} disponibile
               </p>
             )}
             {updateCheckDone && !updateVersion && (
-              <p className="text-xs text-success mt-0.5">Up to date</p>
+              <p className="text-xs text-success mt-0.5">Aggiornato</p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -1682,7 +1703,7 @@ function DeveloperTab() {
                 onClick={handleInstallUpdate}
                 disabled={installingUpdate}
               >
-                {installingUpdate ? "Updating..." : "Update & Restart"}
+                {installingUpdate ? "Aggiornamento in corso..." : "Aggiorna e riavvia"}
               </Button>
             ) : (
               <Button
@@ -1693,19 +1714,19 @@ function DeveloperTab() {
                 disabled={checkingForUpdate}
                 className="bg-bg-tertiary text-text-primary border border-border-primary"
               >
-                {checkingForUpdate ? "Checking..." : "Check for Updates"}
+                {checkingForUpdate ? "Controllo in corso..." : "Verifica aggiornamenti"}
               </Button>
             )}
           </div>
         </div>
       </Section>
 
-      <Section title="Developer Tools">
+      <Section title="Strumenti per sviluppatori">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-text-secondary">Open DevTools</span>
+            <span className="text-sm text-text-secondary">Apri DevTools</span>
             <p className="text-xs text-text-tertiary mt-0.5">
-              Open the WebView developer tools inspector
+              Apre l'ispettore degli strumenti per sviluppatori di WebView
             </p>
           </div>
           <Button
@@ -1717,7 +1738,7 @@ function DeveloperTab() {
             }}
             className="bg-bg-tertiary text-text-primary border border-border-primary"
           >
-            Open DevTools
+            Apri DevTools
           </Button>
         </div>
       </Section>
@@ -1747,16 +1768,16 @@ function AboutTab() {
           <div>
             <h3 className="text-base font-semibold text-text-primary">Velo</h3>
             <p className="text-sm text-text-tertiary">
-              {appVersion ? `Version ${appVersion}` : "Loading..."}
+              {appVersion ? `Versione ${appVersion}` : "Caricamento..."}
             </p>
           </div>
         </div>
         <p className="text-sm text-text-secondary leading-relaxed">
-          A fast, open-source desktop email client built with privacy in mind. Your emails stay on your machine — no cloud, no tracking.
+          Un client di posta per desktop veloce e open source, pensato per la privacy. Le tue email restano sul tuo computer: nessun cloud, nessun tracciamento.
         </p>
       </Section>
 
-      <Section title="Links">
+      <Section title="Link">
         <div className="space-y-1">
           <button
             onClick={() => openExternal("https://velomail.app")}
@@ -1764,7 +1785,7 @@ function AboutTab() {
           >
             <Globe size={16} className="text-text-tertiary shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="text-sm text-text-primary">Website</span>
+              <span className="text-sm text-text-primary">Sito web</span>
               <p className="text-xs text-text-tertiary">velomail.app</p>
             </div>
             <ExternalLink size={14} className="text-text-tertiary shrink-0" />
@@ -1776,7 +1797,7 @@ function AboutTab() {
           >
             <Github size={16} className="text-text-tertiary shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="text-sm text-text-primary">GitHub Repository</span>
+              <span className="text-sm text-text-primary">Repository GitHub</span>
               <p className="text-xs text-text-tertiary">avihaymenahem/velo</p>
             </div>
             <ExternalLink size={14} className="text-text-tertiary shrink-0" />
@@ -1788,7 +1809,7 @@ function AboutTab() {
           >
             <Mail size={16} className="text-text-tertiary shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="text-sm text-text-primary">Contact</span>
+              <span className="text-sm text-text-primary">Contatti</span>
               <p className="text-xs text-text-tertiary">info@velomail.app</p>
             </div>
             <ExternalLink size={14} className="text-text-tertiary shrink-0" />
@@ -1796,7 +1817,7 @@ function AboutTab() {
         </div>
       </Section>
 
-      <Section title="License">
+      <Section title="Licenza">
         <div className="px-4 py-3 bg-bg-secondary rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Scale size={15} className="text-text-tertiary" />
@@ -1894,12 +1915,12 @@ function ShortcutsTab() {
 
   return (
     <>
-      <Section title="Global Shortcut">
+      <Section title="Scorciatoia globale">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-text-secondary">Quick compose</span>
+            <span className="text-sm text-text-secondary">Scrittura rapida</span>
             <p className="text-xs text-text-tertiary mt-0.5">
-              Open compose window from any app
+              Apre la finestra di scrittura da qualsiasi app
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1917,7 +1938,7 @@ function ShortcutsTab() {
                   : "bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary"
               }`}
             >
-              {recordingGlobal ? "Press keys..." : "Change"}
+              {recordingGlobal ? "Premi i tasti..." : "Cambia"}
             </button>
           </div>
         </div>
@@ -1925,14 +1946,14 @@ function ShortcutsTab() {
 
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-text-tertiary">
-          Click a shortcut to rebind it. Press any key or key combination to set.
+          Fai clic su una scorciatoia per modificarla. Premi un tasto o una combinazione di tasti per impostarla.
         </p>
         {hasCustom && (
           <button
             onClick={resetAll}
             className="text-xs text-accent hover:text-accent-hover transition-colors shrink-0 ml-4"
           >
-            Reset all
+            Ripristina tutte
           </button>
         )}
       </div>
@@ -1965,13 +1986,13 @@ function ShortcutsTab() {
                           : "bg-bg-tertiary text-text-tertiary hover:text-text-primary border border-border-primary"
                       }`}
                     >
-                      {isRecording ? "Press key..." : currentKey}
+                      {isRecording ? "Premi un tasto..." : currentKey}
                     </button>
                     {!isDefault && (
                       <button
                         onClick={() => resetKey(item.id)}
                         className="text-xs text-text-tertiary hover:text-text-primary"
-                        title={`Reset to ${defaults[item.id]}`}
+                        title={`Ripristina a ${defaults[item.id]}`}
                       >
                         ×
                       </button>
@@ -2005,7 +2026,7 @@ function ImapCalDavSection() {
   if (!isImap || !account) return null;
 
   return (
-    <Section title="Calendar (CalDAV)">
+    <Section title="Calendario (CalDAV)">
       <CalDavSettingsInline account={account} onSaved={() => {
         // Reload account
         import("@/services/db/accounts").then(({ getAccount }) => {
@@ -2023,7 +2044,7 @@ function CalDavSettingsInline({ account, onSaved }: { account: import("@/service
     import("@/components/settings/CalDavSettings").then((m) => setCalDav(() => m.CalDavSettings));
   }, []);
 
-  if (!CalDav) return <div className="text-xs text-text-tertiary">Loading...</div>;
+  if (!CalDav) return <div className="text-xs text-text-tertiary">Caricamento...</div>;
 
   return <CalDav account={account} onSaved={onSaved} />;
 }
@@ -2072,7 +2093,7 @@ function SidebarNavEditor() {
       items.every((item, i) => item.id === ALL_NAV_ITEMS[i]?.id && item.visible));
 
   return (
-    <Section title="Sidebar">
+    <Section title="Barra laterale">
       <div className="space-y-1">
         {items.map((item, index) => {
           const nav = navLookup.get(item.id);
@@ -2090,7 +2111,7 @@ function SidebarNavEditor() {
                 onClick={() => moveItem(index, -1)}
                 disabled={index === 0}
                 className="p-0.5 rounded text-text-tertiary hover:text-text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                title="Move up"
+                title="Sposta su"
               >
                 <ChevronUp size={14} />
               </button>
@@ -2098,7 +2119,7 @@ function SidebarNavEditor() {
                 onClick={() => moveItem(index, 1)}
                 disabled={index === items.length - 1}
                 className="p-0.5 rounded text-text-tertiary hover:text-text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                title="Move down"
+                title="Sposta giù"
               >
                 <ChevronDown size={14} />
               </button>
@@ -2114,7 +2135,7 @@ function SidebarNavEditor() {
                       ? "bg-accent cursor-pointer"
                       : "bg-bg-tertiary cursor-pointer"
                 }`}
-                title={isInbox ? "Inbox is always visible" : item.visible ? "Hide" : "Show"}
+                title={isInbox ? "La Posta in arrivo è sempre visibile" : item.visible ? "Nascondi" : "Mostra"}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
@@ -2132,7 +2153,7 @@ function SidebarNavEditor() {
           className="flex items-center gap-1.5 text-xs text-accent hover:text-accent-hover mt-2 transition-colors"
         >
           <RotateCcw size={12} />
-          Reset to defaults
+          Ripristina predefiniti
         </button>
       )}
     </Section>
@@ -2171,7 +2192,7 @@ function SettingRow({
   );
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_NAMES = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
 function BundleSettings() {
   const accounts = useAccountStore((s) => s.accounts);
@@ -2222,7 +2243,7 @@ function BundleSettings() {
         return (
           <div key={cat} className="py-3 px-4 bg-bg-secondary rounded-lg space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-text-primary">{cat}</span>
+              <span className="text-sm font-medium text-text-primary">{CATEGORY_LABELS[cat] ?? cat}</span>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-1.5 text-xs text-text-secondary">
                   <input
@@ -2231,7 +2252,7 @@ function BundleSettings() {
                     onChange={() => saveRule(cat, { bundled: !(rule?.bundled ?? false) })}
                     className="accent-accent"
                   />
-                  Bundle
+                  Raggruppa
                 </label>
                 <label className="flex items-center gap-1.5 text-xs text-text-secondary">
                   <input
@@ -2240,7 +2261,7 @@ function BundleSettings() {
                     onChange={() => saveRule(cat, { delivery: !(rule?.delivery ?? false) })}
                     className="accent-accent"
                   />
-                  Schedule
+                  Pianifica
                 </label>
               </div>
             </div>
@@ -2267,7 +2288,7 @@ function BundleSettings() {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-text-tertiary">at</span>
+                  <span className="text-xs text-text-tertiary">alle</span>
                   <input
                     type="time"
                     value={`${String(rule.hour).padStart(2, "0")}:${String(rule.minute).padStart(2, "0")}`}

@@ -96,7 +96,7 @@ describe("AttachmentList", () => {
       />,
     );
 
-    expect(screen.getByText("2 attachments")).toBeInTheDocument();
+    expect(screen.getByText("2 allegati")).toBeInTheDocument();
     expect(screen.getByText("photo.png")).toBeInTheDocument();
     expect(screen.getByText("doc.pdf")).toBeInTheDocument();
   });
@@ -183,10 +183,10 @@ describe("AttachmentList", () => {
 
     // Wait for preview to load, then click download
     await waitFor(() => {
-      expect(screen.getByText("Download")).toBeInTheDocument();
+      expect(screen.getByText("Scarica")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("Download"));
+    fireEvent.click(screen.getByText("Scarica"));
 
     await waitFor(() => {
       expect(save).toHaveBeenCalled();
@@ -246,7 +246,7 @@ describe("AttachmentList", () => {
       />,
     );
 
-    expect(screen.getByText("1 attachment")).toBeInTheDocument();
+    expect(screen.getByText("1 allegato")).toBeInTheDocument();
   });
 
   it("does not dedup attachments with different filenames", () => {
@@ -261,7 +261,7 @@ describe("AttachmentList", () => {
       />,
     );
 
-    expect(screen.getByText("2 attachments")).toBeInTheDocument();
+    expect(screen.getByText("2 allegati")).toBeInTheDocument();
   });
 
   it("shows error state when preview fetch fails", async () => {
@@ -278,7 +278,7 @@ describe("AttachmentList", () => {
     fireEvent.click(screen.getByText("photo.png"));
 
     await waitFor(() => {
-      expect(screen.getByText("Failed to load preview")).toBeInTheDocument();
+      expect(screen.getByText("Impossibile caricare l'anteprima")).toBeInTheDocument();
     });
   });
 

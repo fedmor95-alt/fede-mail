@@ -47,6 +47,8 @@ export interface ImapMessage {
   list_unsubscribe_post: string | null;
   auth_results: string | null;
   attachments: ImapAttachment[];
+  /** PEC envelope/receipt metadata (Italian certified mail). */
+  pec?: { kind: string; ref_message_id: string | null } | null;
 }
 
 export interface ImapAttachment {

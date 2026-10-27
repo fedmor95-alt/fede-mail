@@ -129,9 +129,9 @@ export function SmartLabelEditor() {
     setBackfillResult(null);
     try {
       const count = await backfillSmartLabels(activeAccountId);
-      setBackfillResult(`Applied ${count} label${count !== 1 ? "s" : ""} to existing emails.`);
+      setBackfillResult(`${count} ${count === 1 ? "etichetta applicata" : "etichette applicate"} alle email esistenti.`);
     } catch (err) {
-      setBackfillResult("Backfill failed. Check your AI provider settings.");
+      setBackfillResult("Applicazione non riuscita. Controlla le impostazioni del provider IA.");
       console.error("Smart label backfill failed:", err);
     } finally {
       setBackfilling(false);
@@ -152,7 +152,7 @@ export function SmartLabelEditor() {
           className="text-xs text-accent hover:text-accent-hover disabled:opacity-50 flex items-center gap-1.5"
         >
           {backfilling && <Loader2 size={12} className="animate-spin" />}
-          {backfilling ? "Applying to existing emails..." : "Apply to existing emails"}
+          {backfilling ? "Applicazione alle email esistenti..." : "Applica alle email esistenti"}
         </button>
       )}
 
@@ -170,7 +170,7 @@ export function SmartLabelEditor() {
               {getLabelName(rule.label_id)}
               {rule.is_enabled !== 1 && (
                 <span className="text-[0.625rem] bg-bg-tertiary text-text-tertiary px-1.5 py-0.5 rounded">
-                  Disabled
+                  Disattivato
                 </span>
               )}
             </div>
@@ -184,7 +184,7 @@ export function SmartLabelEditor() {
               className={`w-8 h-4 rounded-full transition-colors relative ${
                 rule.is_enabled === 1 ? "bg-accent" : "bg-bg-tertiary"
               }`}
-              title={rule.is_enabled === 1 ? "Disable" : "Enable"}
+              title={rule.is_enabled === 1 ? "Disattiva" : "Attiva"}
             >
               <span
                 className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform shadow ${
@@ -212,13 +212,13 @@ export function SmartLabelEditor() {
         <div className="border border-border-primary rounded-md p-3 space-y-3">
           {labels.length > 0 ? (
             <div>
-              <div className="text-xs font-medium text-text-secondary mb-1.5">Label</div>
+              <div className="text-xs font-medium text-text-secondary mb-1.5">Etichetta</div>
               <select
                 value={labelId}
                 onChange={(e) => setLabelId(e.target.value)}
                 className="w-full bg-bg-tertiary text-text-primary text-xs px-2 py-1.5 rounded border border-border-primary"
               >
-                <option value="">Select a label...</option>
+                <option value="">Seleziona un'etichetta...</option>
                 {labels.map((l) => (
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
@@ -226,16 +226,16 @@ export function SmartLabelEditor() {
             </div>
           ) : (
             <div className="text-xs text-text-tertiary">
-              No user labels found. Create a label first.
+              Nessuna etichetta personale trovata. Crea prima un'etichetta.
             </div>
           )}
 
           <div>
-            <div className="text-xs font-medium text-text-secondary mb-1.5">AI Description</div>
+            <div className="text-xs font-medium text-text-secondary mb-1.5">Descrizione per l'IA</div>
             <textarea
               value={aiDescription}
               onChange={(e) => setAiDescription(e.target.value)}
-              placeholder="e.g., Job applications and career opportunities"
+              placeholder="es. Candidature di lavoro e opportunità di carriera"
               rows={2}
               className="w-full bg-bg-tertiary text-text-primary text-xs px-2 py-1.5 rounded border border-border-primary resize-none placeholder:text-text-tertiary"
             />
@@ -247,7 +247,7 @@ export function SmartLabelEditor() {
               className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary"
             >
               {showCriteria ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              Optional filter criteria
+              Criteri di filtro facoltativi
             </button>
 
             {showCriteria && (
@@ -256,25 +256,25 @@ export function SmartLabelEditor() {
                   type="text"
                   value={criteriaFrom}
                   onChange={(e) => setCriteriaFrom(e.target.value)}
-                  placeholder="From contains..."
+                  placeholder="Da contiene..."
                 />
                 <TextField
                   type="text"
                   value={criteriaTo}
                   onChange={(e) => setCriteriaTo(e.target.value)}
-                  placeholder="To contains..."
+                  placeholder="A contiene..."
                 />
                 <TextField
                   type="text"
                   value={criteriaSubject}
                   onChange={(e) => setCriteriaSubject(e.target.value)}
-                  placeholder="Subject contains..."
+                  placeholder="Oggetto contiene..."
                 />
                 <TextField
                   type="text"
                   value={criteriaBody}
                   onChange={(e) => setCriteriaBody(e.target.value)}
-                  placeholder="Body contains..."
+                  placeholder="Testo contiene..."
                 />
                 <label className="flex items-center gap-1.5 text-xs text-text-secondary">
                   <input
@@ -283,7 +283,7 @@ export function SmartLabelEditor() {
                     onChange={(e) => setCriteriaHasAttachment(e.target.checked)}
                     className="rounded"
                   />
-                  Has attachment
+                  Con allegato
                 </label>
               </div>
             )}
@@ -295,13 +295,13 @@ export function SmartLabelEditor() {
               disabled={!labelId || !aiDescription.trim()}
               className="px-3 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-md transition-colors disabled:opacity-50"
             >
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Aggiorna" : "Salva"}
             </button>
             <button
               onClick={resetForm}
               className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md transition-colors"
             >
-              Cancel
+              Annulla
             </button>
           </div>
         </div>
@@ -310,7 +310,7 @@ export function SmartLabelEditor() {
           onClick={() => setShowForm(true)}
           className="text-xs text-accent hover:text-accent-hover"
         >
-          + Add smart label
+          + Aggiungi etichetta smart
         </button>
       )}
     </div>

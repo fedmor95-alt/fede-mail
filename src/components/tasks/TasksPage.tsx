@@ -30,6 +30,21 @@ const PRIORITY_ORDER: Record<TaskPriority, number> = {
   none: 4,
 };
 
+const GROUP_LABELS: Record<string, string> = {
+  None: "Nessuna",
+  Low: "Bassa",
+  Medium: "Media",
+  High: "Alta",
+  Urgent: "Urgente",
+  "No due date": "Senza scadenza",
+  Overdue: "Scadute",
+  Today: "Oggi",
+  Tomorrow: "Domani",
+  "This week": "Questa settimana",
+  Later: "Più avanti",
+  Untagged: "Senza tag",
+};
+
 export function TasksPage() {
   const accounts = useAccountStore((s) => s.accounts);
   const activeAccount = accounts.find((a) => a.isActive);
@@ -198,12 +213,12 @@ export function TasksPage() {
   }, [selectedIds, loadTasks]);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bg-primary/50">
+    <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-bg-primary">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border-primary shrink-0 bg-bg-primary/60 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border-primary shrink-0 bg-bg-primary backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <CheckSquare size={18} className="text-accent" />
-          <h1 className="text-base font-semibold text-text-primary">Tasks</h1>
+          <h1 className="text-base font-semibold text-text-primary">Attività</h1>
           {filteredTasks.length > 0 && (
             <span className="text-xs text-text-tertiary bg-bg-tertiary px-2 py-0.5 rounded-full">
               {filteredTasks.length}
@@ -219,7 +234,7 @@ export function TasksPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder="Cerca attività..."
               className="w-48 pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-lg text-xs text-text-primary outline-none focus:border-accent"
             />
           </div>
@@ -230,9 +245,9 @@ export function TasksPage() {
             onChange={(e) => setFilterStatus(e.target.value as TaskFilterStatus)}
             className="bg-bg-tertiary text-text-primary text-xs px-2.5 py-1.5 rounded-lg border border-border-primary"
           >
-            <option value="incomplete">Active</option>
-            <option value="all">All</option>
-            <option value="completed">Completed</option>
+            <option value="incomplete">Attive</option>
+            <option value="all">Tutte</option>
+            <option value="completed">Completate</option>
           </select>
 
           <select
@@ -240,12 +255,12 @@ export function TasksPage() {
             onChange={(e) => setFilterPriority(e.target.value as TaskPriority | "all")}
             className="bg-bg-tertiary text-text-primary text-xs px-2.5 py-1.5 rounded-lg border border-border-primary"
           >
-            <option value="all">All priorities</option>
-            <option value="urgent">Urgent</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-            <option value="none">None</option>
+            <option value="all">Tutte le priorità</option>
+            <option value="urgent">Urgente</option>
+            <option value="high">Alta</option>
+            <option value="medium">Media</option>
+            <option value="low">Bassa</option>
+            <option value="none">Nessuna</option>
           </select>
 
           {/* Group by */}
@@ -254,10 +269,10 @@ export function TasksPage() {
             onChange={(e) => setGroupBy(e.target.value as TaskGroupBy)}
             className="bg-bg-tertiary text-text-primary text-xs px-2.5 py-1.5 rounded-lg border border-border-primary"
           >
-            <option value="none">No grouping</option>
-            <option value="priority">Group by priority</option>
-            <option value="dueDate">Group by due date</option>
-            <option value="tag">Group by tag</option>
+            <option value="none">Nessun raggruppamento</option>
+            <option value="priority">Raggruppa per priorità</option>
+            <option value="dueDate">Raggruppa per scadenza</option>
+            <option value="tag">Raggruppa per tag</option>
           </select>
         </div>
       </div>
@@ -265,26 +280,26 @@ export function TasksPage() {
       {/* Bulk actions bar */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 px-5 py-2 bg-accent/5 border-b border-accent/20">
-          <span className="text-xs text-text-secondary">{selectedIds.size} selected</span>
+          <span className="text-xs text-text-secondary">{selectedIds.size} {selectedIds.size === 1 ? "selezionata" : "selezionate"}</span>
           <button
             onClick={handleBulkComplete}
             className="flex items-center gap-1 text-xs text-accent hover:text-accent-hover"
           >
             <CheckCircle2 size={13} />
-            Complete
+            Completa
           </button>
           <button
             onClick={handleBulkDelete}
             className="flex items-center gap-1 text-xs text-danger hover:opacity-80"
           >
             <Trash2 size={13} />
-            Delete
+            Elimina
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
             className="text-xs text-text-tertiary hover:text-text-primary ml-auto"
           >
-            Clear selection
+            Annulla selezione
           </button>
         </div>
       )}
@@ -299,9 +314,9 @@ export function TasksPage() {
         {filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <CheckSquare size={48} className="text-text-tertiary/30 mb-4" />
-            <p className="text-sm text-text-secondary mb-1">No tasks</p>
+            <p className="text-sm text-text-secondary mb-1">Nessuna attività</p>
             <p className="text-xs text-text-tertiary">
-              {searchQuery ? "Try a different search term" : "Add a task above or press 't' on any email thread"}
+              {searchQuery ? "Prova con un altro termine di ricerca" : "Aggiungi un'attività qui sopra o premi 't' su una conversazione"}
             </p>
           </div>
         ) : (
@@ -310,7 +325,7 @@ export function TasksPage() {
               <div key={group.label || "__ungrouped"}>
                 {group.label && (
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2 px-3">
-                    {group.label}
+                    {GROUP_LABELS[group.label] ?? group.label}
                   </h3>
                 )}
                 <div className="space-y-0.5">

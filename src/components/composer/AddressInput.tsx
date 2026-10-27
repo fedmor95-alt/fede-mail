@@ -12,7 +12,7 @@ export function AddressInput({
   label,
   addresses,
   onChange,
-  placeholder = "Add recipients...",
+  placeholder = "Aggiungi destinatari...",
 }: AddressInputProps) {
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<DbContact[]>([]);
@@ -92,7 +92,7 @@ export function AddressInput({
 
   return (
     <div className="flex items-start gap-2">
-      <span className="text-xs text-text-tertiary pt-1.5 w-8 shrink-0">
+      <span className="text-xs text-text-tertiary pt-1.5 w-14 shrink-0">
         {label}
       </span>
       <div className="flex-1 flex flex-wrap items-center gap-1 min-h-[32px] relative">

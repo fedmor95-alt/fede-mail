@@ -8,7 +8,7 @@ interface MonthViewProps {
   onEventClick: (event: DbCalendarEvent) => void;
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_NAMES = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
 export function MonthView({ currentDate, events, onEventClick }: MonthViewProps) {
   const year = currentDate.getFullYear();

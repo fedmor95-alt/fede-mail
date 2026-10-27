@@ -44,13 +44,13 @@ describe("InputDialog", () => {
     render(<InputDialog {...baseProps} />);
     const input = screen.getByPlaceholderText("Enter name");
     fireEvent.change(input, { target: { value: "My Folder" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
     expect(baseProps.onSubmit).toHaveBeenCalledWith({ name: "My Folder" });
   });
 
   it("submit button is disabled when required field is empty", () => {
     render(<InputDialog {...baseProps} />);
-    const submitBtn = screen.getByRole("button", { name: "Save" });
+    const submitBtn = screen.getByRole("button", { name: "Salva" });
     expect(submitBtn).toBeDisabled();
   });
 
@@ -58,7 +58,7 @@ describe("InputDialog", () => {
     render(<InputDialog {...baseProps} />);
     const input = screen.getByPlaceholderText("Enter name");
     fireEvent.change(input, { target: { value: "test" } });
-    const submitBtn = screen.getByRole("button", { name: "Save" });
+    const submitBtn = screen.getByRole("button", { name: "Salva" });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -69,7 +69,7 @@ describe("InputDialog", () => {
         fields={[{ key: "name", label: "Name", required: false }]}
       />,
     );
-    const submitBtn = screen.getByRole("button", { name: "Save" });
+    const submitBtn = screen.getByRole("button", { name: "Salva" });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -81,7 +81,7 @@ describe("InputDialog", () => {
 
   it("calls onClose when cancel button is clicked", () => {
     render(<InputDialog {...baseProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Annulla" }));
     expect(baseProps.onClose).toHaveBeenCalledTimes(1);
   });
 

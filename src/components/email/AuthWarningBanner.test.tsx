@@ -23,7 +23,7 @@ describe("AuthWarningBanner", () => {
       />,
     );
 
-    expect(screen.getByText("Authentication failed")).toBeInTheDocument();
+    expect(screen.getByText("Autenticazione non riuscita")).toBeInTheDocument();
     expect(screen.getByText(/bad@example\.com/)).toBeInTheDocument();
   });
 
@@ -49,7 +49,7 @@ describe("AuthWarningBanner", () => {
       />,
     );
 
-    const dismissBtn = screen.getByLabelText("Dismiss warning");
+    const dismissBtn = screen.getByLabelText("Chiudi avviso");
     fireEvent.click(dismissBtn);
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });

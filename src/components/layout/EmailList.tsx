@@ -33,6 +33,26 @@ import {
 const PAGE_SIZE = 50;
 
 // Map sidebar labels to Gmail label IDs
+const LABEL_NAMES: Record<string, string> = {
+  inbox: "Posta in arrivo",
+  starred: "Speciali",
+  snoozed: "Posticipati",
+  sent: "Inviata",
+  drafts: "Bozze",
+  trash: "Cestino",
+  spam: "Posta indesiderata",
+  all: "Tutta la posta",
+  archive: "Archivio",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  Primary: "Principale",
+  Updates: "Aggiornamenti",
+  Promotions: "Promozioni",
+  Social: "Social",
+  Newsletters: "Newsletter",
+};
+
 const LABEL_MAP: Record<string, string> = {
   inbox: "INBOX",
   starred: "STARRED",
@@ -55,6 +75,11 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
   const clearMultiSelect = useThreadStore((s) => s.clearMultiSelect);
   const selectAll = useThreadStore((s) => s.selectAll);
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
+  const unifiedView = useAccountStore((s) => s.unifiedView);
+  // null = every account (unified view). Kept separate from activeAccountId,
+  // which follows the opened thread and must not reload the list.
+  const listAccountId = unifiedView ? null : activeAccountId;
+  const hasAccount = activeAccountId !== null;
   const activeLabel = useActiveLabel();
   const readFilter = useUIStore((s) => s.readFilter);
   const setReadFilter = useUIStore((s) => s.setReadFilter);
@@ -200,12 +225,13 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
   };
 
   const searchThreadIds = useThreadStore((s) => s.searchThreadIds);
+  const searchResults = useThreadStore((s) => s.searchResults);
   const searchQuery = useThreadStore((s) => s.searchQuery);
 
   const filteredThreads = useMemo(() => {
-    let filtered = threads;
-    // Apply search filter
-    if (searchThreadIds !== null) {
+    // Unified search replaces the folder list with its own results
+    let filtered = searchResults ?? threads;
+    if (searchResults === null && searchThreadIds !== null) {
       filtered = filtered.filter((t) => searchThreadIds.has(t.id));
     }
     // Apply read filter
@@ -213,7 +239,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
     else if (readFilter === "read") filtered = filtered.filter((t) => t.isRead);
     // Category filtering is now server-side (Phase 4) — no client-side filter needed
     return filtered;
-  }, [threads, readFilter, searchThreadIds]);
+  }, [threads, readFilter, searchThreadIds, searchResults]);
 
   // Pre-compute bundled category Set for O(1) lookups in filter
   const bundledCategorySet = useMemo(
@@ -251,6 +277,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
           labelIds,
           fromName: t.from_name,
           fromAddress: t.from_address,
+          pecStatus: t.pec_status ?? null,
         };
       }),
     );
@@ -259,7 +286,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
   const clearSearch = useThreadStore((s) => s.clearSearch);
 
   const loadThreads = useCallback(async () => {
-    if (!activeAccountId) {
+    if (!hasAccount) {
       setThreads([]);
       return;
     }
@@ -284,11 +311,11 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
         let dbThreads;
         // Server-side category filtering for inbox
         if (activeLabel === "inbox" && activeCategory !== "All") {
-          dbThreads = await getThreadsForCategory(activeAccountId, activeCategory, PAGE_SIZE, 0);
+          dbThreads = await getThreadsForCategory(listAccountId, activeCategory, PAGE_SIZE, 0);
         } else {
           const gmailLabelId = LABEL_MAP[activeLabel] ?? activeLabel;
           dbThreads = await getThreadsForAccount(
-            activeAccountId,
+            listAccountId,
             gmailLabelId || undefined,
             PAGE_SIZE,
             0,
@@ -304,21 +331,21 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
     } finally {
       setLoading(false);
     }
-  }, [activeAccountId, activeLabel, activeCategory, isSmartFolder, activeSmartFolder, setThreads, setLoading, mapDbThreads, clearSearch]);
+  }, [hasAccount, listAccountId, isSmartFolder ? activeAccountId : null, activeLabel, activeCategory, isSmartFolder, activeSmartFolder, setThreads, setLoading, mapDbThreads, clearSearch]);
 
   const loadMore = useCallback(async () => {
-    if (!activeAccountId || loadingMore || !hasMore) return;
+    if (!hasAccount || loadingMore || !hasMore) return;
 
     setLoadingMore(true);
     try {
       const offset = threads.length;
       let dbThreads;
       if (activeLabel === "inbox" && activeCategory !== "All") {
-        dbThreads = await getThreadsForCategory(activeAccountId, activeCategory, PAGE_SIZE, offset);
+        dbThreads = await getThreadsForCategory(listAccountId, activeCategory, PAGE_SIZE, offset);
       } else {
         const gmailLabelId = LABEL_MAP[activeLabel] ?? activeLabel;
         dbThreads = await getThreadsForAccount(
-          activeAccountId,
+          listAccountId,
           gmailLabelId || undefined,
           PAGE_SIZE,
           offset,
@@ -335,7 +362,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
     } finally {
       setLoadingMore(false);
     }
-  }, [activeAccountId, activeLabel, activeCategory, threads, loadingMore, hasMore, setThreads, mapDbThreads]);
+  }, [hasAccount, listAccountId, activeLabel, activeCategory, threads, loadingMore, hasMore, setThreads, mapDbThreads]);
 
   useEffect(() => {
     loadThreads();
@@ -485,7 +512,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
   return (
     <div
       ref={listRef}
-      className={`flex flex-col bg-bg-secondary/50 glass-panel ${
+      className={`flex flex-col bg-bg-primary border-r border-border-primary glass-panel ${
         readingPanePosition === "right"
           ? "min-w-[240px] shrink-0"
           : readingPanePosition === "bottom"
@@ -505,15 +532,15 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
           <h2 className="text-sm font-semibold text-text-primary capitalize flex items-center gap-1.5">
             {isSmartFolder && <FolderSearch size={14} className="text-accent shrink-0" />}
             {isSmartFolder
-              ? activeSmartFolder?.name ?? "Smart Folder"
+              ? activeSmartFolder?.name ?? "Cartella smart"
               : activeLabel === "inbox" && inboxViewMode === "split" && activeCategory !== "All"
-                ? `Inbox — ${activeCategory}`
+                ? `Posta in arrivo — ${CATEGORY_LABELS[activeCategory] ?? activeCategory}`
                 : LABEL_MAP[activeLabel] !== undefined
-                  ? activeLabel
+                  ? LABEL_NAMES[activeLabel] ?? activeLabel
                   : userLabels.find((l) => l.id === activeLabel)?.name ?? activeLabel}
           </h2>
           <span className="text-xs text-text-tertiary">
-            {filteredThreads.length} conversation{filteredThreads.length !== 1 ? "s" : ""}
+            {filteredThreads.length} {filteredThreads.length !== 1 ? "conversazioni" : "conversazione"}
           </span>
         </div>
         <select
@@ -521,9 +548,9 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
           onChange={(e) => setReadFilter(e.target.value as "all" | "read" | "unread")}
           className="text-xs bg-bg-tertiary text-text-secondary px-2 py-1 rounded border border-border-primary"
         >
-          <option value="all">All</option>
-          <option value="unread">Unread</option>
-          <option value="read">Read</option>
+          <option value="all">Tutte</option>
+          <option value="unread">Non lette</option>
+          <option value="read">Lette</option>
         </select>
       </div>
 
@@ -541,42 +568,42 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
         <div ref={multiSelectBarRef} className="px-3 py-2 border-b border-border-primary bg-accent/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-text-primary">
-              {multiSelectCount} selected
+              {multiSelectCount} {multiSelectCount === 1 ? "selezionata" : "selezionate"}
             </span>
             {multiSelectCount < filteredThreads.length && (
               <button
                 onClick={selectAll}
                 className="text-xs text-accent hover:text-accent-hover transition-colors"
               >
-                Select all
+                Seleziona tutto
               </button>
             )}
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={handleBulkArchive}
-              title="Archive selected"
+              title="Archivia selezionate"
               className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
             >
               <Archive size={14} />
             </button>
             <button
               onClick={handleBulkDelete}
-              title="Delete selected"
+              title="Elimina selezionate"
               className="p-1.5 text-text-secondary hover:text-error hover:bg-bg-hover rounded transition-colors"
             >
               <Trash2 size={14} />
             </button>
             <button
               onClick={handleBulkSpam}
-              title={activeLabel === "spam" ? "Not spam" : "Report spam"}
+              title={activeLabel === "spam" ? "Non è indesiderata" : "Segnala come indesiderata"}
               className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
             >
               <Ban size={14} />
             </button>
             <button
               onClick={clearMultiSelect}
-              title="Clear selection"
+              title="Annulla selezione"
               className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
             >
               <X size={14} />
@@ -685,12 +712,12 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
             })}
             {loadingMore && (
               <div className="px-4 py-3 text-center text-xs text-text-tertiary">
-                Loading more...
+                Caricamento altre conversazioni...
               </div>
             )}
             {!hasMore && threads.length > PAGE_SIZE && (
               <div className="px-4 py-3 text-center text-xs text-text-tertiary">
-                All conversations loaded
+                Tutte le conversazioni sono state caricate
               </div>
             )}
           </>
@@ -714,47 +741,47 @@ function EmptyStateForContext({
   activeCategory: string;
 }) {
   if (searchQuery) {
-    return <EmptyState illustration={NoSearchResultsIllustration} title="No results found" subtitle="Try a different search term" />;
+    return <EmptyState illustration={NoSearchResultsIllustration} title="Nessun risultato" subtitle="Prova con un altro termine di ricerca" />;
   }
   if (readFilter !== "all") {
-    return <EmptyState icon={Filter} title={`No ${readFilter} emails`} subtitle="Try changing the filter" />;
+    return <EmptyState icon={Filter} title={readFilter === "unread" ? "Nessuna email non letta" : "Nessuna email letta"} subtitle="Prova a cambiare il filtro" />;
   }
   if (!activeAccountId) {
-    return <EmptyState illustration={NoAccountIllustration} title="No account connected" subtitle="Add a Gmail account to get started" />;
+    return <EmptyState illustration={NoAccountIllustration} title="Nessun account collegato" subtitle="Aggiungi un account per iniziare" />;
   }
 
   switch (activeLabel) {
     case "inbox":
       if (activeCategory !== "All") {
         const categoryMessages: Record<string, { title: string; subtitle: string }> = {
-          Primary: { title: "Primary is clear", subtitle: "No important conversations" },
-          Updates: { title: "No updates", subtitle: "Notifications and transactional emails appear here" },
-          Promotions: { title: "No promotions", subtitle: "Marketing and promotional emails appear here" },
-          Social: { title: "No social emails", subtitle: "Social network notifications appear here" },
-          Newsletters: { title: "No newsletters", subtitle: "Newsletters and subscriptions appear here" },
+          Primary: { title: "Principale è vuota", subtitle: "Nessuna conversazione importante" },
+          Updates: { title: "Nessun aggiornamento", subtitle: "Qui compaiono notifiche e email transazionali" },
+          Promotions: { title: "Nessuna promozione", subtitle: "Qui compaiono email di marketing e promozionali" },
+          Social: { title: "Nessuna email social", subtitle: "Qui compaiono le notifiche dei social network" },
+          Newsletters: { title: "Nessuna newsletter", subtitle: "Qui compaiono newsletter e iscrizioni" },
         };
         const msg = categoryMessages[activeCategory];
         if (msg) return <EmptyState illustration={InboxClearIllustration} title={msg.title} subtitle={msg.subtitle} />;
       }
-      return <EmptyState illustration={InboxClearIllustration} title="You're all caught up" subtitle="No new conversations" />;
+      return <EmptyState illustration={InboxClearIllustration} title="Sei in pari" subtitle="Nessuna nuova conversazione" />;
     case "starred":
-      return <EmptyState illustration={GenericEmptyIllustration} title="No starred conversations" subtitle="Star emails to find them here" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Nessuna conversazione speciale" subtitle="Contrassegna le email come Speciali per trovarle qui" />;
     case "snoozed":
-      return <EmptyState illustration={GenericEmptyIllustration} title="No snoozed emails" subtitle="Snoozed emails will appear here" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Nessuna email posticipata" subtitle="Le email posticipate compariranno qui" />;
     case "sent":
-      return <EmptyState illustration={GenericEmptyIllustration} title="No sent messages" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Nessun messaggio inviato" />;
     case "drafts":
-      return <EmptyState illustration={GenericEmptyIllustration} title="No drafts" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Nessuna bozza" />;
     case "trash":
-      return <EmptyState illustration={GenericEmptyIllustration} title="Trash is empty" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Il cestino è vuoto" />;
     case "spam":
-      return <EmptyState illustration={GenericEmptyIllustration} title="No spam" subtitle="Looking good!" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Nessuna posta indesiderata" subtitle="Tutto a posto!" />;
     case "all":
-      return <EmptyState illustration={GenericEmptyIllustration} title="No emails yet" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Ancora nessuna email" />;
     default:
       if (activeLabel.startsWith("smart-folder:")) {
-        return <EmptyState icon={FolderSearch} title="No matching emails" subtitle="Try adjusting the smart folder query" />;
+        return <EmptyState icon={FolderSearch} title="Nessuna email corrispondente" subtitle="Prova a modificare la ricerca della cartella smart" />;
       }
-      return <EmptyState illustration={GenericEmptyIllustration} title="Nothing here" subtitle="No conversations with this label" />;
+      return <EmptyState illustration={GenericEmptyIllustration} title="Niente da vedere" subtitle="Nessuna conversazione con questa etichetta" />;
   }
 }

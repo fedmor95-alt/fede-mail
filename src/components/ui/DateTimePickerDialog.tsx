@@ -66,7 +66,7 @@ export function DateTimePickerDialog({
 
       <div className="border-t border-border-secondary px-4 py-3 space-y-2">
         <div className="text-xs text-text-tertiary font-medium">
-          Custom date & time
+          Data e ora personalizzate
         </div>
         <div className="flex gap-2">
           <input

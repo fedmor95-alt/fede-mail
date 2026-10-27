@@ -1,19 +1,27 @@
-export type ColorThemeId =
-  | "indigo"
-  | "rose"
-  | "emerald"
-  | "amber"
-  | "sky"
-  | "violet"
-  | "orange"
-  | "slate";
+/**
+ * Full-surface themes (Apple Mail style: solid panels, no glass).
+ * Each theme sets every colour token from styles/globals.css, in a light and
+ * a dark variant; the variant follows the light/dark/system setting.
+ */
+export type ColorThemeId = "mail" | "grafite" | "carta" | "nord" | "salvia" | "notte";
 
 interface ThemeColors {
+  bgPrimary: string;
+  bgSecondary: string;
+  bgTertiary: string;
+  bgHover: string;
+  bgSelected: string;
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  borderPrimary: string;
+  borderSecondary: string;
   accent: string;
   accentHover: string;
   accentLight: string;
-  bgSelected: string;
-  sidebarActive: string;
+  sidebarBg: string;
+  sidebarText: string;
+  sidebarHover: string;
 }
 
 export interface ColorTheme {
@@ -24,166 +32,249 @@ export interface ColorTheme {
   dark: ThemeColors;
 }
 
+const MAIL_LIGHT: ThemeColors = {
+  bgPrimary: "#ffffff",
+  bgSecondary: "#f5f5f7",
+  bgTertiary: "#e8e8ed",
+  bgHover: "rgba(0, 0, 0, 0.04)",
+  bgSelected: "#dbe9ff",
+  textPrimary: "#1d1d1f",
+  textSecondary: "#6e6e73",
+  textTertiary: "#8e8e93",
+  borderPrimary: "rgba(0, 0, 0, 0.1)",
+  borderSecondary: "rgba(0, 0, 0, 0.05)",
+  accent: "#0a84ff",
+  accentHover: "#0071e3",
+  accentLight: "#e5f0ff",
+  sidebarBg: "#ececef",
+  sidebarText: "#1d1d1f",
+  sidebarHover: "rgba(0, 0, 0, 0.05)",
+};
+
+const MAIL_DARK: ThemeColors = {
+  bgPrimary: "#1e1e1e",
+  bgSecondary: "#252527",
+  bgTertiary: "#323235",
+  bgHover: "rgba(255, 255, 255, 0.05)",
+  bgSelected: "#0b3a73",
+  textPrimary: "#f5f5f7",
+  textSecondary: "#a1a1a6",
+  textTertiary: "#7c7c80",
+  borderPrimary: "rgba(255, 255, 255, 0.1)",
+  borderSecondary: "rgba(255, 255, 255, 0.05)",
+  accent: "#0a84ff",
+  accentHover: "#409cff",
+  accentLight: "#0b2a4f",
+  sidebarBg: "#2a2a2d",
+  sidebarText: "#e5e5ea",
+  sidebarHover: "rgba(255, 255, 255, 0.06)",
+};
+
 export const COLOR_THEMES: ColorTheme[] = [
+  { id: "mail", name: "Mail", swatch: "#0a84ff", light: MAIL_LIGHT, dark: MAIL_DARK },
   {
-    id: "indigo",
-    name: "Indigo",
-    swatch: "#4f46e5",
+    id: "grafite",
+    name: "Grafite",
+    swatch: "#6e6e73",
     light: {
-      accent: "#4f46e5",
-      accentHover: "#4338ca",
-      accentLight: "#e0e7ff",
-      bgSelected: "rgba(224, 231, 255, 0.65)",
-      sidebarActive: "#4f46e5",
+      ...MAIL_LIGHT,
+      bgSelected: "#e3e3e8",
+      accent: "#6e6e73",
+      accentHover: "#545458",
+      accentLight: "#ececf0",
     },
     dark: {
-      accent: "#818cf8",
-      accentHover: "#6366f1",
-      accentLight: "#312e81",
-      bgSelected: "rgba(30, 58, 95, 0.55)",
-      sidebarActive: "#818cf8",
+      ...MAIL_DARK,
+      bgSelected: "#3a3a3e",
+      accent: "#a1a1a6",
+      accentHover: "#c7c7cc",
+      accentLight: "#2c2c2f",
     },
   },
   {
-    id: "rose",
-    name: "Rose",
-    swatch: "#e11d48",
+    id: "carta",
+    name: "Carta",
+    swatch: "#b3541e",
     light: {
-      accent: "#e11d48",
-      accentHover: "#be123c",
-      accentLight: "#ffe4e6",
-      bgSelected: "rgba(255, 228, 230, 0.65)",
-      sidebarActive: "#e11d48",
+      bgPrimary: "#fbf8f1",
+      bgSecondary: "#f3eee2",
+      bgTertiary: "#e7e0cf",
+      bgHover: "rgba(60, 40, 10, 0.05)",
+      bgSelected: "#f3dcc8",
+      textPrimary: "#2b2620",
+      textSecondary: "#6b6156",
+      textTertiary: "#968b7c",
+      borderPrimary: "rgba(60, 40, 10, 0.12)",
+      borderSecondary: "rgba(60, 40, 10, 0.06)",
+      accent: "#b3541e",
+      accentHover: "#953f10",
+      accentLight: "#f6e3d3",
+      sidebarBg: "#efe8d8",
+      sidebarText: "#2b2620",
+      sidebarHover: "rgba(60, 40, 10, 0.06)",
     },
     dark: {
-      accent: "#fb7185",
-      accentHover: "#f43f5e",
-      accentLight: "#4c0519",
-      bgSelected: "rgba(76, 5, 25, 0.55)",
-      sidebarActive: "#fb7185",
+      bgPrimary: "#1f1b16",
+      bgSecondary: "#27221b",
+      bgTertiary: "#352e25",
+      bgHover: "rgba(255, 240, 220, 0.05)",
+      bgSelected: "#4a2f1c",
+      textPrimary: "#efe7da",
+      textSecondary: "#b9ad9c",
+      textTertiary: "#8a7f70",
+      borderPrimary: "rgba(255, 240, 220, 0.1)",
+      borderSecondary: "rgba(255, 240, 220, 0.05)",
+      accent: "#e08a4f",
+      accentHover: "#eba574",
+      accentLight: "#3b2618",
+      sidebarBg: "#24201a",
+      sidebarText: "#e6dccb",
+      sidebarHover: "rgba(255, 240, 220, 0.06)",
     },
   },
   {
-    id: "emerald",
-    name: "Emerald",
-    swatch: "#059669",
+    id: "nord",
+    name: "Nord",
+    swatch: "#5e81ac",
     light: {
-      accent: "#059669",
-      accentHover: "#047857",
-      accentLight: "#d1fae5",
-      bgSelected: "rgba(209, 250, 229, 0.65)",
-      sidebarActive: "#059669",
+      bgPrimary: "#f4f6f9",
+      bgSecondary: "#e9edf2",
+      bgTertiary: "#d8dee9",
+      bgHover: "rgba(46, 52, 64, 0.05)",
+      bgSelected: "#d3dff0",
+      textPrimary: "#2e3440",
+      textSecondary: "#4c566a",
+      textTertiary: "#6b7385",
+      borderPrimary: "rgba(46, 52, 64, 0.12)",
+      borderSecondary: "rgba(46, 52, 64, 0.06)",
+      accent: "#5e81ac",
+      accentHover: "#4c6d96",
+      accentLight: "#dfe8f3",
+      sidebarBg: "#e5e9f0",
+      sidebarText: "#2e3440",
+      sidebarHover: "rgba(46, 52, 64, 0.06)",
     },
     dark: {
-      accent: "#34d399",
-      accentHover: "#10b981",
-      accentLight: "#064e3b",
-      bgSelected: "rgba(6, 78, 59, 0.55)",
-      sidebarActive: "#34d399",
+      bgPrimary: "#2e3440",
+      bgSecondary: "#353c4a",
+      bgTertiary: "#434c5e",
+      bgHover: "rgba(236, 239, 244, 0.05)",
+      bgSelected: "#44556e",
+      textPrimary: "#eceff4",
+      textSecondary: "#d8dee9",
+      textTertiary: "#a3abba",
+      borderPrimary: "rgba(236, 239, 244, 0.1)",
+      borderSecondary: "rgba(236, 239, 244, 0.05)",
+      accent: "#88c0d0",
+      accentHover: "#a3d0dc",
+      accentLight: "#3b4a5c",
+      sidebarBg: "#292e39",
+      sidebarText: "#e5e9f0",
+      sidebarHover: "rgba(236, 239, 244, 0.06)",
     },
   },
   {
-    id: "amber",
-    name: "Amber",
-    swatch: "#d97706",
+    id: "salvia",
+    name: "Salvia",
+    swatch: "#4f7d5c",
     light: {
-      accent: "#d97706",
-      accentHover: "#b45309",
-      accentLight: "#fef3c7",
-      bgSelected: "rgba(254, 243, 199, 0.65)",
-      sidebarActive: "#d97706",
+      bgPrimary: "#fbfcfa",
+      bgSecondary: "#f0f3ee",
+      bgTertiary: "#dfe6da",
+      bgHover: "rgba(30, 50, 30, 0.05)",
+      bgSelected: "#dceadf",
+      textPrimary: "#1f2a1f",
+      textSecondary: "#556353",
+      textTertiary: "#7d8a7a",
+      borderPrimary: "rgba(30, 50, 30, 0.12)",
+      borderSecondary: "rgba(30, 50, 30, 0.06)",
+      accent: "#4f7d5c",
+      accentHover: "#3d6649",
+      accentLight: "#e3efe5",
+      sidebarBg: "#e9eee6",
+      sidebarText: "#1f2a1f",
+      sidebarHover: "rgba(30, 50, 30, 0.06)",
     },
     dark: {
-      accent: "#fbbf24",
-      accentHover: "#f59e0b",
-      accentLight: "#78350f",
-      bgSelected: "rgba(120, 53, 15, 0.55)",
-      sidebarActive: "#fbbf24",
+      bgPrimary: "#1a1f1b",
+      bgSecondary: "#212823",
+      bgTertiary: "#2c352e",
+      bgHover: "rgba(230, 245, 230, 0.05)",
+      bgSelected: "#2b4433",
+      textPrimary: "#e8efe8",
+      textSecondary: "#aab8aa",
+      textTertiary: "#7d8b7e",
+      borderPrimary: "rgba(230, 245, 230, 0.1)",
+      borderSecondary: "rgba(230, 245, 230, 0.05)",
+      accent: "#7fb58e",
+      accentHover: "#9bc7a7",
+      accentLight: "#22352a",
+      sidebarBg: "#171c18",
+      sidebarText: "#dfe7df",
+      sidebarHover: "rgba(230, 245, 230, 0.06)",
     },
   },
   {
-    id: "sky",
-    name: "Sky",
-    swatch: "#0284c7",
-    light: {
-      accent: "#0284c7",
-      accentHover: "#0369a1",
-      accentLight: "#e0f2fe",
-      bgSelected: "rgba(224, 242, 254, 0.65)",
-      sidebarActive: "#0284c7",
-    },
+    id: "notte",
+    name: "Notte",
+    swatch: "#000000",
+    light: MAIL_LIGHT,
     dark: {
-      accent: "#38bdf8",
-      accentHover: "#0ea5e9",
-      accentLight: "#0c4a6e",
-      bgSelected: "rgba(12, 74, 110, 0.55)",
-      sidebarActive: "#38bdf8",
-    },
-  },
-  {
-    id: "violet",
-    name: "Violet",
-    swatch: "#7c3aed",
-    light: {
-      accent: "#7c3aed",
-      accentHover: "#6d28d9",
-      accentLight: "#ede9fe",
-      bgSelected: "rgba(237, 233, 254, 0.65)",
-      sidebarActive: "#7c3aed",
-    },
-    dark: {
-      accent: "#a78bfa",
-      accentHover: "#8b5cf6",
-      accentLight: "#2e1065",
-      bgSelected: "rgba(46, 16, 101, 0.55)",
-      sidebarActive: "#a78bfa",
-    },
-  },
-  {
-    id: "orange",
-    name: "Orange",
-    swatch: "#ea580c",
-    light: {
-      accent: "#ea580c",
-      accentHover: "#c2410c",
-      accentLight: "#ffedd5",
-      bgSelected: "rgba(255, 237, 213, 0.65)",
-      sidebarActive: "#ea580c",
-    },
-    dark: {
-      accent: "#fb923c",
-      accentHover: "#f97316",
-      accentLight: "#7c2d12",
-      bgSelected: "rgba(124, 45, 18, 0.55)",
-      sidebarActive: "#fb923c",
-    },
-  },
-  {
-    id: "slate",
-    name: "Slate",
-    swatch: "#475569",
-    light: {
-      accent: "#475569",
-      accentHover: "#334155",
-      accentLight: "#e2e8f0",
-      bgSelected: "rgba(226, 232, 240, 0.65)",
-      sidebarActive: "#475569",
-    },
-    dark: {
-      accent: "#94a3b8",
-      accentHover: "#64748b",
-      accentLight: "#1e293b",
-      bgSelected: "rgba(30, 41, 59, 0.55)",
-      sidebarActive: "#94a3b8",
+      ...MAIL_DARK,
+      bgPrimary: "#000000",
+      bgSecondary: "#0b0b0c",
+      bgTertiary: "#1c1c1e",
+      bgSelected: "#10284a",
+      textTertiary: "#6e6e73",
+      sidebarBg: "#000000",
     },
   },
 ];
 
-export const DEFAULT_COLOR_THEME: ColorThemeId = "indigo";
+export const DEFAULT_COLOR_THEME: ColorThemeId = "mail";
 
 export function getThemeById(id: string): ColorTheme {
   return (
     COLOR_THEMES.find((t) => t.id === id) ??
     COLOR_THEMES.find((t) => t.id === DEFAULT_COLOR_THEME)!
   );
+}
+
+const TOKENS: [keyof ThemeColors, string][] = [
+  ["bgPrimary", "--color-bg-primary"],
+  ["bgSecondary", "--color-bg-secondary"],
+  ["bgTertiary", "--color-bg-tertiary"],
+  ["bgHover", "--color-bg-hover"],
+  ["bgSelected", "--color-bg-selected"],
+  ["textPrimary", "--color-text-primary"],
+  ["textSecondary", "--color-text-secondary"],
+  ["textTertiary", "--color-text-tertiary"],
+  ["borderPrimary", "--color-border-primary"],
+  ["borderSecondary", "--color-border-secondary"],
+  ["accent", "--color-accent"],
+  ["accentHover", "--color-accent-hover"],
+  ["accentLight", "--color-accent-light"],
+  ["sidebarBg", "--color-sidebar-bg"],
+  ["sidebarText", "--color-sidebar-text"],
+  ["sidebarHover", "--color-sidebar-hover"],
+  ["accent", "--color-sidebar-active"],
+];
+
+/**
+ * Apply a theme to <html>, following the system light/dark setting when
+ * `mode` is "system". Returns a cleanup function.
+ */
+export function applyColorTheme(themeId: string, mode: "light" | "dark" | "system"): () => void {
+  const root = document.documentElement;
+  const theme = getThemeById(themeId);
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const isDark = mode === "dark" || (mode === "system" && mq.matches);
+    const colors = isDark ? theme.dark : theme.light;
+    for (const [key, prop] of TOKENS) root.style.setProperty(prop, colors[key]);
+  };
+  apply();
+  if (mode !== "system") return () => {};
+  mq.addEventListener("change", apply);
+  return () => mq.removeEventListener("change", apply);
 }

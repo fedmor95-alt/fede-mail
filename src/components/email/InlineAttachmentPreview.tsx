@@ -72,7 +72,7 @@ export function InlineAttachmentPreview({
               <FileText size={16} className="text-danger shrink-0" />
               <div className="min-w-0">
                 <div className="text-xs text-text-primary truncate">
-                  {att.filename ?? "Document.pdf"}
+                  {att.filename ?? "Documento.pdf"}
                 </div>
                 {att.size != null && (
                   <div className="text-[0.625rem] text-text-tertiary">
@@ -163,23 +163,23 @@ function ImageThumbnail({
       <button
         onClick={onClick}
         className="block rounded-md overflow-hidden border border-border-secondary hover:border-accent transition-colors"
-        title={attachment.filename ?? "Image"}
+        title={attachment.filename ?? "Immagine"}
       >
         {loading && (
           <div className="w-[200px] h-[120px] bg-bg-tertiary animate-pulse flex items-center justify-center">
-            <span className="text-xs text-text-tertiary">Loading...</span>
+            <span className="text-xs text-text-tertiary">Caricamento...</span>
           </div>
         )}
         {thumbnailUrl && (
           <img
             src={thumbnailUrl}
-            alt={attachment.filename ?? "Image"}
+            alt={attachment.filename ?? "Immagine"}
             className="max-w-[200px] max-h-[200px] object-cover"
           />
         )}
         {!loading && !thumbnailUrl && (
           <div className="w-[200px] h-[120px] bg-bg-tertiary flex items-center justify-center">
-            <span className="text-xs text-text-tertiary">Image</span>
+            <span className="text-xs text-text-tertiary">Immagine</span>
           </div>
         )}
       </button>

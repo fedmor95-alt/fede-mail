@@ -65,7 +65,8 @@ export function parseGmailMessage(msg: GmailMessage): ParsedMessage {
     rawSize: msg.sizeEstimate,
     internalDate: parseInt(msg.internalDate, 10),
     labelIds: msg.labelIds,
-    hasAttachments: attachments.length > 0,
+    // Metadata-only fetches carry no parts: multipart/mixed is a good hint.
+    hasAttachments: attachments.length > 0 || (!msg.payload.parts && msg.payload.mimeType === "multipart/mixed"),
     attachments,
     listUnsubscribe: getHeader(headers, "List-Unsubscribe"),
     listUnsubscribePost: getHeader(headers, "List-Unsubscribe-Post"),
@@ -102,8 +103,8 @@ function extractBody(
   part: GmailMessagePart,
   mimeType: string,
 ): string | null {
-  if (part.mimeType === mimeType && part.body.data) {
-    return part.body.data;
+  if (part.mimeType === mimeType && part.body?.data) {
+    return part.body?.data;
   }
 
   if (part.parts) {
@@ -123,7 +124,7 @@ function extractAttachments(part: GmailMessagePart): ParsedAttachment[] {
 }
 
 function collectAttachments(part: GmailMessagePart, results: ParsedAttachment[]): void {
-  if (part.body.attachmentId) {
+  if (part.body?.attachmentId) {
     const contentIdHeader = part.headers?.find(
       (h) => h.name.toLowerCase() === "content-id",
     );
@@ -139,8 +140,8 @@ function collectAttachments(part: GmailMessagePart, results: ParsedAttachment[])
       results.push({
         filename: part.filename || contentIdHeader?.value?.replace(/[<>]/g, "") || "inline",
         mimeType: part.mimeType,
-        size: part.body.size,
-        gmailAttachmentId: part.body.attachmentId,
+        size: part.body?.size ?? 0,
+        gmailAttachmentId: part.body?.attachmentId,
         contentId: contentIdHeader?.value?.replace(/[<>]/g, "") ?? null,
         isInline: isInline && !hasFilename,
       });

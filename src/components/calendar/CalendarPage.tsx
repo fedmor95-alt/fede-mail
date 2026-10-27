@@ -141,9 +141,9 @@ export function CalendarPage() {
         if (reauthDoneRef.current) {
           reauthDoneRef.current = false;
           setCalendarError(
-            "Calendar access is still denied after re-authorization. " +
-            "Make sure the Google Calendar API is enabled in your Google Cloud Console project. " +
-            "Visit console.cloud.google.com → APIs & Services → Enable the \"Google Calendar API\".",
+            "L'accesso al calendario è ancora negato dopo la nuova autorizzazione. " +
+            "Verifica che l'API di Google Calendar sia abilitata nel tuo progetto Google Cloud Console. " +
+            "Vai su console.cloud.google.com → API e servizi → Abilita \"Google Calendar API\".",
           );
         } else {
           setNeedsReauth(true);
@@ -255,7 +255,7 @@ export function CalendarPage() {
   if (!activeAccountId) {
     return (
       <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm">
-        Connect an account to use Calendar
+        Collega un account per usare il Calendario
       </div>
     );
   }
@@ -264,8 +264,8 @@ export function CalendarPage() {
     return (
       <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm">
         <div className="text-center">
-          <p>Calendar is not configured for this account.</p>
-          <p className="mt-1 text-xs">For IMAP accounts, configure CalDAV in Settings.</p>
+          <p>Il calendario non è configurato per questo account.</p>
+          <p className="mt-1 text-xs">Per gli account IMAP, configura CalDAV nelle Impostazioni.</p>
         </div>
       </div>
     );
@@ -301,7 +301,7 @@ export function CalendarPage() {
       {calendarError && !needsReauth && (
         <div className="mx-6 my-4 p-4 rounded-lg bg-danger/10 border border-danger/30 flex items-start gap-3">
           <div>
-            <p className="text-sm font-medium text-text-primary">Calendar access error</p>
+            <p className="text-sm font-medium text-text-primary">Errore di accesso al calendario</p>
             <p className="text-xs text-text-secondary mt-1">{calendarError}</p>
           </div>
         </div>
@@ -309,7 +309,7 @@ export function CalendarPage() {
 
       {loading && events.length === 0 && (
         <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm">
-          Loading calendar...
+          Caricamento calendario...
         </div>
       )}
 

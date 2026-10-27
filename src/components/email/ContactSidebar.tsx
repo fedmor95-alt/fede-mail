@@ -196,7 +196,7 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
         <div className="flex justify-end -mt-1 -mr-1 mb-1">
           <button
             onClick={onClose}
-            title="Close contact sidebar"
+            title="Chiudi barra contatto"
             className="p-1 text-text-tertiary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
           >
             <X size={14} />
@@ -233,7 +233,7 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
               />
               <button
                 onClick={handleSaveEditName}
-                title="Save name"
+                title="Salva nome"
                 className="p-0.5 text-success hover:text-success/80 transition-colors"
               >
                 <Check size={14} />
@@ -255,21 +255,21 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
         <div className="flex items-center justify-center gap-3 mb-4">
           <button
             onClick={handleCompose}
-            title="Send email"
+            title="Invia email"
             className="p-2 text-text-secondary hover:text-accent hover:bg-bg-hover rounded-lg transition-colors"
           >
             <Send size={16} />
           </button>
           <button
             onClick={handleCopyEmail}
-            title={copyFeedback ? "Copied!" : "Copy email"}
+            title={copyFeedback ? "Copiato!" : "Copia email"}
             className="p-2 text-text-secondary hover:text-accent hover:bg-bg-hover rounded-lg transition-colors"
           >
             {copyFeedback ? <Check size={16} className="text-success" /> : <Copy size={16} />}
           </button>
           <button
             onClick={handleToggleVip}
-            title={isVip ? "Remove VIP" : "Mark as VIP"}
+            title={isVip ? "Rimuovi VIP" : "Segna come VIP"}
             className={`p-2 rounded-lg transition-colors ${
               isVip
                 ? "text-warning hover:text-warning/80 hover:bg-bg-hover"
@@ -289,12 +289,12 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
             {addedFeedback ? (
               <>
                 <Check size={12} className="text-success" />
-                <span className="text-success">Added!</span>
+                <span className="text-success">Aggiunto!</span>
               </>
             ) : (
               <>
                 <UserPlus size={12} />
-                <span>Add to Contacts</span>
+                <span>Aggiungi ai contatti</span>
               </>
             )}
           </button>
@@ -304,7 +304,7 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
             className="w-full flex items-center justify-center gap-1.5 px-3 py-1 text-xs text-text-tertiary hover:text-text-secondary transition-colors mb-4"
           >
             <PenLine size={11} />
-            <span>Edit name</span>
+            <span>Modifica nome</span>
           </button>
         ) : null}
 
@@ -313,18 +313,18 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
           <div className="space-y-2 mb-4">
             <div className="flex items-center gap-2 text-xs text-text-secondary">
               <Mail size={12} className="text-text-tertiary shrink-0" />
-              <span>{stats.emailCount} emails</span>
+              <span>{stats.emailCount} email</span>
             </div>
             {stats.firstEmail && (
               <div className="flex items-center gap-2 text-xs text-text-secondary">
                 <Clock size={12} className="text-text-tertiary shrink-0" />
-                <span>First email: {formatRelativeDate(stats.firstEmail)}</span>
+                <span>Prima email: {formatRelativeDate(stats.firstEmail)}</span>
               </div>
             )}
             {stats.lastEmail && (
               <div className="flex items-center gap-2 text-xs text-text-secondary">
                 <Clock size={12} className="text-text-tertiary shrink-0" />
-                <span>Last email: {formatRelativeDate(stats.lastEmail)}</span>
+                <span>Ultima email: {formatRelativeDate(stats.lastEmail)}</span>
               </div>
             )}
           </div>
@@ -338,14 +338,14 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
               className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2 hover:text-text-secondary transition-colors"
             >
               {notesExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-              Notes
+              Note
             </button>
             {notesExpanded && (
               <textarea
                 value={notes}
                 onChange={(e) => handleNotesChange(e.target.value)}
                 onBlur={handleNotesBlur}
-                placeholder="Add a note..."
+                placeholder="Aggiungi una nota..."
                 rows={3}
                 className="w-full text-xs bg-bg-primary border border-border-primary rounded-md px-2 py-1.5 text-text-secondary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent resize-y"
               />
@@ -353,12 +353,12 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
           </div>
         )}
 
-        {/* Shared Files */}
+        {/* File condivisi */}
         {attachments.length > 0 && (
           <div className="mb-4">
             <h4 className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2">
               <Paperclip size={11} />
-              Shared Files
+              File condivisi
             </h4>
             <div className="space-y-1">
               {attachments.map((att, i) => (
@@ -386,7 +386,7 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
           <div className="mb-4">
             <h4 className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2">
               <Building2 size={11} />
-              Others at @{domain}
+              Altri su @{domain}
             </h4>
             <div className="space-y-1">
               {sameDomainContacts.map((c) => (
@@ -417,7 +417,7 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
         {recentThreads.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2">
-              Recent Conversations
+              Conversazioni recenti
             </h4>
             <div className="space-y-1">
               {recentThreads.map((thread) => (
@@ -427,7 +427,7 @@ export function ContactSidebar({ email, name, accountId, onClose }: ContactSideb
                   className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-bg-hover transition-colors group"
                 >
                   <div className="text-text-secondary group-hover:text-text-primary truncate">
-                    {thread.subject ?? "(No subject)"}
+                    {thread.subject ?? "(Nessun oggetto)"}
                   </div>
                   {thread.last_message_at && (
                     <div className="text-text-tertiary text-[0.625rem] mt-0.5">

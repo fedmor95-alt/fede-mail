@@ -16,7 +16,7 @@ describe("uiStore", () => {
       readingPanePosition: "right",
       readFilter: "all",
       fontScale: "default",
-      colorTheme: "indigo",
+      colorTheme: "mail",
       inboxViewMode: "unified",
     });
   });
@@ -147,7 +147,7 @@ describe("uiStore", () => {
   });
 
   it("setColorTheme should persist to DB and update state", () => {
-    expect(useUIStore.getState().colorTheme).toBe("indigo");
+    expect(useUIStore.getState().colorTheme).toBe("mail");
 
     useUIStore.getState().setColorTheme("rose");
     expect(setSetting).toHaveBeenCalledWith("color_theme", "rose");

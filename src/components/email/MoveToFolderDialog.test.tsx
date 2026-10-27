@@ -72,9 +72,9 @@ describe("MoveToFolderDialog", () => {
   it("renders system destinations and user labels when open", () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    expect(screen.getByText("Inbox")).toBeInTheDocument();
-    expect(screen.getByText("Archive")).toBeInTheDocument();
-    expect(screen.getByText("Trash")).toBeInTheDocument();
+    expect(screen.getByText("Posta in arrivo")).toBeInTheDocument();
+    expect(screen.getByText("Archivio")).toBeInTheDocument();
+    expect(screen.getByText("Cestino")).toBeInTheDocument();
     expect(screen.getByText("Spam")).toBeInTheDocument();
     expect(screen.getByText("Work")).toBeInTheDocument();
     expect(screen.getByText("Personal")).toBeInTheDocument();
@@ -84,33 +84,33 @@ describe("MoveToFolderDialog", () => {
   it("does not render when isOpen is false", () => {
     render(<MoveToFolderDialog {...defaultProps} isOpen={false} />);
 
-    expect(screen.queryByText("Inbox")).not.toBeInTheDocument();
+    expect(screen.queryByText("Posta in arrivo")).not.toBeInTheDocument();
   });
 
   it("filters destinations by search query", () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    const input = screen.getByPlaceholderText("Move to...");
+    const input = screen.getByPlaceholderText("Sposta in...");
     fireEvent.change(input, { target: { value: "work" } });
 
     expect(screen.getByText("Work")).toBeInTheDocument();
     expect(screen.queryByText("Personal")).not.toBeInTheDocument();
-    expect(screen.queryByText("Inbox")).not.toBeInTheDocument();
+    expect(screen.queryByText("Posta in arrivo")).not.toBeInTheDocument();
   });
 
   it("shows empty state when no matches", () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    const input = screen.getByPlaceholderText("Move to...");
+    const input = screen.getByPlaceholderText("Sposta in...");
     fireEvent.change(input, { target: { value: "nonexistent" } });
 
-    expect(screen.getByText("No matching folders or labels")).toBeInTheDocument();
+    expect(screen.getByText("Nessuna cartella o etichetta corrispondente")).toBeInTheDocument();
   });
 
   it("calls archiveThread when Archive is selected", async () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("Archive"));
+    fireEvent.click(screen.getByText("Archivio"));
 
     expect(defaultProps.onClose).toHaveBeenCalled();
     expect(archiveThread).toHaveBeenCalledWith("acc-1", "thread-1", []);
@@ -119,7 +119,7 @@ describe("MoveToFolderDialog", () => {
   it("calls trashThread when Trash is selected", async () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("Trash"));
+    fireEvent.click(screen.getByText("Cestino"));
 
     expect(defaultProps.onClose).toHaveBeenCalled();
     expect(trashThread).toHaveBeenCalledWith("acc-1", "thread-1", []);
@@ -150,7 +150,7 @@ describe("MoveToFolderDialog", () => {
   it("calls addThreadLabel for Inbox (un-archive) on Gmail", async () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("Inbox"));
+    fireEvent.click(screen.getByText("Posta in arrivo"));
 
     expect(defaultProps.onClose).toHaveBeenCalled();
     expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "thread-1", "INBOX");
@@ -159,7 +159,7 @@ describe("MoveToFolderDialog", () => {
   it("closes on Escape key", () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    const input = screen.getByPlaceholderText("Move to...");
+    const input = screen.getByPlaceholderText("Sposta in...");
     fireEvent.keyDown(input, { key: "Escape" });
 
     expect(defaultProps.onClose).toHaveBeenCalled();
@@ -168,9 +168,9 @@ describe("MoveToFolderDialog", () => {
   it("navigates with arrow keys and selects with Enter", () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    const input = screen.getByPlaceholderText("Move to...");
+    const input = screen.getByPlaceholderText("Sposta in...");
 
-    // Arrow down to "Archive" (index 1)
+    // Arrow down to "Archivio" (index 1)
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "Enter" });
 
@@ -181,7 +181,7 @@ describe("MoveToFolderDialog", () => {
   it("handles multiple threadIds", async () => {
     render(<MoveToFolderDialog {...defaultProps} threadIds={["thread-1", "thread-2"]} />);
 
-    fireEvent.click(screen.getByText("Archive"));
+    fireEvent.click(screen.getByText("Archivio"));
 
     await vi.waitFor(() => {
       expect(archiveThread).toHaveBeenCalledTimes(2);
@@ -204,8 +204,8 @@ describe("MoveToFolderDialog", () => {
   it("renders keyboard hint footer", () => {
     render(<MoveToFolderDialog {...defaultProps} />);
 
-    expect(screen.getByText("navigate")).toBeInTheDocument();
-    expect(screen.getByText("select")).toBeInTheDocument();
-    expect(screen.getByText("close")).toBeInTheDocument();
+    expect(screen.getByText("naviga")).toBeInTheDocument();
+    expect(screen.getByText("seleziona")).toBeInTheDocument();
+    expect(screen.getByText("chiudi")).toBeInTheDocument();
   });
 });

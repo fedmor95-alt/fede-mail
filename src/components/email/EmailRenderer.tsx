@@ -217,20 +217,20 @@ export function EmailRenderer({
         <div className="flex items-center gap-2 px-3 py-2 mb-2 text-xs bg-bg-tertiary rounded-md border border-border-secondary">
           <ImageOff size={14} className="text-text-tertiary shrink-0" />
           <span className="text-text-secondary">
-            Images hidden to protect your privacy.
+            Immagini nascoste per proteggere la tua privacy.
           </span>
           <button
             onClick={handleLoadImages}
             className="text-accent hover:text-accent-hover font-medium"
           >
-            Load images
+            Carica immagini
           </button>
           {senderAddress && accountId && (
             <button
               onClick={handleAlwaysLoad}
               className="text-accent hover:text-accent-hover font-medium"
             >
-              Always load from sender
+              Carica sempre da questo mittente
             </button>
           )}
         </div>
@@ -240,7 +240,7 @@ export function EmailRenderer({
         sandbox="allow-same-origin"
         className={`w-full border-0 ${isDark && !isPlainText ? "rounded-md" : ""}`}
         style={{ overflow: "hidden" }}
-        title="Email content"
+        title="Contenuto email"
       />
     </div>
   );

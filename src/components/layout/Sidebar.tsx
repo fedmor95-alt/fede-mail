@@ -50,27 +50,27 @@ interface SidebarProps {
 }
 
 export const ALL_NAV_ITEMS: { id: string; label: string; icon: LucideIcon }[] = [
-  { id: "inbox", label: "Inbox", icon: Inbox },
-  { id: "starred", label: "Starred", icon: Star },
-  { id: "snoozed", label: "Snoozed", icon: Clock },
-  { id: "sent", label: "Sent", icon: Send },
-  { id: "drafts", label: "Drafts", icon: FileEdit },
-  { id: "trash", label: "Trash", icon: Trash2 },
-  { id: "spam", label: "Spam", icon: Ban },
-  { id: "all", label: "All Mail", icon: Mail },
-  { id: "tasks", label: "Tasks", icon: CheckSquare },
-  { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "attachments", label: "Attachments", icon: Paperclip },
-  { id: "smart-folders", label: "Smart Folders", icon: FolderSearch },
-  { id: "labels", label: "Labels", icon: Tag },
+  { id: "inbox", label: "Posta in arrivo", icon: Inbox },
+  { id: "starred", label: "Speciali", icon: Star },
+  { id: "snoozed", label: "Posticipati", icon: Clock },
+  { id: "sent", label: "Inviata", icon: Send },
+  { id: "drafts", label: "Bozze", icon: FileEdit },
+  { id: "trash", label: "Cestino", icon: Trash2 },
+  { id: "spam", label: "Posta indesiderata", icon: Ban },
+  { id: "all", label: "Tutta la posta", icon: Mail },
+  { id: "tasks", label: "Attività", icon: CheckSquare },
+  { id: "calendar", label: "Calendario", icon: Calendar },
+  { id: "attachments", label: "Allegati", icon: Paperclip },
+  { id: "smart-folders", label: "Cartelle smart", icon: FolderSearch },
+  { id: "labels", label: "Etichette", icon: Tag },
 ];
 
 const CATEGORY_ITEMS: { id: string; label: string; icon: LucideIcon }[] = [
-  { id: "Primary", label: "Primary", icon: Inbox },
-  { id: "Updates", label: "Updates", icon: Bell },
-  { id: "Promotions", label: "Promotions", icon: Tag },
+  { id: "Primary", label: "Principale", icon: Inbox },
+  { id: "Updates", label: "Aggiornamenti", icon: Bell },
+  { id: "Promotions", label: "Promozioni", icon: Tag },
   { id: "Social", label: "Social", icon: Users },
-  { id: "Newsletters", label: "Newsletters", icon: Newspaper },
+  { id: "Newsletters", label: "Newsletter", icon: Newspaper },
 ];
 
 function DroppableNavItem({
@@ -178,7 +178,7 @@ function DroppableLabelItem({
             onClick={(e) => { e.stopPropagation(); onEditClick(); }}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onEditClick(); } }}
             className="opacity-0 group-hover:opacity-100 p-0.5 text-sidebar-text/40 hover:text-sidebar-text transition-opacity"
-            title="Edit label"
+            title="Modifica etichetta"
           >
             <Pencil size={12} />
           </span>
@@ -347,6 +347,17 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
         collapsed ? "w-16" : "w-60"
       }`}
     >
+      {/* Sidebar toggle, top left as in Apple Mail (also Ctrl+Shift+E) */}
+      <div className={`flex px-2 pt-2 ${collapsed ? "justify-center" : "justify-start"}`}>
+        <button
+          onClick={toggleSidebar}
+          className="p-1.5 text-sidebar-text/60 hover:text-sidebar-text hover:bg-sidebar-hover rounded-md transition-colors"
+          title={collapsed ? "Mostra barra laterale" : "Nascondi barra laterale"}
+          aria-label={collapsed ? "Mostra barra laterale" : "Nascondi barra laterale"}
+        >
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+        </button>
+      </div>
       <AccountSwitcher collapsed={collapsed} onAddAccount={onAddAccount} />
 
       {/* Compose button */}
@@ -355,7 +366,7 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
           onClick={() => openComposer()}
           className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white rounded-lg py-2 text-sm font-medium interactive-btn"
         >
-          {collapsed ? <Plus size={16} /> : "Compose"}
+          {collapsed ? <Plus size={16} /> : "Scrivi"}
         </button>
       </div>
 
@@ -409,7 +420,7 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
                             setInboxViewMode(inboxViewMode === "split" ? "unified" : "split");
                           }
                         }}
-                        title={inboxViewMode === "split" ? "Switch to unified inbox" : "Switch to split inbox"}
+                        title={inboxViewMode === "split" ? "Passa alla posta unificata" : "Passa alla posta suddivisa"}
                         className={`p-1 rounded transition-colors ${
                           inboxViewMode === "split"
                             ? "text-accent hover:bg-accent/10"
@@ -457,12 +468,12 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
             {!collapsed && (
               <div className="flex items-center justify-between px-3 pt-4 pb-1">
                 <span className="text-xs font-medium text-sidebar-text/60 uppercase tracking-wider">
-                  Smart Folders
+                  Cartelle smart
                 </span>
                 <button
                   onClick={handleAddSmartFolder}
                   className="p-0.5 text-sidebar-text/40 hover:text-sidebar-text transition-colors"
-                  title="Add smart folder"
+                  title="Aggiungi cartella smart"
                 >
                   <Plus size={14} />
                 </button>
@@ -517,7 +528,7 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
                 <button
                   onClick={handleAddLabel}
                   className="p-0.5 text-sidebar-text/40 hover:text-sidebar-text transition-colors"
-                  title="Add label"
+                  title="Aggiungi etichetta"
                 >
                   <Plus size={14} />
                 </button>
@@ -579,12 +590,12 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
                 {labelsExpanded ? (
                   <>
                     <ChevronUp size={12} />
-                    <span>Show less</span>
+                    <span>Mostra meno</span>
                   </>
                 ) : (
                   <>
                     <ChevronDown size={12} />
-                    <span>{labels.length - LABELS_COLLAPSED_COUNT} more</span>
+                    <span>{labels.length - LABELS_COLLAPSED_COUNT} altre</span>
                   </>
                 )}
               </button>
@@ -612,10 +623,10 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
               ? "bg-accent/10 text-accent font-medium"
               : "text-sidebar-text hover:bg-sidebar-hover"
           }`}
-          title="Settings"
+          title="Impostazioni"
         >
           <Settings size={18} className="shrink-0" />
-          {!collapsed && <span>Settings</span>}
+          {!collapsed && <span>Impostazioni</span>}
         </button>
         <button
           onClick={() => navigateToLabel("help")}
@@ -626,16 +637,9 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
               ? "bg-accent/10 text-accent font-medium"
               : "text-sidebar-text hover:bg-sidebar-hover"
           }`}
-          title="Help"
+          title="Aiuto"
         >
           <HelpCircle size={18} className="shrink-0" />
-        </button>
-        <button
-          onClick={toggleSidebar}
-          className="p-2 text-sidebar-text/60 hover:text-sidebar-text hover:bg-sidebar-hover rounded-md transition-colors"
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
         </button>
       </div>
 
@@ -649,10 +653,10 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
             activeAccountId ?? undefined,
           );
         }}
-        title="New Smart Folder"
+        title="Nuova cartella smart"
         fields={[
-          { key: "name", label: "Name", placeholder: "e.g. Unread from boss" },
-          { key: "query", label: "Search query", placeholder: "e.g. is:unread from:boss" },
+          { key: "name", label: "Nome", placeholder: "es. Non lette dal capo" },
+          { key: "query", label: "Ricerca", placeholder: "es. is:unread from:boss" },
         ]}
       />
 
@@ -674,7 +678,7 @@ function PendingOpsIndicator({ collapsed }: { collapsed: boolean }) {
         </div>
       ) : (
         <div className="text-xs text-text-secondary">
-          {pendingOpsCount} pending {pendingOpsCount === 1 ? "change" : "changes"}
+          {pendingOpsCount} {pendingOpsCount === 1 ? "modifica in sospeso" : "modifiche in sospeso"}
         </div>
       )}
     </div>

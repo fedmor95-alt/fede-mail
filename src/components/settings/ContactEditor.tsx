@@ -61,14 +61,14 @@ export function ContactEditor() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search contacts..."
+          placeholder="Cerca contatti..."
           className="w-full pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary outline-none focus:border-accent"
         />
       </div>
 
       {filtered.length === 0 ? (
         <p className="text-sm text-text-tertiary py-2">
-          {search ? "No matching contacts" : "No contacts yet"}
+          {search ? "Nessun contatto trovato" : "Ancora nessun contatto"}
         </p>
       ) : (
         <div className="space-y-1 max-h-[300px] overflow-y-auto">
@@ -89,7 +89,7 @@ export function ContactEditor() {
                     }}
                     className="flex-1 min-w-0 px-2 py-0.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary outline-none focus:border-accent"
                     autoFocus
-                    placeholder="Display name"
+                    placeholder="Nome visualizzato"
                   />
                   <button
                     onClick={handleSaveEdit}
@@ -123,14 +123,14 @@ export function ContactEditor() {
                     <button
                       onClick={() => handleEdit(contact)}
                       className="p-1 text-text-tertiary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Edit name"
+                      title="Modifica nome"
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => handleDelete(contact.id)}
                       className="p-1 text-text-tertiary hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete contact"
+                      title="Elimina contatto"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -143,7 +143,7 @@ export function ContactEditor() {
       )}
 
       <p className="text-xs text-text-tertiary">
-        {contacts.length} contact{contacts.length !== 1 ? "s" : ""} total
+        {contacts.length} {contacts.length === 1 ? "contatto" : "contatti"} in totale
       </p>
     </div>
   );

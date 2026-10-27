@@ -12,7 +12,7 @@ describe("themes", () => {
   });
 
   it("all themes have complete light and dark color sets", () => {
-    const requiredKeys = ["accent", "accentHover", "accentLight", "bgSelected", "sidebarActive"];
+    const requiredKeys = ["bgPrimary", "textPrimary", "accent", "accentHover", "accentLight", "bgSelected", "sidebarBg"];
     for (const theme of COLOR_THEMES) {
       for (const key of requiredKeys) {
         expect(theme.light).toHaveProperty(key);
@@ -23,21 +23,18 @@ describe("themes", () => {
     }
   });
 
-  it("DEFAULT_COLOR_THEME is indigo", () => {
-    expect(DEFAULT_COLOR_THEME).toBe("indigo");
+  it("DEFAULT_COLOR_THEME is mail", () => {
+    expect(DEFAULT_COLOR_THEME).toBe("mail");
   });
 
   it("getThemeById returns correct theme", () => {
-    const rose = getThemeById("rose");
-    expect(rose.id).toBe("rose");
-    expect(rose.name).toBe("Rose");
-
-    const emerald = getThemeById("emerald");
-    expect(emerald.id).toBe("emerald");
+    const carta = getThemeById("carta");
+    expect(carta.id).toBe("carta");
+    expect(carta.name).toBe("Carta");
   });
 
-  it("getThemeById falls back to indigo for unknown ID", () => {
+  it("getThemeById falls back to mail for unknown ID", () => {
     const fallback = getThemeById("nonexistent");
-    expect(fallback.id).toBe("indigo");
+    expect(fallback.id).toBe("mail");
   });
 });

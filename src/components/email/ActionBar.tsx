@@ -213,7 +213,7 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
               icon={defaultReplyMode === "replyAll" ? <ReplyAll size={15} /> : <Reply size={15} />}
               onClick={defaultReplyMode === "replyAll" ? onReplyAll : onReply}
               disabled={noReply}
-              title={noReply ? "This sender does not accept replies" : defaultReplyMode === "replyAll" ? "Reply All (r)" : "Reply (r)"}
+              title={noReply ? "Questo mittente non accetta risposte" : defaultReplyMode === "replyAll" ? "Rispondi a tutti (r)" : "Rispondi (r)"}
               className="disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary"
             />
             <Button
@@ -222,7 +222,7 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
               icon={defaultReplyMode === "replyAll" ? <Reply size={15} /> : <ReplyAll size={15} />}
               onClick={defaultReplyMode === "replyAll" ? onReply : onReplyAll}
               disabled={noReply}
-              title={noReply ? "This sender does not accept replies" : defaultReplyMode === "replyAll" ? "Reply (a)" : "Reply All (a)"}
+              title={noReply ? "Questo mittente non accetta risposte" : defaultReplyMode === "replyAll" ? "Rispondi (a)" : "Rispondi a tutti (a)"}
               className="disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary"
             />
             <Button
@@ -230,37 +230,37 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
               iconOnly
               icon={<Forward size={15} />}
               onClick={onForward}
-              title="Forward (f)"
+              title="Inoltra (f)"
             />
             <Separator />
           </>
         )}
 
         {/* Core actions group */}
-        <Button variant="secondary" iconOnly icon={<Archive size={15} />} onClick={handleArchive} title="Archive (e)" />
-        <Button variant="secondary" iconOnly icon={<Trash2 size={15} />} onClick={handleDelete} title="Delete (#)" />
+        <Button variant="secondary" iconOnly icon={<Archive size={15} />} onClick={handleArchive} title="Archivia (e)" />
+        <Button variant="secondary" iconOnly icon={<Trash2 size={15} />} onClick={handleDelete} title="Elimina (#)" />
         <Button
           variant="secondary"
           iconOnly
           icon={thread.isRead ? <Mail size={15} /> : <MailOpen size={15} />}
           onClick={handleToggleRead}
-          title={thread.isRead ? "Mark unread" : "Mark read"}
+          title={thread.isRead ? "Segna come non letto" : "Segna come letto"}
         />
         <Button
           variant="secondary"
           iconOnly
           icon={<Star size={15} className={thread.isStarred ? "fill-current" : ""} />}
           onClick={handleToggleStar}
-          title={thread.isStarred ? "Unstar (s)" : "Star (s)"}
+          title={thread.isStarred ? "Rimuovi contrassegno (s)" : "Contrassegna (s)"}
           className={thread.isStarred ? "text-warning" : ""}
         />
-        <Button variant="secondary" iconOnly icon={<Clock size={15} />} onClick={() => setShowSnooze(true)} title="Snooze (h)" />
+        <Button variant="secondary" iconOnly icon={<Clock size={15} />} onClick={() => setShowSnooze(true)} title="Posticipa (h)" />
         <Button
           variant="secondary"
           iconOnly
           icon={<Ban size={15} />}
           onClick={handleSpam}
-          title={isSpamView ? "Not Spam (!)" : "Report Spam (!)"}
+          title={isSpamView ? "Non è spam (!)" : "Segnala come spam (!)"}
         />
         <Button
           variant="secondary"
@@ -270,14 +270,14 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
             if (!activeAccountId) return;
             window.dispatchEvent(new CustomEvent("velo-move-to-folder", { detail: { threadIds: [thread.id] } }));
           }}
-          title="Move to folder (v)"
+          title="Sposta in cartella (v)"
         />
         <Button
           variant="secondary"
           iconOnly
           icon={<Pin size={15} className={thread.isPinned ? "fill-current" : ""} />}
           onClick={handleTogglePin}
-          title={thread.isPinned ? "Unpin (p)" : "Pin (p)"}
+          title={thread.isPinned ? "Rimuovi dai fissati (p)" : "Fissa in alto (p)"}
           className={thread.isPinned ? "text-accent" : ""}
         />
         <Button
@@ -285,7 +285,7 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
           iconOnly
           icon={<VolumeX size={15} className={thread.isMuted ? "fill-current" : ""} />}
           onClick={handleToggleMute}
-          title={thread.isMuted ? "Unmute (m)" : "Mute (m)"}
+          title={thread.isMuted ? "Riattiva notifiche (m)" : "Silenzia (m)"}
           className={thread.isMuted ? "text-warning" : ""}
         />
         {hasFollowUp ? (
@@ -294,7 +294,7 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
             iconOnly
             icon={<BellRing size={15} className="fill-current" />}
             onClick={handleCancelFollowUp}
-            title="Cancel follow-up reminder"
+            title="Annulla promemoria di sollecito"
             className="text-accent"
           />
         ) : (
@@ -303,7 +303,7 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
             iconOnly
             icon={<BellRing size={15} />}
             onClick={() => setShowFollowUp(true)}
-            title="Remind me if no reply"
+            title="Ricordamelo se non c'è risposta"
           />
         )}
         {hasUnsubscribe && (
@@ -312,7 +312,7 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
             iconOnly
             icon={<MailMinus size={15} />}
             onClick={handleUnsubscribe}
-            title={unsubscribeStatus === "loading" ? "Unsubscribing..." : unsubscribeStatus === "done" ? "Unsubscribed" : "Unsubscribe (u)"}
+            title={unsubscribeStatus === "loading" ? "Annullamento iscrizione..." : unsubscribeStatus === "done" ? "Iscrizione annullata" : "Annulla iscrizione (u)"}
             className={unsubscribeStatus === "done" ? "text-success" : ""}
           />
         )}
@@ -321,22 +321,22 @@ export function ActionBar({ thread, messages, noReply, defaultReplyMode = "reply
         <div className="ml-auto" />
 
         {/* Utility group */}
-        <Button variant="secondary" iconOnly icon={<Printer size={15} />} onClick={onPrint} title="Print" />
-        <Button variant="secondary" iconOnly icon={<Download size={15} />} onClick={onExport} title="Export as .eml" />
-        <Button variant="secondary" iconOnly icon={<ExternalLink size={15} />} onClick={onPopOut} title="Open in new window" />
+        <Button variant="secondary" iconOnly icon={<Printer size={15} />} onClick={onPrint} title="Stampa" />
+        <Button variant="secondary" iconOnly icon={<Download size={15} />} onClick={onExport} title="Esporta come .eml" />
+        <Button variant="secondary" iconOnly icon={<ExternalLink size={15} />} onClick={onPopOut} title="Apri in una nuova finestra" />
         <Button
           variant="secondary"
           iconOnly
           icon={<ListTodo size={15} className={taskSidebarVisible ? "text-accent" : ""} />}
           onClick={onToggleTaskSidebar}
-          title={taskSidebarVisible ? "Hide task panel" : "Show task panel"}
+          title={taskSidebarVisible ? "Nascondi pannello attività" : "Mostra pannello attività"}
         />
         <Button
           variant="secondary"
           iconOnly
           icon={contactSidebarVisible ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
           onClick={onToggleContactSidebar}
-          title={contactSidebarVisible ? "Hide contact sidebar" : "Show contact sidebar"}
+          title={contactSidebarVisible ? "Nascondi barra contatto" : "Mostra barra contatto"}
         />
       </div>
 

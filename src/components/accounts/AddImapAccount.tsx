@@ -86,9 +86,9 @@ const steps: Step[] = ["basic", "imap", "smtp", "test"];
 
 const stepLabels: Record<Step, string> = {
   basic: "Account",
-  imap: "Incoming",
-  smtp: "Outgoing",
-  test: "Verify",
+  imap: "In entrata",
+  smtp: "In uscita",
+  test: "Verifica",
 };
 
 const stepIcons: Record<Step, React.ReactNode> = {
@@ -242,12 +242,12 @@ export function AddImapAccount({
   const handleOAuthConnect = async (providerId: string) => {
     const provider = getOAuthProvider(providerId);
     if (!provider) {
-      setOauthError(`Unknown provider: ${providerId}`);
+      setOauthError(`Provider sconosciuto: ${providerId}`);
       return;
     }
 
     if (!form.oauthClientId.trim()) {
-      setOauthError("Please enter a Client ID first.");
+      setOauthError("Inserisci prima un ID client.");
       return;
     }
 
@@ -442,7 +442,7 @@ export function AddImapAccount({
 
     return (
       <div className="mb-4">
-        <label className={labelClass}>Authentication Method</label>
+        <label className={labelClass}>Metodo di autenticazione</label>
         <div className="flex gap-2">
           {detectedAuthMethods.includes("password") && (
             <button
@@ -488,28 +488,28 @@ export function AddImapAccount({
       <div className="space-y-3">
         <div>
           <label htmlFor="oauth-client-id" className={labelClass}>
-            Client ID
+            ID client
           </label>
           <input
             id="oauth-client-id"
             type="text"
             value={form.oauthClientId}
             onChange={(e) => updateForm("oauthClientId", e.target.value)}
-            placeholder={`${providerName} app Client ID`}
+            placeholder={`ID client dell'app ${providerName}`}
             className={inputClass}
             disabled={hasOAuthTokens}
           />
         </div>
         <div>
           <label htmlFor="oauth-client-secret" className={labelClass}>
-            Client Secret (optional)
+            Segreto client (facoltativo)
           </label>
           <input
             id="oauth-client-secret"
             type="password"
             value={form.oauthClientSecret}
             onChange={(e) => updateForm("oauthClientSecret", e.target.value)}
-            placeholder="Leave blank for public clients"
+            placeholder="Lascia vuoto per i client pubblici"
             className={inputClass}
             disabled={hasOAuthTokens}
           />
@@ -519,7 +519,7 @@ export function AddImapAccount({
           <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 border border-success/20">
             <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
             <div className="text-sm text-success">
-              Connected as <span className="font-medium">{form.oauthEmail}</span>
+              Connesso come <span className="font-medium">{form.oauthEmail}</span>
             </div>
           </div>
         ) : (
@@ -531,12 +531,12 @@ export function AddImapAccount({
             {oauthConnecting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Connecting...
+                Connessione...
               </>
             ) : (
               <>
                 <ShieldCheck className="w-4 h-4" />
-                Sign in with {providerName}
+                Accedi con {providerName}
               </>
             )}
           </button>
@@ -549,12 +549,12 @@ export function AddImapAccount({
         )}
 
         <p className="text-xs text-text-tertiary">
-          You need to register an app with {providerName} to get a Client ID.{" "}
+          Per ottenere un ID client devi registrare un'app con {providerName}.{" "}
           {providerId === "microsoft" && (
-            <>Register at the Azure Portal (App Registrations) with redirect URI <code className="text-accent">http://127.0.0.1:17248</code>.</>
+            <>Registrala nel portale Azure (Registrazioni app) con URI di reindirizzamento <code className="text-accent">http://127.0.0.1:17248</code>.</>
           )}
           {providerId === "yahoo" && (
-            <>Register at the Yahoo Developer Network with redirect URI <code className="text-accent">http://127.0.0.1:17248</code>.</>
+            <>Registrala nello Yahoo Developer Network con URI di reindirizzamento <code className="text-accent">http://127.0.0.1:17248</code>.</>
           )}
         </p>
       </div>
@@ -565,7 +565,7 @@ export function AddImapAccount({
     <div className="space-y-4">
       <div>
         <label htmlFor="imap-email" className={labelClass}>
-          Email Address
+          Indirizzo email
         </label>
         <input
           id="imap-email"
@@ -573,7 +573,7 @@ export function AddImapAccount({
           value={form.email}
           onChange={(e) => updateForm("email", e.target.value)}
           onBlur={handleEmailBlur}
-          placeholder="you@example.com"
+          placeholder="tu@esempio.com"
           className={inputClass}
           autoFocus
           disabled={isOAuth && hasOAuthTokens}
@@ -588,31 +588,31 @@ export function AddImapAccount({
         <>
           <div>
             <label htmlFor="imap-display-name" className={labelClass}>
-              Display Name (optional)
+              Nome visualizzato (facoltativo)
             </label>
             <input
               id="imap-display-name"
               type="text"
               value={form.displayName}
               onChange={(e) => updateForm("displayName", e.target.value)}
-              placeholder="Your Name"
+              placeholder="Il tuo nome"
               className={inputClass}
             />
           </div>
           <div>
             <label htmlFor="imap-username" className={labelClass}>
-              Username (optional)
+              Nome utente (facoltativo)
             </label>
             <input
               id="imap-username"
               type="text"
               value={form.imapUsername}
               onChange={(e) => updateForm("imapUsername", e.target.value)}
-              placeholder="Leave blank to use your email address"
+              placeholder="Lascia vuoto per usare il tuo indirizzo email"
               className={inputClass}
             />
             <p className="text-xs text-text-tertiary mt-1">
-              Only needed if your login username differs from your email address.
+              Serve solo se il nome utente di accesso è diverso dal tuo indirizzo email.
             </p>
           </div>
           <div>
@@ -624,11 +624,11 @@ export function AddImapAccount({
               type="password"
               value={form.password}
               onChange={(e) => updateForm("password", e.target.value)}
-              placeholder="Enter your email password or app password"
+              placeholder="Inserisci la password dell'email o la password per app"
               className={inputClass}
             />
             <p className="text-xs text-text-tertiary mt-1">
-              If your provider requires it, use an app-specific password.
+              Se il provider lo richiede, usa una password specifica per l'app.
             </p>
           </div>
         </>
@@ -637,14 +637,14 @@ export function AddImapAccount({
       {isOAuth && hasOAuthTokens && (
         <div>
           <label htmlFor="imap-display-name" className={labelClass}>
-            Display Name (optional)
+            Nome visualizzato (facoltativo)
           </label>
           <input
             id="imap-display-name"
             type="text"
             value={form.displayName}
             onChange={(e) => updateForm("displayName", e.target.value)}
-            placeholder="Your Name"
+            placeholder="Il tuo nome"
             className={inputClass}
           />
         </div>
@@ -656,12 +656,12 @@ export function AddImapAccount({
     <div className="space-y-4">
       {isOAuth && (
         <p className="text-xs text-text-tertiary">
-          Server settings have been auto-configured for your provider. You can adjust them if needed.
+          Le impostazioni del server sono state configurate automaticamente per il tuo provider. Puoi modificarle se necessario.
         </p>
       )}
       <div>
         <label htmlFor="imap-host" className={labelClass}>
-          IMAP Server
+          Server IMAP
         </label>
         <input
           id="imap-host"
@@ -676,7 +676,7 @@ export function AddImapAccount({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="imap-port" className={labelClass}>
-            Port
+            Porta
           </label>
           <input
             id="imap-port"
@@ -690,7 +690,7 @@ export function AddImapAccount({
         </div>
         <div>
           <label htmlFor="imap-security" className={labelClass}>
-            Security
+            Sicurezza
           </label>
           <select
             id="imap-security"
@@ -702,7 +702,7 @@ export function AddImapAccount({
           >
             <option value="ssl">SSL/TLS</option>
             <option value="starttls">STARTTLS</option>
-            <option value="none">None</option>
+            <option value="none">Nessuna</option>
           </select>
         </div>
       </div>
@@ -718,11 +718,11 @@ export function AddImapAccount({
           htmlFor="accept-invalid-certs"
           className="text-sm text-text-secondary"
         >
-          Accept self-signed certificates
+          Accetta certificati autofirmati
         </label>
       </div>
       <p className="text-xs text-text-tertiary -mt-2 ml-6">
-        Enable for local mail bridges like ProtonMail Bridge
+        Attiva per bridge di posta locali come ProtonMail Bridge
       </p>
     </div>
   );
@@ -731,12 +731,12 @@ export function AddImapAccount({
     <div className="space-y-4">
       {isOAuth && (
         <p className="text-xs text-text-tertiary">
-          Server settings have been auto-configured for your provider. You can adjust them if needed.
+          Le impostazioni del server sono state configurate automaticamente per il tuo provider. Puoi modificarle se necessario.
         </p>
       )}
       <div>
         <label htmlFor="smtp-host" className={labelClass}>
-          SMTP Server
+          Server SMTP
         </label>
         <input
           id="smtp-host"
@@ -751,7 +751,7 @@ export function AddImapAccount({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="smtp-port" className={labelClass}>
-            Port
+            Porta
           </label>
           <input
             id="smtp-port"
@@ -765,7 +765,7 @@ export function AddImapAccount({
         </div>
         <div>
           <label htmlFor="smtp-security" className={labelClass}>
-            Security
+            Sicurezza
           </label>
           <select
             id="smtp-security"
@@ -777,7 +777,7 @@ export function AddImapAccount({
           >
             <option value="ssl">SSL/TLS</option>
             <option value="starttls">STARTTLS</option>
-            <option value="none">None</option>
+            <option value="none">Nessuna</option>
           </select>
         </div>
       </div>
@@ -795,20 +795,20 @@ export function AddImapAccount({
               htmlFor="smtp-same-password"
               className="text-sm text-text-secondary"
             >
-              Use same password as IMAP
+              Usa la stessa password di IMAP
             </label>
           </div>
           {!form.samePassword && (
             <div>
               <label htmlFor="smtp-password" className={labelClass}>
-                SMTP Password
+                Password SMTP
               </label>
               <input
                 id="smtp-password"
                 type="password"
                 value={form.smtpPassword}
                 onChange={(e) => updateForm("smtpPassword", e.target.value)}
-                placeholder="SMTP password"
+                placeholder="Password SMTP"
                 className={inputClass}
               />
             </div>
@@ -856,12 +856,12 @@ export function AddImapAccount({
   const renderTestStep = () => (
     <div className="space-y-4">
       <div className="text-sm text-text-secondary mb-2">
-        Test your connection settings before adding the account.
+        Verifica le impostazioni di connessione prima di aggiungere l'account.
       </div>
 
       <div className="space-y-3">
-        {renderTestResult("IMAP Connection", imapTest)}
-        {renderTestResult("SMTP Connection", smtpTest)}
+        {renderTestResult("Connessione IMAP", imapTest)}
+        {renderTestResult("Connessione SMTP", smtpTest)}
       </div>
 
       <button
@@ -870,10 +870,10 @@ export function AddImapAccount({
         className="w-full px-4 py-2 text-sm bg-bg-secondary border border-border-primary rounded-lg text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {imapTest.state === "testing" || smtpTest.state === "testing"
-          ? "Testing..."
+          ? "Verifica..."
           : imapTest.state === "idle" && smtpTest.state === "idle"
-            ? "Test Connection"
-            : "Re-test Connection"}
+            ? "Verifica connessione"
+            : "Verifica di nuovo"}
       </button>
 
       {saveError && (
@@ -901,7 +901,7 @@ export function AddImapAccount({
     <Modal
       isOpen={true}
       onClose={onClose}
-      title="Add IMAP/SMTP Account"
+      title="Aggiungi account IMAP/SMTP"
       width="w-full max-w-lg"
     >
       <div className="p-4" onKeyDown={handleKeyDown}>
@@ -914,7 +914,7 @@ export function AddImapAccount({
             className="flex items-center gap-1 px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back
+            Indietro
           </button>
 
           <div className="flex gap-2">
@@ -922,7 +922,7 @@ export function AddImapAccount({
               onClick={onClose}
               className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
-              Cancel
+              Annulla
             </button>
 
             {currentStep === "test" ? (
@@ -931,7 +931,7 @@ export function AddImapAccount({
                 disabled={!bothTestsPassed || saving}
                 className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? "Adding..." : "Add Account"}
+                {saving ? "Aggiunta..." : "Aggiungi account"}
               </button>
             ) : (
               <button
@@ -939,7 +939,7 @@ export function AddImapAccount({
                 disabled={!canGoNext()}
                 className="flex items-center gap-1 px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                Avanti
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}

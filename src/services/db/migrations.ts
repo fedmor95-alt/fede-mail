@@ -775,6 +775,16 @@ const MIGRATIONS = [
     description: "Accept self-signed certificates for IMAP/SMTP",
     sql: `ALTER TABLE accounts ADD COLUMN accept_invalid_certs INTEGER DEFAULT 0;`,
   },
+  {
+    version: 24,
+    description: "PEC (Italian certified mail) envelopes and receipts",
+    sql: `
+      ALTER TABLE messages ADD COLUMN pec_kind TEXT;
+      ALTER TABLE messages ADD COLUMN pec_ref TEXT;
+      ALTER TABLE threads ADD COLUMN pec_status TEXT;
+      CREATE INDEX idx_messages_pec_ref ON messages(account_id, pec_ref);
+    `,
+  },
 ];
 
 /**

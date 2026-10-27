@@ -38,7 +38,7 @@ describe("CalendarList", () => {
     expect(screen.getByText("Holidays")).toBeInTheDocument();
   });
 
-  it('shows "Primary" badge for primary calendar', () => {
+  it('shows "Principale" badge for primary calendar', () => {
     const calendars = [
       makeCalendar({ id: "cal-1", display_name: "Main", is_primary: 1 }),
       makeCalendar({ id: "cal-2", display_name: "Secondary", is_primary: 0 }),
@@ -48,9 +48,9 @@ describe("CalendarList", () => {
       <CalendarList calendars={calendars} onVisibilityChange={vi.fn()} />,
     );
 
-    expect(screen.getByText("Primary")).toBeInTheDocument();
+    expect(screen.getByText("Principale")).toBeInTheDocument();
     // Only one Primary badge
-    expect(screen.getAllByText("Primary")).toHaveLength(1);
+    expect(screen.getAllByText("Principale")).toHaveLength(1);
   });
 
   it("checkboxes reflect is_visible state", () => {
@@ -117,7 +117,7 @@ describe("CalendarList", () => {
     expect(indicator.style.backgroundColor).toBe("rgb(230, 57, 70)");
   });
 
-  it('handles null display_name by showing "Calendar" fallback', () => {
+  it('handles null display_name by showing "Calendario" fallback', () => {
     const calendars = [
       makeCalendar({ id: "cal-1", display_name: null }),
     ];
@@ -126,6 +126,6 @@ describe("CalendarList", () => {
       <CalendarList calendars={calendars} onVisibilityChange={vi.fn()} />,
     );
 
-    expect(screen.getByText("Calendar")).toBeInTheDocument();
+    expect(screen.getByText("Calendario")).toBeInTheDocument();
   });
 });

@@ -52,10 +52,10 @@ export function AttachmentPicker() {
           type="button"
           onClick={() => inputRef.current?.click()}
           className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-primary transition-colors py-1"
-          title="Attach files"
+          title="Allega file"
         >
           <Paperclip size={14} />
-          <span>Attach</span>
+          <span>Allega</span>
         </button>
 
         {attachments.map((att) => (
@@ -80,7 +80,7 @@ export function AttachmentPicker() {
 
         {attachments.length > 0 && (
           <span className="text-xs text-text-tertiary">
-            {formatFileSize(totalSize)} total
+            {formatFileSize(totalSize)} in totale
           </span>
         )}
       </div>

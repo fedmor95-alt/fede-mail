@@ -90,7 +90,7 @@ describe("AttachmentLibrary", () => {
 
     render(<AttachmentLibrary />);
 
-    expect(await screen.findByText("No attachments yet")).toBeInTheDocument();
+    expect(await screen.findByText("Ancora nessun allegato")).toBeInTheDocument();
   });
 
   it("renders attachments in grid view", async () => {
@@ -110,7 +110,7 @@ describe("AttachmentLibrary", () => {
     render(<AttachmentLibrary />);
     await screen.findByText("report.pdf");
 
-    fireEvent.click(screen.getByTitle("List view"));
+    fireEvent.click(screen.getByTitle("Vista a elenco"));
 
     expect(screen.getByText("report.pdf")).toBeInTheDocument();
   });
@@ -122,7 +122,7 @@ describe("AttachmentLibrary", () => {
     render(<AttachmentLibrary />);
     await screen.findByText("report.pdf");
 
-    fireEvent.change(screen.getByPlaceholderText("Search attachments..."), {
+    fireEvent.change(screen.getByPlaceholderText("Cerca allegati..."), {
       target: { value: "report" },
     });
 
@@ -138,7 +138,7 @@ describe("AttachmentLibrary", () => {
     await screen.findByText("report.pdf");
 
     // Select "Images" type filter
-    const typeSelect = screen.getByDisplayValue("All types");
+    const typeSelect = screen.getByDisplayValue("Tutti i tipi");
     fireEvent.change(typeSelect, { target: { value: "images" } });
 
     expect(screen.queryByText("report.pdf")).not.toBeInTheDocument();
@@ -161,6 +161,6 @@ describe("AttachmentLibrary", () => {
 
     render(<AttachmentLibrary />);
 
-    expect(await screen.findByText("Attachments")).toBeInTheDocument();
+    expect(await screen.findByText("Allegati")).toBeInTheDocument();
   });
 });

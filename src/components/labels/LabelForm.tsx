@@ -70,7 +70,7 @@ export function LabelForm({ accountId, label, onDone, variant = "settings" }: La
       }
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save label");
+      setError(err instanceof Error ? err.message : "Impossibile salvare l'etichetta");
     } finally {
       setIsSaving(false);
     }
@@ -109,7 +109,7 @@ export function LabelForm({ accountId, label, onDone, variant = "settings" }: La
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Label name"
+        placeholder="Nome etichetta"
         className={
           isSidebar
             ? "w-full px-2 py-1 bg-sidebar-hover border border-sidebar-text/20 rounded text-xs text-sidebar-text outline-none focus:border-accent"
@@ -127,7 +127,7 @@ export function LabelForm({ accountId, label, onDone, variant = "settings" }: La
                 ? "border-accent ring-1 ring-accent"
                 : "border-border-primary hover:border-text-tertiary"
             }`}
-            title="No color"
+            title="Nessun colore"
           >
             <X size={isSidebar ? 8 : 10} className="mx-auto text-text-tertiary" />
           </button>
@@ -155,7 +155,7 @@ export function LabelForm({ accountId, label, onDone, variant = "settings" }: La
             isSidebar ? "px-2 py-1 text-[0.625rem]" : "px-3 py-1.5 text-xs"
           } font-medium text-white bg-accent hover:bg-accent-hover rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          {isSaving ? "Saving..." : label ? "Update" : "Save"}
+          {isSaving ? "Salvataggio..." : label ? "Aggiorna" : "Salva"}
         </button>
         <button
           onClick={onDone}
@@ -163,7 +163,7 @@ export function LabelForm({ accountId, label, onDone, variant = "settings" }: La
             isSidebar ? "px-2 py-1 text-[0.625rem]" : "px-3 py-1.5 text-xs"
           } text-text-secondary hover:text-text-primary rounded-md transition-colors`}
         >
-          Cancel
+          Annulla
         </button>
       </div>
     </div>

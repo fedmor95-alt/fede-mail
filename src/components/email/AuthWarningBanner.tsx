@@ -19,24 +19,24 @@ export function AuthWarningBanner({ authResults, senderAddress, onDismiss }: Aut
 
   if (parsed.aggregate !== "fail") return null;
 
-  const sender = senderAddress ?? "this sender";
+  const sender = senderAddress ?? "questo mittente";
 
   return (
     <div className="bg-danger/10 border border-danger/20 rounded-lg p-3 mb-3 flex items-start gap-2">
       <ShieldX size={16} className="text-danger shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-danger font-medium">
-          Authentication failed
+          Autenticazione non riuscita
         </p>
         <p className="text-xs text-text-secondary mt-0.5">
-          This message from {sender} failed email authentication checks (SPF/DKIM/DMARC).
-          Be cautious with any links or attachments.
+          Questo messaggio da {sender} non ha superato i controlli di autenticazione email (SPF/DKIM/DMARC).
+          Fai attenzione a link e allegati.
         </p>
       </div>
       <button
         onClick={onDismiss}
         className="shrink-0 p-0.5 rounded hover:bg-danger/10 text-text-tertiary hover:text-text-secondary transition-colors"
-        aria-label="Dismiss warning"
+        aria-label="Chiudi avviso"
       >
         <X size={14} />
       </button>

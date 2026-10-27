@@ -16,6 +16,14 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   Newsletters: Newspaper,
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  Primary: "Principale",
+  Updates: "Aggiornamenti",
+  Promotions: "Promozioni",
+  Social: "Social",
+  Newsletters: "Newsletter",
+};
+
 export function CategoryTabs({ activeCategory, onCategoryChange, unreadCounts }: CategoryTabsProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -83,7 +91,7 @@ export function CategoryTabs({ activeCategory, onCategoryChange, unreadCounts }:
               }`}
             >
               {Icon && <Icon size={13} />}
-              {cat}
+              {CATEGORY_LABELS[cat] ?? cat}
               {count > 0 && (
                 <span className="text-[0.625rem] bg-accent/15 text-accent px-1.5 rounded-full leading-normal">
                   {count}

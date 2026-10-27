@@ -15,14 +15,14 @@ export interface TemplateVariable {
 }
 
 export const TEMPLATE_VARIABLES: TemplateVariable[] = [
-  { key: "{{first_name}}", desc: "Recipient's first name" },
-  { key: "{{last_name}}", desc: "Recipient's last name" },
-  { key: "{{email}}", desc: "Recipient's email address" },
-  { key: "{{my_name}}", desc: "Your display name" },
-  { key: "{{my_email}}", desc: "Your email address" },
-  { key: "{{subject}}", desc: "Thread subject" },
-  { key: "{{date}}", desc: "Today's date" },
-  { key: "{{day}}", desc: "Day of week" },
+  { key: "{{first_name}}", desc: "Nome del destinatario" },
+  { key: "{{last_name}}", desc: "Cognome del destinatario" },
+  { key: "{{email}}", desc: "Indirizzo email del destinatario" },
+  { key: "{{my_name}}", desc: "Il tuo nome visualizzato" },
+  { key: "{{my_email}}", desc: "Il tuo indirizzo email" },
+  { key: "{{subject}}", desc: "Oggetto della conversazione" },
+  { key: "{{date}}", desc: "Data di oggi" },
+  { key: "{{day}}", desc: "Giorno della settimana" },
 ];
 
 function splitName(fullName: string | undefined): { first: string; last: string } {

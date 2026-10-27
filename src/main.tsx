@@ -5,6 +5,9 @@ import { router } from "./router";
 import ThreadWindow from "./ThreadWindow";
 import ComposerWindow from "./ComposerWindow";
 import "./styles/globals.css";
+import { installConsoleToLog } from "./utils/consoleToLog";
+
+installConsoleToLog();
 
 const params = new URLSearchParams(window.location.search);
 const isThreadWindow = params.has("thread") && params.has("account");

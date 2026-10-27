@@ -31,15 +31,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-          <p className="text-sm font-medium text-text-primary mb-1">Something went wrong</p>
+          <p className="text-sm font-medium text-text-primary mb-1">Qualcosa è andato storto</p>
           <p className="text-xs text-text-tertiary mb-3">
-            {this.state.error?.message ?? "An unexpected error occurred"}
+            {this.state.error?.message ?? "Si è verificato un errore imprevisto"}
           </p>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
             className="px-3 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-md transition-colors"
           >
-            Try again
+            Riprova
           </button>
         </div>
       );

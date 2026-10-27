@@ -8,7 +8,7 @@ import { runMigrations } from "./services/db/migrations";
 import { getAllAccounts } from "./services/db/accounts";
 import { getSetting } from "./services/db/settings";
 import { initializeClients } from "./services/gmail/tokenManager";
-import { getThemeById, COLOR_THEMES } from "./constants/themes";
+import { applyColorTheme, COLOR_THEMES } from "./constants/themes";
 import type { ColorThemeId } from "./constants/themes";
 import type { ComposerMode } from "./stores/composerStore";
 
@@ -100,7 +100,7 @@ export default function ComposerWindow() {
         useComposerStore.getState().setViewMode("fullpage");
       } catch (err) {
         console.error("Failed to initialize composer window:", err);
-        setError("Failed to load composer");
+        setError("Impossibile caricare l'editor");
       }
       setLoading(false);
     }
@@ -139,40 +139,12 @@ export default function ComposerWindow() {
 
   // Apply color theme CSS custom properties to <html>
   const colorTheme = useUIStore((s) => s.colorTheme);
-  useEffect(() => {
-    const root = document.documentElement;
-    const props = ["--color-accent", "--color-accent-hover", "--color-accent-light", "--color-bg-selected", "--color-sidebar-active"];
-
-    const apply = () => {
-      if (colorTheme === "indigo") {
-        for (const p of props) root.style.removeProperty(p);
-        return;
-      }
-      const themeData = getThemeById(colorTheme);
-      const isDark =
-        theme === "dark" ||
-        (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      const colors = isDark ? themeData.dark : themeData.light;
-      root.style.setProperty("--color-accent", colors.accent);
-      root.style.setProperty("--color-accent-hover", colors.accentHover);
-      root.style.setProperty("--color-accent-light", colors.accentLight);
-      root.style.setProperty("--color-bg-selected", colors.bgSelected);
-      root.style.setProperty("--color-sidebar-active", colors.sidebarActive);
-    };
-
-    apply();
-
-    if (theme === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      mq.addEventListener("change", apply);
-      return () => mq.removeEventListener("change", apply);
-    }
-  }, [colorTheme, theme]);
+  useEffect(() => applyColorTheme(colorTheme, theme), [colorTheme, theme]);
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg-primary text-text-secondary">
-        <span className="text-sm">Loading composer...</span>
+        <span className="text-sm">Caricamento editor...</span>
       </div>
     );
   }

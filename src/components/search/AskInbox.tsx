@@ -27,7 +27,7 @@ export function AskInbox({ isOpen, onClose }: AskInboxProps) {
     } catch (err) {
       console.error("Ask inbox failed:", err);
       setResult({
-        answer: "Sorry, something went wrong. Please check your AI configuration and try again.",
+        answer: "Spiacente, qualcosa è andato storto. Controlla la configurazione dell'IA e riprova.",
         sourceMessages: [],
       });
     } finally {
@@ -67,7 +67,7 @@ export function AskInbox({ isOpen, onClose }: AskInboxProps) {
         {/* Header */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border-primary bg-bg-secondary">
           <Sparkles size={16} className="text-accent" />
-          <span className="text-sm font-medium text-text-primary flex-1">Ask My Inbox</span>
+          <span className="text-sm font-medium text-text-primary flex-1">Chiedi alla mia posta</span>
           <button
             onClick={onClose}
             className="text-text-tertiary hover:text-text-primary transition-colors"
@@ -85,7 +85,7 @@ export function AskInbox({ isOpen, onClose }: AskInboxProps) {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask a question about your emails..."
+            placeholder="Fai una domanda sulle tue email..."
             className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
           />
           <button
@@ -102,7 +102,7 @@ export function AskInbox({ isOpen, onClose }: AskInboxProps) {
           {loading && (
             <div className="flex items-center gap-2 px-4 py-6 text-text-tertiary justify-center">
               <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              <span className="text-sm">Searching your inbox...</span>
+              <span className="text-sm">Ricerca nella tua posta...</span>
             </div>
           )}
 
@@ -128,14 +128,14 @@ export function AskInbox({ isOpen, onClose }: AskInboxProps) {
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-text-primary truncate">
-                            {msg.from_name ?? msg.from_address ?? "Unknown"}
+                            {msg.from_name ?? msg.from_address ?? "Sconosciuto"}
                           </span>
                           <span className="text-[0.625rem] text-text-tertiary shrink-0 ml-2">
                             {new Date(msg.date).toLocaleDateString()}
                           </span>
                         </div>
                         <div className="text-xs text-text-secondary truncate mt-0.5 flex items-center gap-1">
-                          {msg.subject ?? "(no subject)"}
+                          {msg.subject ?? "(nessun oggetto)"}
                           <ExternalLink size={10} className="opacity-0 group-hover:opacity-100 shrink-0" />
                         </div>
                       </button>
@@ -149,14 +149,14 @@ export function AskInbox({ isOpen, onClose }: AskInboxProps) {
                 onClick={handleClear}
                 className="text-xs text-accent hover:text-accent-hover transition-colors"
               >
-                Ask another question
+                Fai un'altra domanda
               </button>
             </div>
           )}
 
           {!loading && !result && (
             <div className="px-4 py-8 text-center text-sm text-text-tertiary">
-              Ask anything about your emails — meetings, conversations, attachments, and more.
+              Chiedi qualsiasi cosa sulle tue email: riunioni, conversazioni, allegati e altro.
             </div>
           )}
         </div>

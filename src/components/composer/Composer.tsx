@@ -58,8 +58,13 @@ export function Composer() {
   const setViewMode = useComposerStore((s) => s.setViewMode);
   const addAttachment = useComposerStore((s) => s.addAttachment);
 
-  const activeAccountId = useAccountStore((s) => s.activeAccountId);
+  const storeActiveAccountId = useAccountStore((s) => s.activeAccountId);
   const accounts = useAccountStore((s) => s.accounts);
+  // Account used to send: starts as the active one (the thread's own account
+  // in the unified view) and changes when another account is picked in "Da".
+  const [sendAccountId, setSendAccountId] = useState<string | null>(null);
+  const activeAccountId = sendAccountId ?? storeActiveAccountId;
+  const [allAliases, setAllAliases] = useState<SendAsAlias[]>([]);
   const activeAccount = accounts.find((a) => a.id === activeAccountId);
   const sendingRef = useRef(false);
   const [showSchedule, setShowSchedule] = useState(false);
@@ -77,7 +82,7 @@ export function Composer() {
         link: { openOnClick: false },
       }),
       Placeholder.configure({
-        placeholder: "Write your message...",
+        placeholder: "Scrivi il tuo messaggio...",
       }),
       Image.configure({
         inline: true,
@@ -139,6 +144,33 @@ export function Composer() {
       },
     },
   });
+
+  // Every account's addresses for the "Da" selector (unified compose)
+  useEffect(() => {
+    if (!isOpen) {
+      setSendAccountId(null);
+      return;
+    }
+    const emailAccounts = accounts.filter((a) => a.provider !== "caldav");
+    Promise.all(
+      emailAccounts.map(async (acc) => {
+        const list = (await getAliasesForAccount(acc.id)).map(mapDbAlias);
+        if (list.length > 0) return list;
+        return [{
+          id: `account-${acc.id}`,
+          accountId: acc.id,
+          email: acc.email,
+          displayName: acc.displayName,
+          replyToAddress: null,
+          signatureId: null,
+          isPrimary: true,
+          isDefault: false,
+          treatAsAlias: false,
+          verificationStatus: "accepted",
+        } satisfies SendAsAlias];
+      }),
+    ).then((lists) => setAllAliases(lists.flat()));
+  }, [isOpen, accounts]);
 
   // Load signature, aliases, and templates in parallel when composer opens
   useEffect(() => {
@@ -398,7 +430,7 @@ export function Composer() {
 
       new WebviewWindow(windowLabel, {
         url: `index.html?${params.toString()}`,
-        title: state.subject || "New Message",
+        title: state.subject || "Nuovo messaggio",
         width: 700,
         height: 650,
         center: true,
@@ -415,17 +447,17 @@ export function Composer() {
 
   const modeLabel =
     mode === "reply"
-      ? "Reply"
+      ? "Rispondi"
       : mode === "replyAll"
-        ? "Reply All"
+        ? "Rispondi a tutti"
         : mode === "forward"
-          ? "Forward"
-          : "New Message";
+          ? "Inoltra"
+          : "Nuovo messaggio";
 
   const savedLabel = isSaving
-    ? "Saving..."
+    ? "Salvataggio..."
     : lastSavedAt
-      ? "Draft saved"
+      ? "Bozza salvata"
       : null;
 
   return (
@@ -449,7 +481,7 @@ export function Composer() {
       >
         {isDragging && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-accent/10 rounded-lg pointer-events-none">
-            <span className="text-sm font-medium text-accent">Drop files to attach</span>
+            <span className="text-sm font-medium text-accent">Trascina qui i file da allegare</span>
           </div>
         )}
 
@@ -462,14 +494,14 @@ export function Composer() {
             <button
               onClick={() => setViewMode(isFullpage ? "modal" : "fullpage")}
               className="text-text-tertiary hover:text-text-primary p-1 rounded transition-colors"
-              title={isFullpage ? "Collapse" : "Expand"}
+              title={isFullpage ? "Riduci" : "Espandi"}
             >
               {isFullpage ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
             <button
               onClick={handlePopOutComposer}
               className="text-text-tertiary hover:text-text-primary p-1 rounded transition-colors"
-              title="Open in new window"
+              title="Apri in una nuova finestra"
             >
               <ExternalLink size={14} />
             </button>
@@ -485,22 +517,25 @@ export function Composer() {
         {/* Address fields */}
         <div className="px-3 py-2 space-y-1.5 border-b border-border-secondary">
           <FromSelector
-            aliases={aliases}
+            aliases={allAliases.length > 0 ? allAliases : aliases}
             selectedEmail={fromEmail ?? activeAccount?.email ?? ""}
-            onChange={(alias) => setFromEmail(alias.email)}
+            onChange={(alias) => {
+              if (alias.accountId !== activeAccountId) setSendAccountId(alias.accountId);
+              setFromEmail(alias.email);
+            }}
           />
-          <AddressInput label="To" addresses={to} onChange={setTo} />
+          <AddressInput label="A" addresses={to} onChange={setTo} />
           {showCcBcc ? (
             <>
               <AddressInput label="Cc" addresses={cc} onChange={setCc} />
-              <AddressInput label="Bcc" addresses={bcc} onChange={setBcc} />
+              <AddressInput label="Ccn" addresses={bcc} onChange={setBcc} />
             </>
           ) : (
             <button
               onClick={() => setShowCcBcc(true)}
-              className="text-xs text-accent hover:text-accent-hover ml-10"
+              className="text-xs text-accent hover:text-accent-hover ml-16"
             >
-              Cc / Bcc
+              Cc / Ccn
             </button>
           )}
         </div>
@@ -508,14 +543,14 @@ export function Composer() {
         {/* Subject */}
         <div className="px-3 py-1.5 border-b border-border-secondary">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-text-tertiary w-8 shrink-0">
-              Sub
+            <span className="text-xs text-text-tertiary w-14 shrink-0">
+              Oggetto
             </span>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Subject"
+              placeholder="Oggetto"
               className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
             />
           </div>
@@ -556,7 +591,7 @@ export function Composer() {
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-border-primary bg-bg-secondary rounded-b-lg">
           <div className="flex items-center gap-3">
             <div className="text-xs text-text-tertiary">
-              {fromEmail ?? activeAccount?.email ?? "No account"}
+              {fromEmail ?? activeAccount?.email ?? "Nessun account"}
             </div>
             {savedLabel && (
               <span className={`text-xs text-text-tertiary italic transition-opacity duration-200 ${isSaving ? "animate-pulse" : ""}`}>
@@ -571,7 +606,7 @@ export function Composer() {
               variant="secondary"
               onClick={handleDiscard}
             >
-              Discard
+              Elimina
             </Button>
             <div className="flex items-center">
               <button
@@ -579,13 +614,13 @@ export function Composer() {
                 disabled={to.length === 0}
                 className="px-4 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-l-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send
+                Invia
               </button>
               <button
                 onClick={() => setShowSchedule(true)}
                 disabled={to.length === 0}
                 className="px-2 py-1.5 text-white bg-accent hover:bg-accent-hover border-l border-white/20 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Schedule send"
+                title="Programma invio"
               >
                 <Clock size={12} />
               </button>

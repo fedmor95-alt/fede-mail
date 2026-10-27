@@ -74,25 +74,25 @@ describe("SignatureEditor", () => {
     render(<SignatureEditor />);
 
     // Click "Add signature" to show the form
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
 
     expect(screen.getByTestId("editor-content")).toBeInTheDocument();
     expect(screen.getByTestId("editor-toolbar")).toBeInTheDocument();
-    expect(screen.getByTitle("Edit HTML source")).toBeInTheDocument();
+    expect(screen.getByTitle("Modifica sorgente HTML")).toBeInTheDocument();
   });
 
   it("switches to HTML textarea when toggle is clicked", () => {
     render(<SignatureEditor />);
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
 
     // Click the toggle to switch to HTML mode
-    fireEvent.click(screen.getByTitle("Edit HTML source"));
+    fireEvent.click(screen.getByTitle("Modifica sorgente HTML"));
 
     // Should show textarea, not editor
     expect(screen.queryByTestId("editor-content")).not.toBeInTheDocument();
     expect(screen.queryByTestId("editor-toolbar")).not.toBeInTheDocument();
-    expect(screen.getByText("HTML source")).toBeInTheDocument();
-    expect(screen.getByTitle("Switch to visual editor")).toBeInTheDocument();
+    expect(screen.getByText("Sorgente HTML")).toBeInTheDocument();
+    expect(screen.getByTitle("Passa all'editor visuale")).toBeInTheDocument();
 
     // Textarea should have the editor's HTML content
     const textarea = document.querySelector("textarea")!;
@@ -102,17 +102,17 @@ describe("SignatureEditor", () => {
 
   it("switches back to WYSIWYG when toggled again", () => {
     render(<SignatureEditor />);
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
 
     // Toggle to HTML mode
-    fireEvent.click(screen.getByTitle("Edit HTML source"));
+    fireEvent.click(screen.getByTitle("Modifica sorgente HTML"));
 
     // Edit the raw HTML
     const textarea = document.querySelector("textarea")!;
     fireEvent.change(textarea, { target: { value: "<b>custom html</b>" } });
 
     // Toggle back to WYSIWYG
-    fireEvent.click(screen.getByTitle("Switch to visual editor"));
+    fireEvent.click(screen.getByTitle("Passa all'editor visuale"));
 
     expect(screen.getByTestId("editor-content")).toBeInTheDocument();
     expect(screen.getByTestId("editor-toolbar")).toBeInTheDocument();
@@ -121,22 +121,22 @@ describe("SignatureEditor", () => {
 
   it("saves using textarea content when in HTML mode", async () => {
     render(<SignatureEditor />);
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
 
     // Fill in the name
-    fireEvent.change(screen.getByPlaceholderText("Signature name"), {
+    fireEvent.change(screen.getByPlaceholderText("Nome della firma"), {
       target: { value: "My Sig" },
     });
 
     // Toggle to HTML mode
-    fireEvent.click(screen.getByTitle("Edit HTML source"));
+    fireEvent.click(screen.getByTitle("Modifica sorgente HTML"));
 
     // Edit the raw HTML
     const textarea = document.querySelector("textarea")!;
     fireEvent.change(textarea, { target: { value: "<table><tr><td>Sig</td></tr></table>" } });
 
     // Save
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("Salva"));
 
     await waitFor(() => {
       expect(mockInsertSignature).toHaveBeenCalledWith({
@@ -152,13 +152,13 @@ describe("SignatureEditor", () => {
     mockGetHTML.mockReturnValue("<p>wysiwyg content</p>");
 
     render(<SignatureEditor />);
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
 
-    fireEvent.change(screen.getByPlaceholderText("Signature name"), {
+    fireEvent.change(screen.getByPlaceholderText("Nome della firma"), {
       target: { value: "My Sig" },
     });
 
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("Salva"));
 
     await waitFor(() => {
       expect(mockInsertSignature).toHaveBeenCalledWith({
@@ -172,17 +172,17 @@ describe("SignatureEditor", () => {
 
   it("resets HTML mode state when cancel is clicked", () => {
     render(<SignatureEditor />);
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
 
     // Toggle to HTML mode
-    fireEvent.click(screen.getByTitle("Edit HTML source"));
+    fireEvent.click(screen.getByTitle("Modifica sorgente HTML"));
     expect(document.querySelector("textarea")).toBeInTheDocument();
 
     // Cancel
-    fireEvent.click(screen.getByText("Cancel"));
+    fireEvent.click(screen.getByText("Annulla"));
 
     // Re-open form — should be in WYSIWYG mode
-    fireEvent.click(screen.getByText("+ Add signature"));
+    fireEvent.click(screen.getByText("+ Aggiungi firma"));
     expect(screen.getByTestId("editor-content")).toBeInTheDocument();
     expect(document.querySelector("textarea")).not.toBeInTheDocument();
   });

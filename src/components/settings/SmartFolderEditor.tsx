@@ -95,7 +95,7 @@ export function SmartFolderEditor() {
               {folder.name}
               {folder.is_default === 1 && (
                 <span className="text-[0.625rem] bg-accent/15 text-accent px-1.5 py-0.5 rounded">
-                  Default
+                  Predefinita
                 </span>
               )}
             </div>
@@ -107,7 +107,7 @@ export function SmartFolderEditor() {
             <button
               onClick={() => handleEdit(folder)}
               className="p-1 text-text-tertiary hover:text-text-primary"
-              title="Edit"
+              title="Modifica"
             >
               <Pencil size={13} />
             </button>
@@ -115,7 +115,7 @@ export function SmartFolderEditor() {
               <button
                 onClick={() => handleDelete(folder.id)}
                 className="p-1 text-text-tertiary hover:text-danger"
-                title="Delete"
+                title="Elimina"
               >
                 <Trash2 size={13} />
               </button>
@@ -130,20 +130,20 @@ export function SmartFolderEditor() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Folder name"
+            placeholder="Nome della cartella"
             className="w-full px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary outline-none focus:border-accent"
           />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search query (e.g. is:unread from:boss)"
+            placeholder="Query di ricerca (es. is:unread from:boss)"
             className="w-full px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary outline-none focus:border-accent"
           />
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-xs text-text-secondary block mb-1">
-                Icon name
+                Nome icona
               </label>
               <input
                 type="text"
@@ -158,7 +158,7 @@ export function SmartFolderEditor() {
             </div>
             <div className="flex-1">
               <label className="text-xs text-text-secondary block mb-1">
-                Color (optional)
+                Colore (facoltativo)
               </label>
               <input
                 type="text"
@@ -176,13 +176,13 @@ export function SmartFolderEditor() {
               disabled={!name.trim() || !query.trim()}
               className="px-3 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-md transition-colors disabled:opacity-50"
             >
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Aggiorna" : "Salva"}
             </button>
             <button
               onClick={resetForm}
               className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md transition-colors"
             >
-              Cancel
+              Annulla
             </button>
           </div>
         </div>
@@ -191,7 +191,7 @@ export function SmartFolderEditor() {
           onClick={() => setShowForm(true)}
           className="text-xs text-accent hover:text-accent-hover"
         >
-          + Add smart folder
+          + Aggiungi cartella smart
         </button>
       )}
     </div>

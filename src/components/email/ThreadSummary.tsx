@@ -71,7 +71,7 @@ export function ThreadSummary({ threadId, accountId, messages }: ThreadSummaryPr
         className="flex items-center gap-2 w-full text-left"
       >
         <Sparkles size={14} className="text-accent shrink-0" />
-        <span className="text-xs font-medium text-accent flex-1">AI Summary</span>
+        <span className="text-xs font-medium text-accent flex-1">Riepilogo IA</span>
         {summary && (
           <span
             role="button"
@@ -79,7 +79,7 @@ export function ThreadSummary({ threadId, accountId, messages }: ThreadSummaryPr
             onClick={(e) => { e.stopPropagation(); handleRefresh(); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); handleRefresh(); } }}
             className="p-0.5 text-text-tertiary hover:text-accent transition-colors cursor-pointer"
-            title="Refresh summary"
+            title="Aggiorna riepilogo"
           >
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           </span>
@@ -91,7 +91,7 @@ export function ThreadSummary({ threadId, accountId, messages }: ThreadSummaryPr
           {loading && !summary && (
             <div className="flex items-center gap-2 text-text-tertiary">
               <div className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              <span className="text-xs">Generating summary...</span>
+              <span className="text-xs">Generazione riepilogo...</span>
             </div>
           )}
           {summary && <p className="text-xs leading-relaxed">{summary}</p>}

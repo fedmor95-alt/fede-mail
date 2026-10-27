@@ -49,6 +49,19 @@ pub struct ImapMessage {
     pub list_unsubscribe_post: Option<String>,
     pub auth_results: Option<String>,
     pub attachments: Vec<ImapAttachment>,
+    /// Italian certified mail (PEC) metadata, when the message is a PEC
+    /// envelope or receipt.
+    pub pec: Option<PecInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PecInfo {
+    /// "posta-certificata" for an envelope, otherwise the receipt type
+    /// (X-Ricevuta: "accettazione", "avvenuta-consegna", "errore-consegna", ...).
+    pub kind: String,
+    /// Message-ID of the original message (envelope: the inner message;
+    /// receipt: the message it refers to), without angle brackets.
+    pub ref_message_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

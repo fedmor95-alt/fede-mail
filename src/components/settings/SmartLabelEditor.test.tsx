@@ -44,31 +44,31 @@ describe("SmartLabelEditor", () => {
   it("renders add button", async () => {
     render(<SmartLabelEditor />);
     await waitFor(() => {
-      expect(screen.getByText("+ Add smart label")).toBeInTheDocument();
+      expect(screen.getByText("+ Aggiungi etichetta smart")).toBeInTheDocument();
     });
   });
 
-  it("shows form when + Add smart label is clicked", async () => {
+  it("shows form when + Aggiungi etichetta smart is clicked", async () => {
     render(<SmartLabelEditor />);
-    await waitFor(() => screen.getByText("+ Add smart label"));
+    await waitFor(() => screen.getByText("+ Aggiungi etichetta smart"));
 
-    fireEvent.click(screen.getByText("+ Add smart label"));
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta smart"));
 
-    expect(screen.getByText("Label")).toBeInTheDocument();
-    expect(screen.getByText("AI Description")).toBeInTheDocument();
-    expect(screen.getByText("Save")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getByText("Etichetta")).toBeInTheDocument();
+    expect(screen.getByText("Descrizione per l'IA")).toBeInTheDocument();
+    expect(screen.getByText("Salva")).toBeInTheDocument();
+    expect(screen.getByText("Annulla")).toBeInTheDocument();
   });
 
   it("hides form when Cancel is clicked", async () => {
     render(<SmartLabelEditor />);
-    await waitFor(() => screen.getByText("+ Add smart label"));
+    await waitFor(() => screen.getByText("+ Aggiungi etichetta smart"));
 
-    fireEvent.click(screen.getByText("+ Add smart label"));
-    expect(screen.getByText("AI Description")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta smart"));
+    expect(screen.getByText("Descrizione per l'IA")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("Cancel"));
-    expect(screen.queryByText("AI Description")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Annulla"));
+    expect(screen.queryByText("Descrizione per l'IA")).not.toBeInTheDocument();
   });
 
   it("renders existing rules", async () => {
@@ -110,25 +110,25 @@ describe("SmartLabelEditor", () => {
     render(<SmartLabelEditor />);
 
     await waitFor(() => {
-      expect(screen.getByText("Disabled")).toBeInTheDocument();
+      expect(screen.getByText("Disattivato")).toBeInTheDocument();
     });
   });
 
   it("calls insertSmartLabelRule on save", async () => {
     render(<SmartLabelEditor />);
-    await waitFor(() => screen.getByText("+ Add smart label"));
+    await waitFor(() => screen.getByText("+ Aggiungi etichetta smart"));
 
-    fireEvent.click(screen.getByText("+ Add smart label"));
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta smart"));
 
     // Select label
     const select = screen.getByRole("combobox");
     fireEvent.change(select, { target: { value: "label-work" } });
 
     // Enter description
-    const textarea = screen.getByPlaceholderText("e.g., Job applications and career opportunities");
+    const textarea = screen.getByPlaceholderText("es. Candidature di lavoro e opportunità di carriera");
     fireEvent.change(textarea, { target: { value: "Work-related emails" } });
 
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("Salva"));
 
     await waitFor(() => {
       expect(mockInsertRule).toHaveBeenCalledWith({
@@ -157,7 +157,7 @@ describe("SmartLabelEditor", () => {
     render(<SmartLabelEditor />);
 
     await waitFor(() => {
-      expect(screen.getByText("Apply to existing emails")).toBeInTheDocument();
+      expect(screen.getByText("Applica alle email esistenti")).toBeInTheDocument();
     });
   });
 
@@ -177,21 +177,21 @@ describe("SmartLabelEditor", () => {
 
     render(<SmartLabelEditor />);
 
-    await waitFor(() => screen.getByText("Apply to existing emails"));
+    await waitFor(() => screen.getByText("Applica alle email esistenti"));
 
-    fireEvent.click(screen.getByText("Apply to existing emails"));
+    fireEvent.click(screen.getByText("Applica alle email esistenti"));
 
     await waitFor(() => {
       expect(mockBackfill).toHaveBeenCalledWith("acc1");
-      expect(screen.getByText("Applied 5 labels to existing emails.")).toBeInTheDocument();
+      expect(screen.getByText("5 etichette applicate alle email esistenti.")).toBeInTheDocument();
     });
   });
 
   it("only shows user labels in dropdown (filters out system labels)", async () => {
     render(<SmartLabelEditor />);
-    await waitFor(() => screen.getByText("+ Add smart label"));
+    await waitFor(() => screen.getByText("+ Aggiungi etichetta smart"));
 
-    fireEvent.click(screen.getByText("+ Add smart label"));
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta smart"));
 
     const options = screen.getAllByRole("option");
     const optionTexts = options.map((o) => o.textContent);
@@ -202,13 +202,13 @@ describe("SmartLabelEditor", () => {
 
   it("shows optional criteria section when toggled", async () => {
     render(<SmartLabelEditor />);
-    await waitFor(() => screen.getByText("+ Add smart label"));
+    await waitFor(() => screen.getByText("+ Aggiungi etichetta smart"));
 
-    fireEvent.click(screen.getByText("+ Add smart label"));
-    fireEvent.click(screen.getByText("Optional filter criteria"));
+    fireEvent.click(screen.getByText("+ Aggiungi etichetta smart"));
+    fireEvent.click(screen.getByText("Criteri di filtro facoltativi"));
 
-    expect(screen.getByPlaceholderText("From contains...")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Subject contains...")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Da contiene...")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Oggetto contiene...")).toBeInTheDocument();
   });
 
   it("deletes a rule", async () => {

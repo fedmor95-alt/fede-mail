@@ -73,7 +73,7 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
   }, [accountId, calendar, event, onUpdated]);
 
   const formatTime = (ts: number) => {
-    return new Date(ts * 1000).toLocaleString(undefined, {
+    return new Date(ts * 1000).toLocaleString("it-IT", {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -86,10 +86,10 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
 
   if (editing) {
     return (
-      <Modal isOpen={true} onClose={onClose} title="Edit Event" width="w-full max-w-md">
+      <Modal isOpen={true} onClose={onClose} title="Modifica evento" width="w-full max-w-md">
         <div className="p-4 space-y-3">
           <TextField
-            label="Title"
+            label="Titolo"
             type="text"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
@@ -98,13 +98,13 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
 
           <div className="grid grid-cols-2 gap-3">
             <TextField
-              label="Start"
+              label="Inizio"
               type="datetime-local"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
             />
             <TextField
-              label="End"
+              label="Fine"
               type="datetime-local"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
@@ -112,19 +112,19 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
           </div>
 
           <TextField
-            label="Location"
+            label="Luogo"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Add location"
+            placeholder="Aggiungi luogo"
           />
 
           <div>
-            <label className="text-xs text-text-secondary block mb-1">Description</label>
+            <label className="text-xs text-text-secondary block mb-1">Descrizione</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add description"
+              placeholder="Aggiungi descrizione"
               rows={3}
               className="w-full px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary outline-none focus:border-accent resize-none"
             />
@@ -132,10 +132,10 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" size="md" onClick={() => setEditing(false)}>
-              Cancel
+              Annulla
             </Button>
             <Button variant="primary" size="md" onClick={handleSave} disabled={saving || !summary.trim()}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Salvataggio..." : "Salva"}
             </Button>
           </div>
         </div>
@@ -144,7 +144,7 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
   }
 
   return (
-    <Modal isOpen={true} onClose={onClose} title={event.summary ?? "Event"} width="w-full max-w-md">
+    <Modal isOpen={true} onClose={onClose} title={event.summary ?? "Evento"} width="w-full max-w-md">
       <div className="p-4 space-y-3">
         {calendar && (
           <div className="flex items-center gap-2 text-xs text-text-tertiary">
@@ -179,7 +179,7 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
 
         {attendees.length > 0 && (
           <div className="border-t border-border-primary pt-3">
-            <div className="text-xs text-text-tertiary mb-1.5">Attendees</div>
+            <div className="text-xs text-text-tertiary mb-1.5">Partecipanti</div>
             <div className="space-y-1">
               {attendees.map((a, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-text-secondary">
@@ -194,12 +194,12 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
         <div className="flex justify-between pt-2 border-t border-border-primary">
           {confirmDelete ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-danger">Delete this event?</span>
+              <span className="text-xs text-danger">Eliminare questo evento?</span>
               <Button variant="danger" size="xs" onClick={handleDelete} disabled={deleting}>
-                {deleting ? "Deleting..." : "Yes, delete"}
+                {deleting ? "Eliminazione..." : "Sì, elimina"}
               </Button>
               <Button variant="secondary" size="xs" onClick={() => setConfirmDelete(false)}>
-                Cancel
+                Annulla
               </Button>
             </div>
           ) : (
@@ -209,7 +209,7 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
               icon={<Trash2 size={14} />}
               onClick={() => setConfirmDelete(true)}
             >
-              Delete
+              Elimina
             </Button>
           )}
           <Button
@@ -218,7 +218,7 @@ export function EventDetailModal({ event, calendars, accountId, onClose, onUpdat
             icon={<Pencil size={14} />}
             onClick={() => setEditing(true)}
           >
-            Edit
+            Modifica
           </Button>
         </div>
       </div>

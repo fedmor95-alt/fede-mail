@@ -87,14 +87,14 @@ export function SubscriptionManager() {
   }, [subscriptions, searchQuery]);
 
   if (!activeAccountId) {
-    return <p className="text-sm text-text-tertiary">No active account selected.</p>;
+    return <p className="text-sm text-text-tertiary">Nessun account attivo selezionato.</p>;
   }
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-8 justify-center text-text-tertiary">
         <Loader2 size={16} className="animate-spin" />
-        <span className="text-sm">Loading subscriptions...</span>
+        <span className="text-sm">Caricamento iscrizioni...</span>
       </div>
     );
   }
@@ -108,7 +108,7 @@ export function SubscriptionManager() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search senders..."
+            placeholder="Cerca mittenti..."
             className="w-full pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-xs text-text-primary outline-none focus:border-accent"
           />
         </div>
@@ -117,13 +117,13 @@ export function SubscriptionManager() {
             onClick={handleBulkUnsubscribe}
             className="px-3 py-1.5 text-xs bg-danger text-white rounded-md hover:bg-danger/80 transition-colors shrink-0"
           >
-            Unsubscribe ({selectedIds.size})
+            Annulla iscrizione ({selectedIds.size})
           </button>
         )}
       </div>
 
       <p className="text-xs text-text-tertiary">
-        {subscriptions.length} sender{subscriptions.length !== 1 ? "s" : ""} detected with unsubscribe headers.
+        {subscriptions.length} {subscriptions.length === 1 ? "mittente rilevato" : "mittenti rilevati"} con intestazioni di annullamento iscrizione.
       </p>
 
       <div className="space-y-1 max-h-[500px] overflow-y-auto">
@@ -157,18 +157,18 @@ export function SubscriptionManager() {
                   </span>
                   {isUnsubscribed && (
                     <span className="text-[0.625rem] px-1.5 rounded-full bg-success/15 text-success">
-                      Unsubscribed
+                      Iscrizione annullata
                     </span>
                   )}
                   {parsed.hasOneClick && !isUnsubscribed && (
                     <span className="text-[0.625rem] px-1.5 rounded-full bg-accent/15 text-accent">
-                      One-click
+                      Un clic
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-text-tertiary mt-0.5">
                   <span className="truncate">{sub.from_address}</span>
-                  <span className="shrink-0">{sub.message_count} emails</span>
+                  <span className="shrink-0">{sub.message_count} email</span>
                   <span className="shrink-0">{formatRelativeDate(sub.latest_date)}</span>
                 </div>
               </div>
@@ -183,7 +183,7 @@ export function SubscriptionManager() {
                   ) : (
                     <MailMinus size={12} />
                   )}
-                  {isLoading ? "..." : "Unsubscribe"}
+                  {isLoading ? "..." : "Annulla iscrizione"}
                 </button>
               )}
             </div>
@@ -191,7 +191,7 @@ export function SubscriptionManager() {
         })}
         {filtered.length === 0 && (
           <p className="text-sm text-text-tertiary py-4 text-center">
-            {searchQuery ? "No matching senders found." : "No subscriptions detected yet. Subscriptions appear as emails are synced."}
+            {searchQuery ? "Nessun mittente trovato." : "Ancora nessuna iscrizione rilevata. Le iscrizioni compaiono man mano che le email vengono sincronizzate."}
           </p>
         )}
       </div>

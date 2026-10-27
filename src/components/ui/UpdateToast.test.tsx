@@ -29,9 +29,9 @@ describe("UpdateToast", () => {
   it("renders when an update is available on mount", () => {
     mockGetAvailableUpdate.mockReturnValue({ version: "2.0.0", body: null });
     render(<UpdateToast />);
-    expect(screen.getByText("Velo v2.0.0 is available")).toBeTruthy();
-    expect(screen.getByText("Later")).toBeTruthy();
-    expect(screen.getByText("Update Now")).toBeTruthy();
+    expect(screen.getByText("Velo v2.0.0 è disponibile")).toBeTruthy();
+    expect(screen.getByText("Più tardi")).toBeTruthy();
+    expect(screen.getByText("Aggiorna ora")).toBeTruthy();
   });
 
   it("renders when callback fires with an update", async () => {
@@ -50,17 +50,17 @@ describe("UpdateToast", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Velo v3.0.0 is available")).toBeTruthy();
+      expect(screen.getByText("Velo v3.0.0 è disponibile")).toBeTruthy();
     });
   });
 
   it("dismisses on Later click", async () => {
     mockGetAvailableUpdate.mockReturnValue({ version: "2.0.0", body: null });
     render(<UpdateToast />);
-    fireEvent.click(screen.getByText("Later"));
+    fireEvent.click(screen.getByText("Più tardi"));
 
     await waitFor(() => {
-      expect(screen.queryByText("Velo v2.0.0 is available")).toBeNull();
+      expect(screen.queryByText("Velo v2.0.0 è disponibile")).toBeNull();
     });
   });
 
@@ -68,10 +68,10 @@ describe("UpdateToast", () => {
     mockGetAvailableUpdate.mockReturnValue({ version: "2.0.0", body: null });
     mockInstallUpdate.mockReturnValue(new Promise(() => {})); // never resolves
     render(<UpdateToast />);
-    fireEvent.click(screen.getByText("Update Now"));
+    fireEvent.click(screen.getByText("Aggiorna ora"));
 
     await waitFor(() => {
-      expect(screen.getByText("Updating...")).toBeTruthy();
+      expect(screen.getByText("Aggiornamento...")).toBeTruthy();
     });
   });
 

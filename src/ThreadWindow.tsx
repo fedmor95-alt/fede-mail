@@ -9,7 +9,7 @@ import { getAllAccounts } from "./services/db/accounts";
 import { getSetting } from "./services/db/settings";
 import { initializeClients } from "./services/gmail/tokenManager";
 import { getThreadById, getThreadLabelIds } from "./services/db/threads";
-import { getThemeById, COLOR_THEMES } from "./constants/themes";
+import { applyColorTheme, COLOR_THEMES } from "./constants/themes";
 import type { ColorThemeId } from "./constants/themes";
 import type { Thread } from "./stores/threadStore";
 
@@ -26,7 +26,7 @@ export default function ThreadWindow() {
     const accountId = params.get("account");
 
     if (!threadId || !accountId) {
-      setError("Missing thread or account parameter");
+      setError("Parametro conversazione o account mancante");
       setLoading(false);
       return;
     }
@@ -74,7 +74,7 @@ export default function ThreadWindow() {
         // Fetch thread
         const dbThread = await getThreadById(accountId!, threadId!);
         if (!dbThread) {
-          setError("Thread not found");
+          setError("Conversazione non trovata");
           setLoading(false);
           return;
         }
@@ -98,7 +98,7 @@ export default function ThreadWindow() {
         });
       } catch (err) {
         console.error("Failed to initialize thread window:", err);
-        setError("Failed to load thread");
+        setError("Impossibile caricare la conversazione");
       }
       setLoading(false);
     }
@@ -137,40 +137,12 @@ export default function ThreadWindow() {
 
   // Apply color theme CSS custom properties to <html>
   const colorTheme = useUIStore((s) => s.colorTheme);
-  useEffect(() => {
-    const root = document.documentElement;
-    const props = ["--color-accent", "--color-accent-hover", "--color-accent-light", "--color-bg-selected", "--color-sidebar-active"];
-
-    const apply = () => {
-      if (colorTheme === "indigo") {
-        for (const p of props) root.style.removeProperty(p);
-        return;
-      }
-      const themeData = getThemeById(colorTheme);
-      const isDark =
-        theme === "dark" ||
-        (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      const colors = isDark ? themeData.dark : themeData.light;
-      root.style.setProperty("--color-accent", colors.accent);
-      root.style.setProperty("--color-accent-hover", colors.accentHover);
-      root.style.setProperty("--color-accent-light", colors.accentLight);
-      root.style.setProperty("--color-bg-selected", colors.bgSelected);
-      root.style.setProperty("--color-sidebar-active", colors.sidebarActive);
-    };
-
-    apply();
-
-    if (theme === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      mq.addEventListener("change", apply);
-      return () => mq.removeEventListener("change", apply);
-    }
-  }, [colorTheme, theme]);
+  useEffect(() => applyColorTheme(colorTheme, theme), [colorTheme, theme]);
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg-primary text-text-secondary">
-        <span className="text-sm">Loading thread...</span>
+        <span className="text-sm">Caricamento conversazione...</span>
       </div>
     );
   }
@@ -178,7 +150,7 @@ export default function ThreadWindow() {
   if (error || !thread) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg-primary text-text-secondary">
-        <span className="text-sm">{error ?? "Thread not found"}</span>
+        <span className="text-sm">{error ?? "Conversazione non trovata"}</span>
       </div>
     );
   }

@@ -76,9 +76,9 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByTitle("Send email")).toBeInTheDocument();
-      expect(screen.getByTitle("Copy email")).toBeInTheDocument();
-      expect(screen.getByTitle("Mark as VIP")).toBeInTheDocument();
+      expect(screen.getByTitle("Invia email")).toBeInTheDocument();
+      expect(screen.getByTitle("Copia email")).toBeInTheDocument();
+      expect(screen.getByTitle("Segna come VIP")).toBeInTheDocument();
     });
   });
 
@@ -88,7 +88,7 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Add to Contacts")).toBeInTheDocument();
+      expect(screen.getByText("Aggiungi ai contatti")).toBeInTheDocument();
     });
   });
 
@@ -98,7 +98,7 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Edit name")).toBeInTheDocument();
+      expect(screen.getByText("Modifica nome")).toBeInTheDocument();
     });
   });
 
@@ -108,16 +108,16 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Notes")).toBeInTheDocument();
+      expect(screen.getByText("Note")).toBeInTheDocument();
     });
 
     // Notes textarea should not be visible initially
-    expect(screen.queryByPlaceholderText("Add a note...")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Aggiungi una nota...")).not.toBeInTheDocument();
 
     // Click to expand
-    fireEvent.click(screen.getByText("Notes"));
+    fireEvent.click(screen.getByText("Note"));
 
-    expect(screen.getByPlaceholderText("Add a note...")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Aggiungi una nota...")).toBeInTheDocument();
   });
 
   it("renders attachments section when data present", async () => {
@@ -129,7 +129,7 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Shared Files")).toBeInTheDocument();
+      expect(screen.getByText("File condivisi")).toBeInTheDocument();
       expect(screen.getByText("report.pdf")).toBeInTheDocument();
     });
   });
@@ -160,7 +160,7 @@ describe("ContactSidebar", () => {
     const { container } = render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      const badge = container.querySelector("[aria-label='Authentication passed']");
+      const badge = container.querySelector("[aria-label='Autenticazione riuscita']");
       expect(badge).toBeInTheDocument();
     });
   });
@@ -171,7 +171,7 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByTitle("Remove VIP")).toBeInTheDocument();
+      expect(screen.getByTitle("Rimuovi VIP")).toBeInTheDocument();
     });
   });
 
@@ -181,9 +181,9 @@ describe("ContactSidebar", () => {
     render(<ContactSidebar {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Add to Contacts")).toBeInTheDocument();
+      expect(screen.getByText("Aggiungi ai contatti")).toBeInTheDocument();
     });
 
-    expect(screen.queryByText("Notes")).not.toBeInTheDocument();
+    expect(screen.queryByText("Note")).not.toBeInTheDocument();
   });
 });

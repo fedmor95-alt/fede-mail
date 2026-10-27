@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useAccountStore, type Account } from "@/stores/accountStore";
-import { ChevronDown, Check, Plus, UserPlus, Calendar } from "lucide-react";
+import { ChevronDown, Check, Plus, UserPlus, Calendar, Inbox } from "lucide-react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
 interface AccountSwitcherProps {
@@ -12,7 +12,7 @@ export function AccountSwitcher({
   collapsed,
   onAddAccount,
 }: AccountSwitcherProps) {
-  const { accounts, activeAccountId, setActiveAccount } = useAccountStore();
+  const { accounts, activeAccountId, setActiveAccount, unifiedView, setUnifiedView } = useAccountStore();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -22,10 +22,11 @@ export function AccountSwitcher({
 
   const handleSwitch = useCallback(
     (id: string) => {
+      setUnifiedView(false);
       setActiveAccount(id);
       setOpen(false);
     },
-    [setActiveAccount],
+    [setActiveAccount, setUnifiedView],
   );
 
   const handleAdd = useCallback(() => {
@@ -46,7 +47,7 @@ export function AccountSwitcher({
           <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
             <UserPlus size={16} className="text-accent" />
           </div>
-          {!collapsed && <span className="font-medium">Add Account</span>}
+          {!collapsed && <span className="font-medium">Aggiungi account</span>}
         </button>
       </div>
     );
@@ -61,8 +62,22 @@ export function AccountSwitcher({
           collapsed ? "justify-center" : "gap-2.5"
         } ${open ? "bg-sidebar-hover" : ""}`}
       >
-        <ActiveAvatar account={activeAccount} />
-        {!collapsed && activeAccount && (
+        {unifiedView ? <UnifiedAvatar /> : <ActiveAvatar account={activeAccount} />}
+        {!collapsed && unifiedView && (
+          <>
+            <div className="flex-1 min-w-0 text-left">
+              <div className="text-sm font-medium text-sidebar-text truncate leading-tight">Tutte le caselle</div>
+              <div className="text-xs text-sidebar-text/50 truncate leading-tight">
+                {accounts.length} account
+              </div>
+            </div>
+            <ChevronDown
+              size={14}
+              className={`shrink-0 text-sidebar-text/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+          </>
+        )}
+        {!collapsed && !unifiedView && activeAccount && (
           <>
             <div className="flex-1 min-w-0 text-left">
               <div className="text-sm font-medium text-sidebar-text truncate leading-tight">
@@ -90,12 +105,27 @@ export function AccountSwitcher({
           }`}
         >
           {accounts.length > 1 && (
-            <div className="px-3 py-1.5 text-[0.625rem] font-medium text-text-tertiary uppercase tracking-wider">
-              Accounts
-            </div>
+            <>
+              <button
+                onClick={() => {
+                  setUnifiedView(true);
+                  setOpen(false);
+                }}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors ${
+                  unifiedView ? "bg-accent/8 text-accent" : "text-text-primary hover:bg-bg-hover"
+                }`}
+              >
+                <UnifiedAvatar small />
+                <div className="flex-1 min-w-0 text-sm font-medium truncate">Tutte le caselle</div>
+                {unifiedView && <Check size={14} className="shrink-0 text-accent" />}
+              </button>
+              <div className="px-3 py-1.5 text-[0.625rem] font-medium text-text-tertiary uppercase tracking-wider">
+                Account
+              </div>
+            </>
           )}
           {accounts.map((account) => {
-            const isActive = account.id === activeAccountId;
+            const isActive = !unifiedView && account.id === activeAccountId;
             return (
               <button
                 key={account.id}
@@ -132,10 +162,20 @@ export function AccountSwitcher({
             <div className="w-7 h-7 rounded-full bg-bg-tertiary flex items-center justify-center shrink-0">
               <Plus size={14} />
             </div>
-            <span>Add account</span>
+            <span>Aggiungi account</span>
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function UnifiedAvatar({ small = false }: { small?: boolean }) {
+  return (
+    <div
+      className={`${small ? "w-7 h-7" : "w-8 h-8"} rounded-full bg-accent/15 text-accent flex items-center justify-center shrink-0`}
+    >
+      <Inbox size={small ? 14 : 16} />
     </div>
   );
 }

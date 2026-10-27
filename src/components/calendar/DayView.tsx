@@ -49,7 +49,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
           {currentDate.getDate()}
         </div>
         <div className="text-sm text-text-secondary">
-          {currentDate.toLocaleDateString(undefined, { weekday: "long" })}
+          {currentDate.toLocaleDateString("it-IT", { weekday: "long" })}
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
               onClick={() => onEventClick(e)}
               className="w-full text-left text-xs px-2 py-1.5 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
             >
-              {e.summary ?? "Event"} · All day
+              {e.summary ?? "Evento"} · Tutto il giorno
             </button>
           ))}
         </div>
@@ -76,7 +76,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
             <div key={hour} className="flex border-b border-border-secondary h-14">
               <div className="w-16 shrink-0 px-2 flex items-start justify-end -mt-1.5">
                 <span className="text-[0.625rem] text-text-tertiary">
-                  {hour === 0 ? "" : `${hour % 12 || 12}${hour < 12 ? "am" : "pm"}`}
+                  {hour === 0 ? "" : `${hour}:00`}
                 </span>
               </div>
               <div className="flex-1 relative px-1">
@@ -86,7 +86,7 @@ export function DayView({ currentDate, events, onEventClick }: DayViewProps) {
                     onClick={() => onEventClick(e)}
                     className="w-full text-left text-xs px-2 py-1 rounded bg-accent/15 text-accent truncate hover:bg-accent/25 transition-colors mb-0.5"
                   >
-                    {e.summary ?? "Event"}
+                    {e.summary ?? "Evento"}
                     {e.location && <span className="text-text-tertiary"> · {e.location}</span>}
                   </button>
                 ))}

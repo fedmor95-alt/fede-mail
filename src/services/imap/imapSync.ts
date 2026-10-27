@@ -320,6 +320,8 @@ async function storeThreadsAndMessages(
             inReplyToHeader: imapMsg?.in_reply_to ?? null,
             imapUid: imapMsg?.uid ?? null,
             imapFolder: imapMsg?.folder ?? null,
+            pecKind: imapMsg?.pec?.kind ?? null,
+            pecRef: imapMsg?.pec?.ref_message_id ?? null,
           });
 
           for (const att of parsed.attachments) {
@@ -587,6 +589,8 @@ export async function imapInitialSync(
                 inReplyToHeader: msg.in_reply_to ?? null,
                 imapUid: msg.uid ?? null,
                 imapFolder: msg.folder ?? null,
+                pecKind: msg.pec?.kind ?? null,
+                pecRef: msg.pec?.ref_message_id ?? null,
               });
 
               // Store attachments

@@ -163,7 +163,19 @@ async fn connect_inner(config: &ImapConfig) -> Result<ImapSession, String> {
     }
 
     let stream = connect_stream(config).await?;
-    let client = Client::new(stream);
+    let mut client = Client::new(stream);
+
+    // Consume the server greeting ("* OK ..."). Left unread, it is taken as
+    // the reply to AUTHENTICATE, and the server's "+" continuation is then
+    // never answered: XOAUTH2 hangs until the timeout. LOGIN hides this.
+    tokio::time::timeout(IMAP_CMD_TIMEOUT, client.read_response())
+        .await
+        .map_err(|_| format!(
+            "Reading server greeting timed out after {}s — check your server settings or network connection",
+            IMAP_CMD_TIMEOUT.as_secs()
+        ))?
+        .ok_or("Connection closed before the server greeting")?
+        .map_err(|e| format!("Failed to read server greeting: {e}"))?;
 
     tokio::time::timeout(AUTH_TIMEOUT, authenticate(client, config))
         .await
@@ -607,34 +619,8 @@ pub async fn fetch_attachment(
         .parse(raw)
         .ok_or_else(|| format!("Failed to parse message UID {uid}"))?;
 
-    // Build section map and find the part index for the requested section path
-    let section_map = build_imap_section_map(&message);
-    let target_part_idx = section_map
-        .iter()
-        .find(|(_, section)| section.as_str() == part_id)
-        .map(|(&idx, _)| idx)
-        .ok_or_else(|| format!("Section {part_id} not found in message UID {uid}"))?;
-
-    let part = message
-        .parts
-        .get(target_part_idx)
-        .ok_or_else(|| format!("Part index {target_part_idx} out of range for UID {uid}"))?;
-
-    // Extract the decoded binary content from the part
-    let data = match &part.body {
-        mail_parser::PartType::Binary(data) | mail_parser::PartType::InlineBinary(data) => {
-            data.as_ref().to_vec()
-        }
-        mail_parser::PartType::Text(text) => text.as_bytes().to_vec(),
-        mail_parser::PartType::Html(html) => html.as_bytes().to_vec(),
-        mail_parser::PartType::Message(msg) => {
-            // Nested message — encode the raw bytes
-            msg.raw_message.as_ref().to_vec()
-        }
-        mail_parser::PartType::Multipart(_) => {
-            return Err(format!("Part {part_id} is a multipart container, not a leaf part"));
-        }
-    };
+    let data = find_section_bytes(&message, part_id)
+        .map_err(|e| format!("Attachment {part_id} of UID {uid}: {e}"))?;
 
     Ok(base64::engine::general_purpose::STANDARD.encode(&data))
 }
@@ -1731,7 +1717,177 @@ fn parse_message(
         list_unsubscribe_post,
         auth_results,
         attachments,
+        pec: None,
     })
+    .map(|mut msg| {
+        apply_pec(&message, &mut msg);
+        msg
+    })
+}
+
+/// Prefix for attachments that live inside a PEC envelope's postacert.eml:
+/// `pec:<outer section>|<section inside the inner message>`.
+const PEC_PART_PREFIX: &str = "pec:";
+
+fn header_text(message: &mail_parser::Message, name: &str) -> Option<String> {
+    extract_header_text(message.header(mail_parser::HeaderName::Other(name.to_string().into())))
+        .map(|s| s.trim().to_lowercase())
+}
+
+fn strip_msgid(id: &str) -> String {
+    id.trim()
+        .trim_start_matches("&lt;")
+        .trim_end_matches("&gt;")
+        .trim_start_matches('<')
+        .trim_end_matches('>')
+        .trim()
+        .to_string()
+}
+
+/// Pull `<msgid>` out of a PEC daticert.xml.
+fn daticert_msgid(message: &mail_parser::Message) -> Option<String> {
+    message.attachments.iter().find_map(|&idx| {
+        let part = message.parts.get(idx)?;
+        let name = part.attachment_name()?.to_lowercase();
+        if name != "daticert.xml" {
+            return None;
+        }
+        let xml = String::from_utf8_lossy(part.contents()).to_string();
+        let start = xml.find("<msgid>")? + "<msgid>".len();
+        let end = xml[start..].find("</msgid>")? + start;
+        Some(strip_msgid(&xml[start..end]))
+    })
+}
+
+fn make_snippet(text: &str) -> String {
+    let cleaned: String = text.chars().map(|c| if c.is_whitespace() { ' ' } else { c }).collect();
+    let trimmed = cleaned.trim();
+    let short: String = trimmed.chars().take(200).collect();
+    if trimmed.chars().count() > 200 {
+        format!("{short}...")
+    } else {
+        short
+    }
+}
+
+/// Detect PEC envelopes/receipts. An envelope ("posta-certificata") is
+/// rewritten to show the original message carried in postacert.eml, with
+/// the transport files (daticert.xml, smime.p7s) hidden.
+fn apply_pec(message: &mail_parser::Message, msg: &mut ImapMessage) {
+    let trasporto = header_text(message, "X-Trasporto");
+    let ricevuta = header_text(message, "X-Ricevuta");
+    let kind = match (&ricevuta, &trasporto) {
+        (Some(r), _) => r.clone(),
+        (None, Some(t)) => t.clone(),
+        _ => return,
+    };
+    let ref_header = header_text(message, "X-Riferimento-Message-ID").map(|s| strip_msgid(&s));
+    let mut pec = PecInfo {
+        kind,
+        ref_message_id: ref_header.or_else(|| daticert_msgid(message)),
+    };
+
+    if ricevuta.is_none() {
+        let section_map = build_imap_section_map(message);
+        let inner = message.parts.iter().enumerate().find_map(|(idx, part)| match &part.body {
+            mail_parser::PartType::Message(m) => Some((idx, m)),
+            _ => None,
+        });
+        if let Some((outer_idx, inner)) = inner {
+            let outer_section = section_map.get(&outer_idx).cloned().unwrap_or_default();
+            let (from_address, from_name) = extract_first_address(inner.from());
+            if from_address.is_some() {
+                msg.from_address = from_address;
+                msg.from_name = from_name;
+            }
+            msg.to_addresses = format_address_list(inner.to()).or(msg.to_addresses.take());
+            msg.cc_addresses = format_address_list(inner.cc());
+            msg.reply_to = format_address_list(inner.reply_to());
+            if let Some(subject) = inner.subject() {
+                msg.subject = Some(subject.to_string());
+            }
+            if let Some(id) = inner.message_id() {
+                msg.message_id = Some(id.to_string());
+                pec.ref_message_id = Some(strip_msgid(id));
+            }
+            msg.body_text = inner.body_text(0).map(|s| s.to_string());
+            msg.body_html = inner.body_html(0).map(|s| s.to_string());
+            msg.snippet = msg.body_text.as_deref().map(make_snippet);
+
+            let inner_map = build_imap_section_map(inner);
+            msg.attachments = inner
+                .attachments
+                .iter()
+                .filter_map(|&idx| {
+                    let att = inner.parts.get(idx)?;
+                    let section = inner_map.get(&idx)?;
+                    let mime_type = att
+                        .content_type()
+                        .map(|ct| format!("{}/{}", ct.ctype(), ct.subtype().unwrap_or("octet-stream")))
+                        .unwrap_or_else(|| "application/octet-stream".to_string());
+                    Some(ImapAttachment {
+                        part_id: format!("{PEC_PART_PREFIX}{outer_section}|{section}"),
+                        filename: att.attachment_name().unwrap_or("attachment").to_string(),
+                        mime_type,
+                        size: att.len() as u32,
+                        content_id: att.content_id().map(|s| s.to_string()),
+                        is_inline: att.content_disposition().map_or(false, |cd| cd.is_inline()),
+                    })
+                })
+                .collect();
+        } else {
+            msg.attachments.retain(|a| {
+                let n = a.filename.to_lowercase();
+                n != "daticert.xml" && n != "smime.p7s"
+            });
+        }
+    }
+
+    // Receipts carry no In-Reply-To; point them at the original so the
+    // threader puts them in the same conversation as the sent message.
+    if ricevuta.is_some() && msg.in_reply_to.is_none() {
+        if let Some(r) = &pec.ref_message_id {
+            msg.in_reply_to = Some(format!("<{r}>"));
+            msg.references.get_or_insert_with(|| format!("<{r}>"));
+        }
+    }
+
+    msg.pec = Some(pec);
+}
+
+/// Decoded bytes of a leaf part.
+fn part_bytes(part: &mail_parser::MessagePart) -> Result<Vec<u8>, String> {
+    Ok(match &part.body {
+        mail_parser::PartType::Binary(data) | mail_parser::PartType::InlineBinary(data) => data.as_ref().to_vec(),
+        mail_parser::PartType::Text(text) => text.as_bytes().to_vec(),
+        mail_parser::PartType::Html(html) => html.as_bytes().to_vec(),
+        mail_parser::PartType::Message(msg) => msg.raw_message.as_ref().to_vec(),
+        mail_parser::PartType::Multipart(_) => return Err("multipart container, not a leaf part".to_string()),
+    })
+}
+
+/// Find a leaf part by section path, descending into PEC envelopes for
+/// `pec:<outer>|<inner>` ids.
+fn find_section_bytes(message: &mail_parser::Message, part_id: &str) -> Result<Vec<u8>, String> {
+    let (outer_id, inner_id) = match part_id.strip_prefix(PEC_PART_PREFIX) {
+        Some(rest) => match rest.split_once('|') {
+            Some((o, i)) => (o, Some(i)),
+            None => (rest, None),
+        },
+        None => (part_id, None),
+    };
+    let map = build_imap_section_map(message);
+    let idx = map
+        .iter()
+        .find(|(_, s)| s.as_str() == outer_id)
+        .map(|(&i, _)| i)
+        .ok_or_else(|| format!("Section {outer_id} not found"))?;
+    let part = message.parts.get(idx).ok_or_else(|| format!("Part {idx} out of range"))?;
+    match (inner_id, &part.body) {
+        (Some(inner_id), mail_parser::PartType::Message(inner)) => find_section_bytes(inner, inner_id),
+        (Some(_), _) => Err(format!("Section {outer_id} is not an embedded message")),
+        (None, _) => part_bytes(part),
+    }
 }
 
 /// Build a mapping from mail-parser part index → IMAP MIME section path string.
@@ -1834,3 +1990,92 @@ fn format_address_list(addr: Option<&mail_parser::Address>) -> Option<String> {
         Some(parts.join(", "))
     }
 }
+
+#[cfg(test)]
+mod pec_tests {
+    use super::*;
+
+    const ENVELOPE: &str = "From: \"Per conto di: mario@pec.it\" <posta-certificata@pec.aruba.it>\r\n\
+To: fede@pec.it\r\n\
+Subject: POSTA CERTIFICATA: Fattura\r\n\
+Message-ID: <opec123@pec.aruba.it>\r\n\
+X-Trasporto: posta-certificata\r\n\
+X-Riferimento-Message-ID: <orig-1@pec.it>\r\n\
+MIME-Version: 1.0\r\n\
+Content-Type: multipart/mixed; boundary=\"B1\"\r\n\
+\r\n\
+--B1\r\n\
+Content-Type: text/plain\r\n\
+\r\n\
+Messaggio di posta certificata\r\n\
+--B1\r\n\
+Content-Type: application/xml; name=\"daticert.xml\"\r\n\
+Content-Disposition: attachment; filename=\"daticert.xml\"\r\n\
+\r\n\
+<postacert tipo=\"posta-certificata\"><dati><msgid>&lt;orig-1@pec.it&gt;</msgid></dati></postacert>\r\n\
+--B1\r\n\
+Content-Type: message/rfc822; name=\"postacert.eml\"\r\n\
+Content-Disposition: attachment; filename=\"postacert.eml\"\r\n\
+\r\n\
+From: Mario Rossi <mario@pec.it>\r\n\
+To: fede@pec.it\r\n\
+Subject: Fattura\r\n\
+Message-ID: <orig-1@pec.it>\r\n\
+MIME-Version: 1.0\r\n\
+Content-Type: multipart/mixed; boundary=\"B2\"\r\n\
+\r\n\
+--B2\r\n\
+Content-Type: text/plain\r\n\
+\r\n\
+Ecco la fattura.\r\n\
+--B2\r\n\
+Content-Type: application/pdf; name=\"fattura.pdf\"\r\n\
+Content-Disposition: attachment; filename=\"fattura.pdf\"\r\n\
+Content-Transfer-Encoding: base64\r\n\
+\r\n\
+JVBERi0xLjQ=\r\n\
+--B2--\r\n\
+--B1--\r\n";
+
+    const RECEIPT: &str = "From: posta-certificata@pec.aruba.it\r\n\
+To: fede@pec.it\r\n\
+Subject: CONSEGNA: Fattura\r\n\
+Message-ID: <rcpt-1@pec.aruba.it>\r\n\
+X-Ricevuta: avvenuta-consegna\r\n\
+X-Riferimento-Message-ID: <sent-9@pec.it>\r\n\
+Content-Type: text/plain\r\n\
+\r\n\
+Ricevuta di avvenuta consegna\r\n";
+
+    fn parse(raw: &str) -> ImapMessage {
+        let parser = MessageParser::default();
+        parse_message(&parser, raw.as_bytes(), 1, "INBOX", raw.len() as u32, false, false, false, None).unwrap()
+    }
+
+    #[test]
+    fn envelope_shows_inner_message() {
+        let msg = parse(ENVELOPE);
+        let pec = msg.pec.as_ref().unwrap();
+        assert_eq!(pec.kind, "posta-certificata");
+        assert_eq!(pec.ref_message_id.as_deref(), Some("orig-1@pec.it"));
+        assert_eq!(msg.from_address.as_deref(), Some("mario@pec.it"));
+        assert_eq!(msg.subject.as_deref(), Some("Fattura"));
+        assert!(msg.body_text.as_deref().unwrap().contains("Ecco la fattura"));
+        assert_eq!(msg.attachments.len(), 1);
+        assert_eq!(msg.attachments[0].filename, "fattura.pdf");
+
+        let parsed = MessageParser::default().parse(ENVELOPE.as_bytes()).unwrap();
+        let data = find_section_bytes(&parsed, &msg.attachments[0].part_id).unwrap();
+        assert!(data.starts_with(b"%PDF"));
+    }
+
+    #[test]
+    fn receipt_links_to_original() {
+        let msg = parse(RECEIPT);
+        let pec = msg.pec.as_ref().unwrap();
+        assert_eq!(pec.kind, "avvenuta-consegna");
+        assert_eq!(pec.ref_message_id.as_deref(), Some("sent-9@pec.it"));
+        assert_eq!(msg.in_reply_to.as_deref(), Some("<sent-9@pec.it>"));
+    }
+}
+

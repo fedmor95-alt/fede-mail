@@ -56,7 +56,13 @@ async function syncGmailAccount(accountId: string): Promise<void> {
   const syncPeriodStr = await getSetting("sync_period_days");
   const syncDays = parseInt(syncPeriodStr ?? "365", 10) || 365;
 
-  if (account.history_id) {
+  if (account.history_id && (await getThreadCountForAccount(accountId)) === 0) {
+    // A previous initial sync stored nothing: start over.
+    console.warn(`[syncManager] ${accountId} has a history ID but no threads, re-running initial sync`);
+    await initialSync(client, accountId, syncDays, (progress) => {
+      statusCallback?.(accountId, "syncing", progress);
+    });
+  } else if (account.history_id) {
     // Delta sync
     try {
       await deltaSync(client, accountId, account.history_id);
@@ -230,6 +236,8 @@ async function syncAccountInternal(accountId: string): Promise<void> {
 
     if (account.provider === "imap") {
       await syncImapAccount(accountId);
+      const { refreshPecState } = await import("../pec/pecStatus");
+      await refreshPecState(accountId);
     } else {
       await syncGmailAccount(accountId);
     }

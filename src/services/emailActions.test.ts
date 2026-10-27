@@ -44,6 +44,7 @@ import { getEmailProvider } from "@/services/email/providerFactory";
 import { enqueuePendingOperation } from "@/services/db/pendingOperations";
 import {
   archiveThread,
+  flushPendingUndo,
   trashThread,
   permanentDeleteThread,
   starThread,
@@ -73,7 +74,8 @@ describe("emailActions", () => {
 
   describe("online execution", () => {
     it("archives a thread via provider", async () => {
-      const result = await archiveThread("acct-1", "t1", ["m1"]);
+      await archiveThread("acct-1", "t1", ["m1"]);
+      const [result] = await flushPendingUndo();
       expect(result.success).toBe(true);
       expect(result.queued).toBeUndefined();
       expect(mockRemoveThread).toHaveBeenCalledWith("t1");
@@ -81,7 +83,8 @@ describe("emailActions", () => {
     });
 
     it("trashes a thread via provider", async () => {
-      const result = await trashThread("acct-1", "t1", ["m1"]);
+      await trashThread("acct-1", "t1", ["m1"]);
+      const [result] = await flushPendingUndo();
       expect(result.success).toBe(true);
       expect(mockProvider.trash).toHaveBeenCalledWith("t1", ["m1"]);
     });
@@ -114,7 +117,8 @@ describe("emailActions", () => {
     });
 
     it("queues archive when offline", async () => {
-      const result = await archiveThread("acct-1", "t1", ["m1"]);
+      await archiveThread("acct-1", "t1", ["m1"]);
+      const [result] = await flushPendingUndo();
       expect(result.success).toBe(true);
       expect(result.queued).toBe(true);
       expect(mockProvider.archive).not.toHaveBeenCalled();
@@ -137,7 +141,9 @@ describe("emailActions", () => {
       vi.mocked(useUIStore.getState).mockReturnValue({ isOnline: true } as never);
       mockProvider.archive.mockRejectedValueOnce(new Error("Failed to fetch"));
 
-      const result = await archiveThread("acct-1", "t1", ["m1"]);
+      await archiveThread("acct-1", "t1", ["m1"]);
+
+      const [result] = await flushPendingUndo();
       expect(result.success).toBe(true);
       expect(result.queued).toBe(true);
       expect(enqueuePendingOperation).toHaveBeenCalled();
@@ -183,6 +189,8 @@ describe("emailActions", () => {
       }) as never);
 
       await archiveThread("acct-1", "t2", ["m1"]);
+
+      await flushPendingUndo();
       expect(navigateToThread).toHaveBeenCalledWith("t3");
     });
 
@@ -195,6 +203,8 @@ describe("emailActions", () => {
       }) as never);
 
       await archiveThread("acct-1", "t3", ["m1"]);
+
+      await flushPendingUndo();
       expect(navigateToThread).toHaveBeenCalledWith("t2");
     });
 
@@ -207,6 +217,8 @@ describe("emailActions", () => {
       }) as never);
 
       await archiveThread("acct-1", "t2", ["m1"]);
+
+      await flushPendingUndo();
       expect(navigateToThread).not.toHaveBeenCalled();
     });
 
@@ -219,6 +231,8 @@ describe("emailActions", () => {
       }) as never);
 
       await archiveThread("acct-1", "t1", ["m1"]);
+
+      await flushPendingUndo();
       expect(navigateToThread).not.toHaveBeenCalled();
     });
 
@@ -231,6 +245,8 @@ describe("emailActions", () => {
       }) as never);
 
       await trashThread("acct-1", "t1", ["m1"]);
+
+      await flushPendingUndo();
       expect(navigateToThread).toHaveBeenCalledWith("t2");
     });
 

@@ -34,11 +34,11 @@ function formatDueDate(timestamp: number): string {
   const dueStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const diffDays = Math.floor((dueStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Tomorrow";
-  if (diffDays <= 7) return `${diffDays}d`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diffDays < 0) return `Scaduta da ${Math.abs(diffDays)} g`;
+  if (diffDays === 0) return "Oggi";
+  if (diffDays === 1) return "Domani";
+  if (diffDays <= 7) return `${diffDays} g`;
+  return date.toLocaleDateString("it-IT", { month: "short", day: "numeric" });
 }
 
 function getDueDateColor(timestamp: number): string {

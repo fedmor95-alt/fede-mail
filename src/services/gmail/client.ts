@@ -4,7 +4,7 @@ import { encryptValue } from "@/utils/crypto";
 import { getCurrentUnixTimestamp } from "@/utils/timestamp";
 
 const GMAIL_API_BASE = "https://www.googleapis.com/gmail/v1";
-const MAX_RETRY_ATTEMPTS = 3;
+const MAX_RETRY_ATTEMPTS = 4;
 const INITIAL_BACKOFF_MS = 1000;
 
 interface TokenInfo {
@@ -45,6 +45,12 @@ export class GmailClient {
     return this.tokenInfo.accessToken;
   }
 
+  /** Valid access token (refreshed if close to expiry) — used for Gmail IMAP IDLE. */
+  async getAccessToken(forceRefresh = false): Promise<string> {
+    if (forceRefresh) this.tokenInfo.expiresAt = 0;
+    return this.getValidToken();
+  }
+
   private async refreshToken(): Promise<void> {
     const tokens: TokenResponse = await refreshAccessToken(
       this.tokenInfo.refreshToken,
@@ -80,7 +86,11 @@ export class GmailClient {
     let lastResponse: Response | undefined;
     for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
       const response = await fetch(url, options);
-      if (response.status !== 429) return response;
+      // Gmail reports the per-user quota as 403 rateLimitExceeded, not 429.
+      const rateLimited =
+        response.status === 429 ||
+        (response.status === 403 && /rateLimitExceeded/i.test(await response.clone().text()));
+      if (!rateLimited) return response;
 
       lastResponse = response;
       if (attempt === MAX_RETRY_ATTEMPTS - 1) break;
@@ -88,7 +98,7 @@ export class GmailClient {
       const retryAfter = response.headers.get("Retry-After");
       const delayMs = retryAfter
         ? parseInt(retryAfter, 10) * 1000
-        : INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        : Math.max(INITIAL_BACKOFF_MS, response.status === 403 ? 5000 : 0) * Math.pow(2, attempt);
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
     return lastResponse!;

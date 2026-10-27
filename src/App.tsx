@@ -8,6 +8,7 @@ import { CommandPalette } from "./components/search/CommandPalette";
 import { ShortcutsHelp } from "./components/search/ShortcutsHelp";
 import { AskInbox } from "./components/search/AskInbox";
 import { useUIStore } from "./stores/uiStore";
+import { startPush, stopPush } from "./services/push/pushManager";
 import { useAccountStore } from "./stores/accountStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { runMigrations } from "./services/db/migrations";
@@ -69,9 +70,11 @@ import { ContextMenuPortal } from "./components/ui/ContextMenuPortal";
 import { MoveToFolderDialog } from "./components/email/MoveToFolderDialog";
 import { OfflineBanner } from "./components/ui/OfflineBanner";
 import { UpdateToast } from "./components/ui/UpdateToast";
+import { UndoToast } from "./components/ui/UndoToast";
+import { flushPendingUndo } from "./services/emailActions";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { formatSyncError } from "./utils/networkErrors";
-import { getThemeById, COLOR_THEMES } from "./constants/themes";
+import { applyColorTheme, COLOR_THEMES } from "./constants/themes";
 import type { ColorThemeId } from "./constants/themes";
 import { router } from "./router";
 import { getSelectedThreadId } from "./router/navigate";
@@ -305,6 +308,8 @@ export default function App() {
           provider: a.provider,
         }));
         const savedAccountId = await getSetting("active_account_id");
+        const savedUnified = await getSetting("unified_view");
+        useAccountStore.setState({ unifiedView: savedUnified !== "false" });
         useAccountStore.getState().setAccounts(mapped, savedAccountId);
 
         // Initialize Gmail clients for existing accounts
@@ -325,6 +330,7 @@ export default function App() {
         // Start background sync for active accounts
         if (activeIds.length > 0) {
           startBackgroundSync(activeIds);
+          startPush(emailAccountIds).catch((err) => console.warn("[push] start failed:", err));
         }
 
         // Start snooze, scheduled send, follow-up, bundle, and queue checkers
@@ -367,6 +373,8 @@ export default function App() {
 
     return () => {
       stopBackgroundSync();
+      stopPush();
+      void flushPendingUndo();
       stopSnoozeChecker();
       stopScheduledSendChecker();
       stopFollowUpChecker();
@@ -388,18 +396,18 @@ export default function App() {
         if (progress) {
           if (progress.phase === "messages") {
             setSyncStatus(
-              `Syncing: ${progress.current}/${progress.total} messages`,
+              `Sincronizzazione: ${progress.current}/${progress.total} messaggi`,
             );
           } else if (progress.phase === "labels") {
-            setSyncStatus("Syncing labels...");
+            setSyncStatus("Sincronizzazione etichette...");
           } else if (progress.phase === "threads") {
-            setSyncStatus(`Building threads... (${progress.current}/${progress.total})`);
+            setSyncStatus(`Creazione conversazioni... (${progress.current}/${progress.total})`);
           }
         } else {
-          setSyncStatus("Syncing...");
+          setSyncStatus("Sincronizzazione...");
         }
       } else if (status === "done") {
-        setSyncStatus("Sync complete");
+        setSyncStatus("Sincronizzazione completata");
         setTimeout(() => setSyncStatus(null), 2_000);
         window.dispatchEvent(new Event("velo-sync-done"));
         updateBadgeCount();
@@ -412,7 +420,7 @@ export default function App() {
             .catch((err) => console.error("Backfill error:", err));
         }
       } else if (status === "error") {
-        setSyncStatus(error ? `Sync failed: ${formatSyncError(error)}` : "Sync failed");
+        setSyncStatus(error ? `Sincronizzazione non riuscita: ${formatSyncError(error)}` : "Sincronizzazione non riuscita");
         // Still dispatch sync-done so the UI refreshes with any partially stored data
         window.dispatchEvent(new Event("velo-sync-done"));
         // Auto-clear the error after 8 seconds
@@ -458,36 +466,7 @@ export default function App() {
   }, [reduceMotion]);
 
   // Apply color theme CSS custom properties to <html>
-  useEffect(() => {
-    const root = document.documentElement;
-    const props = ["--color-accent", "--color-accent-hover", "--color-accent-light", "--color-bg-selected", "--color-sidebar-active"];
-
-    const apply = () => {
-      if (colorTheme === "indigo") {
-        // Default theme — remove inline overrides, let CSS handle it
-        for (const p of props) root.style.removeProperty(p);
-        return;
-      }
-      const themeData = getThemeById(colorTheme);
-      const isDark =
-        theme === "dark" ||
-        (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      const colors = isDark ? themeData.dark : themeData.light;
-      root.style.setProperty("--color-accent", colors.accent);
-      root.style.setProperty("--color-accent-hover", colors.accentHover);
-      root.style.setProperty("--color-accent-light", colors.accentLight);
-      root.style.setProperty("--color-bg-selected", colors.bgSelected);
-      root.style.setProperty("--color-sidebar-active", colors.sidebarActive);
-    };
-
-    apply();
-
-    if (theme === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      mq.addEventListener("change", apply);
-      return () => mq.removeEventListener("change", apply);
-    }
-  }, [colorTheme, theme]);
+  useEffect(() => applyColorTheme(colorTheme, theme), [colorTheme, theme]);
 
   const handleAddAccountSuccess = useCallback(async () => {
     setShowAddAccount(false);
@@ -523,6 +502,8 @@ export default function App() {
     // since we already triggered the new account's sync above.
     const activeIds = mapped.filter((a) => a.isActive).map((a) => a.id);
     startBackgroundSync(activeIds, true);
+    const emailIds = mapped.filter((a) => a.isActive && a.provider !== "caldav").map((a) => a.id);
+    startPush(emailIds).catch((err) => console.warn("[push] restart failed:", err));
   }, []);
 
   if (!initialized) {
@@ -533,7 +514,7 @@ export default function App() {
             <div className="absolute inset-0 rounded-full border-2 border-accent/20" />
             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent animate-spin" />
           </div>
-          <span className="text-xs text-text-tertiary animate-pulse">Loading your inbox...</span>
+          <span className="text-xs text-text-tertiary animate-pulse">Caricamento della posta...</span>
         </div>
       </div>
     );
@@ -542,14 +523,6 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen overflow-hidden text-text-primary">
       <OfflineBanner />
-      {/* Animated gradient blobs for glassmorphism effect */}
-      <div className="animated-bg" aria-hidden="true">
-        <div className="blob" />
-        <div className="blob" />
-        <div className="blob" />
-        <div className="blob" />
-        <div className="blob" />
-      </div>
       <TitleBar />
       <div className="flex flex-1 min-w-0 overflow-hidden">
         <DndProvider>
@@ -567,7 +540,7 @@ export default function App() {
       {syncStatus && (
         <div
           className={`fixed bottom-0 left-0 right-0 glass-panel text-white text-xs px-4 py-1.5 text-center z-40 animate-[slideUp_200ms_ease-out,fadeIn_200ms_ease-out] ${
-            syncStatus.startsWith("Sync failed") ? "bg-danger/90" : "bg-accent/90"
+            syncStatus.startsWith("Sincronizzazione non riuscita") ? "bg-danger/90" : "bg-accent/90"
           }`}
         >
           {syncStatus}
@@ -586,6 +559,7 @@ export default function App() {
       </ErrorBoundary>
       <UndoSendToast />
       <UpdateToast />
+      <UndoToast />
       <ErrorBoundary name="CommandPalette">
         <CommandPalette
           isOpen={showCommandPalette}

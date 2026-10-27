@@ -38,7 +38,7 @@ export function LabelEditor() {
       await deleteLabel(activeAccountId, label.id);
       if (editingId === label.id) resetForm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete label");
+      setError(err instanceof Error ? err.message : "Impossibile eliminare l'etichetta");
     }
   }, [activeAccountId, deleteLabel, editingId, resetForm]);
 
@@ -76,7 +76,7 @@ export function LabelEditor() {
       )}
 
       {labels.length === 0 && !showForm && (
-        <p className="text-sm text-text-tertiary">No user labels</p>
+        <p className="text-sm text-text-tertiary">Nessuna etichetta personale</p>
       )}
 
       {labels.map((label, index) => (
@@ -100,7 +100,7 @@ export function LabelEditor() {
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
                 className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Move up"
+                title="Sposta su"
               >
                 <ChevronUp size={13} />
               </button>
@@ -108,21 +108,21 @@ export function LabelEditor() {
                 onClick={() => handleMoveDown(index)}
                 disabled={index === labels.length - 1}
                 className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Move down"
+                title="Sposta giù"
               >
                 <ChevronDown size={13} />
               </button>
               <button
                 onClick={() => handleEdit(label)}
                 className="p-1 text-text-tertiary hover:text-text-primary"
-                title="Edit"
+                title="Modifica"
               >
                 <Pencil size={13} />
               </button>
               <button
                 onClick={() => handleDelete(label)}
                 className="p-1 text-text-tertiary hover:text-danger"
-                title="Delete"
+                title="Elimina"
               >
                 <Trash2 size={13} />
               </button>
@@ -152,7 +152,7 @@ export function LabelEditor() {
           onClick={() => { setShowForm(true); setEditingId(null); setError(null); }}
           className="text-xs text-accent hover:text-accent-hover"
         >
-          + Add label
+          + Aggiungi etichetta
         </button>
       )}
     </div>

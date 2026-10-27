@@ -37,10 +37,10 @@ function getSnoozePresets(): { label: string; timestamp: number }[] {
   nextWeek.setHours(9, 0, 0, 0);
 
   return [
-    { label: "Later Today", timestamp: Math.floor(laterToday.getTime() / 1000) },
-    { label: "Tomorrow", timestamp: Math.floor(tomorrow.getTime() / 1000) },
-    { label: "This Weekend", timestamp: Math.floor(weekend.getTime() / 1000) },
-    { label: "Next Week", timestamp: Math.floor(nextWeek.getTime() / 1000) },
+    { label: "Più tardi oggi", timestamp: Math.floor(laterToday.getTime() / 1000) },
+    { label: "Domani", timestamp: Math.floor(tomorrow.getTime() / 1000) },
+    { label: "Questo weekend", timestamp: Math.floor(weekend.getTime() / 1000) },
+    { label: "Prossima settimana", timestamp: Math.floor(nextWeek.getTime() / 1000) },
   ];
 }
 
@@ -51,10 +51,10 @@ export function SnoozeDialog({ isOpen = true, onSnooze, onClose }: SnoozeDialogP
     <DateTimePickerDialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Snooze until..."
+      title="Posticipa fino a..."
       presets={presets}
       onSelect={onSnooze}
-      submitLabel="Snooze"
+      submitLabel="Posticipa"
     />
   );
 }

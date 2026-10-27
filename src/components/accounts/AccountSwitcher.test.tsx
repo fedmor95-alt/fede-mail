@@ -6,6 +6,7 @@ import { useAccountStore } from "@/stores/accountStore";
 describe("AccountSwitcher", () => {
   beforeEach(() => {
     useAccountStore.setState({
+      unifiedView: false,
       accounts: [],
       activeAccountId: null,
     });
@@ -13,11 +14,12 @@ describe("AccountSwitcher", () => {
 
   it("shows add account button when no accounts", () => {
     render(<AccountSwitcher collapsed={false} onAddAccount={() => {}} />);
-    expect(screen.getByText("Add Account")).toBeInTheDocument();
+    expect(screen.getByText("Aggiungi account")).toBeInTheDocument();
   });
 
   it("shows initial letter when avatarUrl is null", () => {
     useAccountStore.setState({
+      unifiedView: false,
       accounts: [
         {
           id: "1",
@@ -36,6 +38,7 @@ describe("AccountSwitcher", () => {
 
   it("shows initial letter when avatar image fails to load", () => {
     useAccountStore.setState({
+      unifiedView: false,
       accounts: [
         {
           id: "1",
@@ -59,6 +62,7 @@ describe("AccountSwitcher", () => {
 
   it("falls back to email initial when displayName is null", () => {
     useAccountStore.setState({
+      unifiedView: false,
       accounts: [
         {
           id: "1",
@@ -77,6 +81,7 @@ describe("AccountSwitcher", () => {
 
   it("shows display name and email in trigger when expanded", () => {
     useAccountStore.setState({
+      unifiedView: false,
       accounts: [
         {
           id: "1",
@@ -96,6 +101,7 @@ describe("AccountSwitcher", () => {
 
   it("opens dropdown with account list on click", () => {
     useAccountStore.setState({
+      unifiedView: false,
       accounts: [
         {
           id: "1",
@@ -122,6 +128,7 @@ describe("AccountSwitcher", () => {
 
     // Both accounts should appear in the dropdown
     expect(screen.getByText("Jane Smith")).toBeInTheDocument();
-    expect(screen.getByText("Add account")).toBeInTheDocument();
+    expect(screen.getByText("Aggiungi account")).toBeInTheDocument();
+    expect(screen.getByText("Tutte le caselle")).toBeInTheDocument();
   });
 });

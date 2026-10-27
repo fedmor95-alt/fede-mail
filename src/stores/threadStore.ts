@@ -15,6 +15,8 @@ export interface Thread {
   labelIds: string[];
   fromName: string | null;
   fromAddress: string | null;
+  /** PEC thread status, see services/pec/pecStatus.ts. */
+  pecStatus?: string | null;
 }
 
 interface ThreadState {
@@ -25,6 +27,10 @@ interface ThreadState {
   isLoading: boolean;
   searchQuery: string;
   searchThreadIds: Set<string> | null; // null = no active search
+  /** Unified search results (local + server, all accounts); null = not searching */
+  searchResults: Thread[] | null;
+  searchPending: boolean;
+  setSearchResults: (results: Thread[] | null, pending: boolean) => void;
   setThreads: (threads: Thread[]) => void;
   selectThread: (id: string | null) => void;
   toggleThreadSelection: (id: string) => void;
@@ -40,6 +46,28 @@ interface ThreadState {
   clearSearch: () => void;
 }
 
+/**
+ * Read/star changes made in the UI win over list reloads for a short while:
+ * a reload can read the DB before the queued local write lands (e.g. during
+ * a sync), which would flip a just-opened message back to unread.
+ */
+const FLAG_OVERRIDE_MS = 30_000;
+const flagOverrides = new Map<
+  string,
+  { updates: Partial<Thread>; until: number }
+>();
+
+function applyFlagOverrides(threads: Thread[]): Thread[] {
+  if (flagOverrides.size === 0) return threads;
+  const now = Date.now();
+  for (const [id, o] of flagOverrides)
+    if (o.until < now) flagOverrides.delete(id);
+  return threads.map((t) => {
+    const o = flagOverrides.get(t.id);
+    return o ? { ...t, ...o.updates } : t;
+  });
+}
+
 export const useThreadStore = create<ThreadState>((set, get) => ({
   threads: [],
   threadMap: new Map(),
@@ -48,9 +76,33 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
   isLoading: false,
   searchQuery: "",
   searchThreadIds: null,
+  searchResults: null,
+  searchPending: false,
+  setSearchResults: (searchResults, searchPending) =>
+    set((state) => ({
+      searchResults,
+      searchPending,
+      // Make results resolvable by id (reading pane, actions)
+      threadMap: searchResults
+        ? new Map([
+            ...state.threadMap,
+            ...searchResults.map((t) => [t.id, t] as const),
+          ])
+        : state.threadMap,
+    })),
 
-  setThreads: (threads) => set({ threads, threadMap: new Map(threads.map((t) => [t.id, t])) }),
-  selectThread: (selectedThreadId) => set({ selectedThreadId, selectedThreadIds: new Set() }),
+  setThreads: (loaded) =>
+    set((state) => {
+      const threads = applyFlagOverrides(loaded);
+      return {
+        threads,
+        threadMap: new Map(
+          [...(state.searchResults ?? []), ...threads].map((t) => [t.id, t]),
+        ),
+      };
+    }),
+  selectThread: (selectedThreadId) =>
+    set({ selectedThreadId, selectedThreadIds: new Set() }),
   toggleThreadSelection: (id) =>
     set((state) => {
       const next = new Set(state.selectedThreadIds);
@@ -97,6 +149,16 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
   setLoading: (isLoading) => set({ isLoading }),
   updateThread: (id, updates) =>
     set((state) => {
+      const flags: Partial<Thread> = {};
+      if (updates.isRead !== undefined) flags.isRead = updates.isRead;
+      if (updates.isStarred !== undefined) flags.isStarred = updates.isStarred;
+      if (Object.keys(flags).length > 0) {
+        const prev = flagOverrides.get(id)?.updates;
+        flagOverrides.set(id, {
+          updates: { ...prev, ...flags },
+          until: Date.now() + FLAG_OVERRIDE_MS,
+        });
+      }
       const threads = state.threads.map((t) =>
         t.id === id ? { ...t, ...updates } : t,
       );
@@ -114,7 +176,8 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
       return {
         threads: state.threads.filter((t) => t.id !== id),
         threadMap,
-        selectedThreadId: state.selectedThreadId === id ? null : state.selectedThreadId,
+        selectedThreadId:
+          state.selectedThreadId === id ? null : state.selectedThreadId,
         selectedThreadIds: next,
       };
     }),
@@ -128,10 +191,20 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
       return {
         threads: state.threads.filter((t) => !idsSet.has(t.id)),
         threadMap,
-        selectedThreadId: state.selectedThreadId && idsSet.has(state.selectedThreadId) ? null : state.selectedThreadId,
+        selectedThreadId:
+          state.selectedThreadId && idsSet.has(state.selectedThreadId)
+            ? null
+            : state.selectedThreadId,
         selectedThreadIds: next,
       };
     }),
-  setSearch: (query, threadIds) => set({ searchQuery: query, searchThreadIds: threadIds }),
-  clearSearch: () => set({ searchQuery: "", searchThreadIds: null }),
+  setSearch: (query, threadIds) =>
+    set({ searchQuery: query, searchThreadIds: threadIds }),
+  clearSearch: () =>
+    set({
+      searchQuery: "",
+      searchThreadIds: null,
+      searchResults: null,
+      searchPending: false,
+    }),
 }));

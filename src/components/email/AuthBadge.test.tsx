@@ -19,7 +19,7 @@ describe("AuthBadge", () => {
       <AuthBadge authResults={makeAuthResults("pass")} />,
     );
 
-    const badge = container.querySelector("[aria-label='Authentication passed']");
+    const badge = container.querySelector("[aria-label='Autenticazione riuscita']");
     expect(badge).toBeInTheDocument();
     expect(badge?.className).toContain("text-success");
   });
@@ -29,7 +29,7 @@ describe("AuthBadge", () => {
       <AuthBadge authResults={makeAuthResults("fail")} />,
     );
 
-    const badge = container.querySelector("[aria-label='Authentication failed']");
+    const badge = container.querySelector("[aria-label='Autenticazione non riuscita']");
     expect(badge).toBeInTheDocument();
     expect(badge?.className).toContain("text-danger");
   });
@@ -45,7 +45,7 @@ describe("AuthBadge", () => {
       <AuthBadge authResults={makeAuthResults("warning")} />,
     );
 
-    const badge = container.querySelector("[aria-label='Authentication warning']");
+    const badge = container.querySelector("[aria-label='Avviso di autenticazione']");
     expect(badge).toBeInTheDocument();
     expect(badge?.className).toContain("text-warning");
   });
@@ -55,7 +55,7 @@ describe("AuthBadge", () => {
       <AuthBadge authResults={makeAuthResults("unknown")} />,
     );
 
-    const badge = container.querySelector("[aria-label='Authentication unknown']");
+    const badge = container.querySelector("[aria-label='Autenticazione sconosciuta']");
     expect(badge).toBeInTheDocument();
     expect(badge?.className).toContain("text-text-tertiary");
   });

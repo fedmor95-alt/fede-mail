@@ -13,6 +13,10 @@ export interface Account {
 interface AccountState {
   accounts: Account[];
   activeAccountId: string | null;
+  /** Unified view: lists, search and counts span every account. The active
+   * account then just follows the selected thread (actions, reply, sidebar). */
+  unifiedView: boolean;
+  setUnifiedView: (on: boolean) => void;
   setAccounts: (accounts: Account[], restoredId?: string | null) => void;
   setActiveAccount: (id: string) => void;
   addAccount: (account: Account) => void;
@@ -22,6 +26,12 @@ interface AccountState {
 export const useAccountStore = create<AccountState>((set) => ({
   accounts: [],
   activeAccountId: null,
+  unifiedView: true,
+
+  setUnifiedView: (unifiedView) => {
+    setSetting("unified_view", unifiedView ? "true" : "false").catch(() => {});
+    set({ unifiedView });
+  },
 
   setAccounts: (accounts, restoredId) => {
     const activeId = (restoredId && accounts.some((a) => a.id === restoredId))

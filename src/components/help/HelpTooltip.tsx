@@ -47,7 +47,7 @@ export function HelpTooltip({ contextId, size = 14 }: HelpTooltipProps) {
         onMouseLeave={hide}
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center text-text-tertiary hover:text-text-secondary transition-colors"
-        aria-label={`Help: ${tip.title}`}
+        aria-label={`Aiuto: ${tip.title}`}
       >
         <HelpCircle size={size} />
       </button>
@@ -70,7 +70,7 @@ export function HelpTooltip({ contextId, size = 14 }: HelpTooltipProps) {
               onClick={handleLearnMore}
               className="mt-2 text-xs text-accent hover:text-accent-hover transition-colors"
             >
-              Learn more
+              Scopri di più
             </button>
           </div>,
           document.body,

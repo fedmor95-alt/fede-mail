@@ -42,21 +42,21 @@ export function TitleBar() {
           <button
             onClick={handleMinimize}
             className="h-full px-3.5 flex items-center justify-center text-sidebar-text/70 hover:bg-sidebar-hover transition-colors"
-            title="Minimize"
+            title="Riduci a icona"
           >
             <Minus size={14} />
           </button>
           <button
             onClick={handleMaximize}
             className="h-full px-3.5 flex items-center justify-center text-sidebar-text/70 hover:bg-sidebar-hover transition-colors"
-            title={maximized ? "Restore" : "Maximize"}
+            title={maximized ? "Ripristina" : "Ingrandisci"}
           >
             {maximized ? <Copy size={12} /> : <Square size={12} />}
           </button>
           <button
             onClick={handleClose}
             className="h-full px-3.5 flex items-center justify-center text-sidebar-text/70 hover:bg-danger hover:text-white transition-colors"
-            title="Close"
+            title="Chiudi"
           >
             <X size={14} />
           </button>

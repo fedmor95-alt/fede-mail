@@ -27,13 +27,13 @@ describe("ConfirmDialog", () => {
 
   it("calls onConfirm when confirm button is clicked", () => {
     render(<ConfirmDialog {...baseProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    fireEvent.click(screen.getByRole("button", { name: "Conferma" }));
     expect(baseProps.onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it("calls onClose when cancel button is clicked", () => {
     render(<ConfirmDialog {...baseProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Annulla" }));
     expect(baseProps.onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -57,13 +57,13 @@ describe("ConfirmDialog", () => {
 
   it("applies primary variant to confirm button by default", () => {
     render(<ConfirmDialog {...baseProps} />);
-    const btn = screen.getByRole("button", { name: "Confirm" });
+    const btn = screen.getByRole("button", { name: "Conferma" });
     expect(btn.className).toContain("bg-accent");
   });
 
   it("disables buttons when loading", () => {
     render(<ConfirmDialog {...baseProps} loading />);
-    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Annulla" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "..." })).toBeDisabled();
   });
 

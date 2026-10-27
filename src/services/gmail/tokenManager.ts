@@ -123,4 +123,8 @@ export async function reauthorizeAccount(
     expiresAt,
   }, clientSecret);
   clients.set(accountId, client);
+
+  // The new token may carry scopes the old one lacked (IMAP push).
+  const { restartWatcher } = await import("../push/pushManager");
+  restartWatcher(accountId);
 }

@@ -5,6 +5,7 @@ import { upsertThread, setThreadLabels } from "../db/threads";
 import { upsertMessage } from "../db/messages";
 import { upsertAttachment } from "../db/attachments";
 import { updateAccountSyncState } from "../db/accounts";
+import { getDb } from "../db/connection";
 import { shouldNotifyForMessage, queueNewEmailNotification } from "../notifications/notificationManager";
 import { applyFiltersToMessages } from "../filters/filterEngine";
 import { getSetting } from "../db/settings";
@@ -174,87 +175,87 @@ export async function syncLabels(
 /**
  * Perform an initial full sync: fetch all threads from the last N days.
  */
+/**
+ * Initial sync keeps the mailbox local copy small and shows mail quickly:
+ * - threads are listed newest first and stored page by page, so the list
+ *   fills in while the sync is still running;
+ * - at most INITIAL_SYNC_MAX_THREADS are stored (older mail is reachable
+ *   through server-side search, see services/search/unifiedSearch.ts);
+ * - threads already in the DB are skipped, so an interrupted sync resumes
+ *   instead of starting over;
+ * - the history ID is taken from the profile *before* listing, so the
+ *   following delta sync catches anything that changed meanwhile.
+ */
+const INITIAL_SYNC_MAX_THREADS = 1500;
+
 export async function initialSync(
   client: GmailClient,
   accountId: string,
   daysBack = 365,
   onProgress?: SyncProgressCallback,
 ): Promise<void> {
-  // Phase 1: Sync labels
   onProgress?.({ phase: "labels", current: 0, total: 1 });
+  const profile = await client.getProfile();
   await syncLabels(client, accountId);
   onProgress?.({ phase: "labels", current: 1, total: 1 });
 
-  // Phase 2: Fetch thread list
   const afterDate = new Date();
   afterDate.setDate(afterDate.getDate() - daysBack);
   const afterStr = `${afterDate.getFullYear()}/${afterDate.getMonth() + 1}/${afterDate.getDate()}`;
 
-  const threadStubs: { id: string }[] = [];
+  const db = await getDb();
+  const existingRows = await db.select<{ id: string }[]>("SELECT id FROM threads WHERE account_id = $1", [accountId]);
+  const existing = new Set(existingRows.map((r) => r.id));
+  const autoArchiveCategories = await loadAutoArchiveCategories();
+
+  let listed = 0;
+  let attempted = 0;
+  let failed = 0;
   let pageToken: string | undefined;
-
-  onProgress?.({ phase: "threads", current: 0, total: 0 });
-
   do {
     const response = await client.listThreads({
       maxResults: 100,
       pageToken,
       q: `after:${afterStr}`,
     });
-
-    if (response.threads) {
-      threadStubs.push(...response.threads.map((t) => ({ id: t.id })));
-    }
-
     pageToken = response.nextPageToken;
+    const stubs = (response.threads ?? []).slice(0, INITIAL_SYNC_MAX_THREADS - listed);
+    listed += stubs.length;
+
+    await parallelLimit(
+      stubs
+        .filter((stub) => !existing.has(stub.id))
+        .map((stub) => async () => {
+          attempted++;
+          try {
+            const thread = await client.getThread(stub.id, "metadata");
+            if (!thread.messages || thread.messages.length === 0) return;
+            const parsedMessages = thread.messages.map(parseGmailMessage);
+            await processAndStoreThread(thread, accountId, parsedMessages, client, autoArchiveCategories);
+          } catch (err) {
+            failed++;
+            console.error(`Failed to sync thread ${stub.id}:`, err);
+          }
+        }),
+      4,
+    );
+
     onProgress?.({
-      phase: "threads",
-      current: threadStubs.length,
-      total: threadStubs.length + (pageToken ? 100 : 0), // estimate
+      phase: "messages",
+      current: listed,
+      total: listed + (pageToken && listed < INITIAL_SYNC_MAX_THREADS ? 100 : 0),
     });
-  } while (pageToken);
+    window.dispatchEvent(new Event("velo-sync-done"));
+  } while (pageToken && listed < INITIAL_SYNC_MAX_THREADS);
 
-  // Phase 3: Fetch and store each thread's details
-  let historyId = "0";
+  // Don't mark a sync that stored nothing as complete: the next run retries.
+  if (attempted > 0 && failed === attempted) {
+    throw new Error(`Initial sync failed for all ${attempted} threads`);
+  }
+  console.log(`[syncManager] Initial sync stored ${attempted - failed}/${listed} threads for ${accountId}`);
+  await updateAccountSyncState(accountId, profile.historyId);
 
-  // Load auto-archive categories once for the whole sync
-  const autoArchiveCategories = await loadAutoArchiveCategories();
-
-  let progress = 0;
-  await parallelLimit(
-    threadStubs.map((stub) => async () => {
-      onProgress?.({
-        phase: "messages",
-        current: ++progress,
-        total: threadStubs.length,
-      });
-
-      try {
-        const thread = await client.getThread(stub.id, "full");
-
-        if (BigInt(thread.historyId) > BigInt(historyId)) {
-          historyId = thread.historyId;
-        }
-
-        if (!thread.messages || thread.messages.length === 0) return;
-
-        const parsedMessages = thread.messages.map(parseGmailMessage);
-        await processAndStoreThread(thread, accountId, parsedMessages, client, autoArchiveCategories);
-      } catch (err) {
-        console.error(`Failed to sync thread ${stub.id}:`, err);
-      }
-    }),
-    10,
-  );
-
-  // Store the latest history ID for delta sync
-  await updateAccountSyncState(accountId, historyId);
-
-  onProgress?.({
-    phase: "done",
-    current: threadStubs.length,
-    total: threadStubs.length,
-  });
+  onProgress?.({ phase: "done", current: listed, total: listed });
 }
 
 /**
@@ -360,7 +361,7 @@ export async function deltaSync(
             return;
           }
 
-          const thread = await client.getThread(threadId, "full");
+          const thread = await client.getThread(threadId, "metadata");
 
           if (!thread.messages || thread.messages.length === 0) return;
 
@@ -436,4 +437,19 @@ export async function deltaSync(
     }
     throw err;
   }
+}
+
+/**
+ * Fetch one thread (headers only) and store it locally. Used by server-side
+ * search to bring in old threads that fall outside the synced window.
+ */
+export async function storeGmailThread(
+  client: GmailClient,
+  accountId: string,
+  threadId: string,
+): Promise<void> {
+  const thread = await client.getThread(threadId, "metadata");
+  if (!thread.messages || thread.messages.length === 0) return;
+  const parsedMessages = thread.messages.map(parseGmailMessage);
+  await processAndStoreThread(thread, accountId, parsedMessages, client, await loadAutoArchiveCategories());
 }

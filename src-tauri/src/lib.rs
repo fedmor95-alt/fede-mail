@@ -86,6 +86,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
+        .manage(imap::idle::IdleWatchers::default())
         .invoke_handler(tauri::generate_handler![
             oauth::start_oauth_server,
             oauth::oauth_exchange_token,
@@ -110,6 +111,9 @@ pub fn run() {
             commands::imap_sync_folder,
             commands::imap_raw_fetch_diagnostic,
             commands::imap_delta_check,
+            imap::idle::imap_idle_start,
+            imap::idle::imap_idle_stop,
+            imap::idle::imap_idle_stop_all,
             commands::smtp_send_email,
             commands::smtp_test_connection,
         ])
@@ -131,10 +135,10 @@ pub fn run() {
             #[cfg(not(target_os = "linux"))]
             {
                 // Build system tray menu
-                let show = MenuItem::with_id(app, "show", "Show Velo", true, None::<&str>)?;
+                let show = MenuItem::with_id(app, "show", "Mostra Velo", true, None::<&str>)?;
                 let check_mail =
-                    MenuItem::with_id(app, "check_mail", "Check for Mail", true, None::<&str>)?;
-                let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                    MenuItem::with_id(app, "check_mail", "Controlla la posta", true, None::<&str>)?;
+                let quit = MenuItem::with_id(app, "quit", "Esci", true, None::<&str>)?;
                 let menu = Menu::with_items(app, &[&show, &check_mail, &quit])?;
 
                 let icon = app
@@ -192,7 +196,7 @@ pub fn run() {
                     };
 
                     let app_handle_show = app_handle.clone();
-                    if let Err(e) = tray.add_menu_item("Show Velo", move || {
+                    if let Err(e) = tray.add_menu_item("Mostra Velo", move || {
                         if let Some(window) = app_handle_show.get_webview_window("main") {
                             let _ = window.show();
                             let _ = window.set_focus();
@@ -202,7 +206,7 @@ pub fn run() {
                     }
 
                     let app_handle_check = app_handle.clone();
-                    if let Err(e) = tray.add_menu_item("Check for Mail", move || {
+                    if let Err(e) = tray.add_menu_item("Controlla la posta", move || {
                         if let Some(window) = app_handle_check.get_webview_window("main") {
                             let _ = window.emit("tray-check-mail", ());
                         }
@@ -211,7 +215,7 @@ pub fn run() {
                     }
 
                     let app_handle_quit = app_handle.clone();
-                    if let Err(e) = tray.add_menu_item("Quit", move || {
+                    if let Err(e) = tray.add_menu_item("Esci", move || {
                         app_handle_quit.exit(0);
                     }) {
                         log::warn!("Failed to add tray menu item 'Quit': {e}");

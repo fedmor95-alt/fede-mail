@@ -30,10 +30,10 @@ function getFollowUpPresets(): { label: string; timestamp: number }[] {
   oneWeek.setHours(9, 0, 0, 0);
 
   return [
-    { label: "In 1 day", timestamp: Math.floor(oneDay.getTime() / 1000) },
-    { label: "In 2 days", timestamp: Math.floor(twoDays.getTime() / 1000) },
-    { label: "In 3 days", timestamp: Math.floor(threeDays.getTime() / 1000) },
-    { label: "In 1 week", timestamp: Math.floor(oneWeek.getTime() / 1000) },
+    { label: "Tra 1 giorno", timestamp: Math.floor(oneDay.getTime() / 1000) },
+    { label: "Tra 2 giorni", timestamp: Math.floor(twoDays.getTime() / 1000) },
+    { label: "Tra 3 giorni", timestamp: Math.floor(threeDays.getTime() / 1000) },
+    { label: "Tra 1 settimana", timestamp: Math.floor(oneWeek.getTime() / 1000) },
   ];
 }
 
@@ -44,10 +44,10 @@ export function FollowUpDialog({ isOpen = true, onSetReminder, onClose }: Follow
     <DateTimePickerDialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Remind me if no reply..."
+      title="Ricordamelo se non c'è risposta..."
       presets={presets}
       onSelect={onSetReminder}
-      submitLabel="Set reminder"
+      submitLabel="Imposta promemoria"
     />
   );
 }

@@ -16,7 +16,7 @@ export function HelpSearchBar({ query, onChange }: HelpSearchBarProps) {
         type="text"
         value={query}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Search help topics..."
+        placeholder="Cerca negli argomenti di aiuto..."
         className="w-full pl-9 pr-9 py-2 text-sm rounded-lg bg-bg-secondary border border-border-secondary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors"
       />
       {query && (

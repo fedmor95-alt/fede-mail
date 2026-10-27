@@ -29,7 +29,7 @@ export function SignatureEditor() {
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: { openOnClick: false } }),
       Image.configure({ inline: true, allowBase64: true }),
-      Placeholder.configure({ placeholder: "Write your signature..." }),
+      Placeholder.configure({ placeholder: "Scrivi la tua firma..." }),
     ],
     content: "",
     editorProps: {
@@ -118,7 +118,7 @@ export function SignatureEditor() {
               {sig.name}
               {sig.is_default === 1 && (
                 <span className="text-[0.625rem] bg-accent/10 text-accent px-1.5 py-0.5 rounded">
-                  Default
+                  Predefinita
                 </span>
               )}
             </div>
@@ -146,12 +146,12 @@ export function SignatureEditor() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Signature name"
+            placeholder="Nome della firma"
           />
           <div className="border border-border-primary rounded overflow-hidden bg-bg-tertiary">
             <div className="flex items-center justify-between">
               {isHtmlMode ? (
-                <span className="px-2 py-1 text-xs text-text-secondary">HTML source</span>
+                <span className="px-2 py-1 text-xs text-text-secondary">Sorgente HTML</span>
               ) : (
                 <EditorToolbar editor={editor} />
               )}
@@ -159,7 +159,7 @@ export function SignatureEditor() {
                 type="button"
                 onClick={toggleHtmlMode}
                 className={`p-1.5 mr-1 rounded transition-colors ${isHtmlMode ? "text-accent bg-accent/10" : "text-text-tertiary hover:text-text-primary"}`}
-                title={isHtmlMode ? "Switch to visual editor" : "Edit HTML source"}
+                title={isHtmlMode ? "Passa all'editor visuale" : "Modifica sorgente HTML"}
               >
                 <Code size={14} />
               </button>
@@ -183,7 +183,7 @@ export function SignatureEditor() {
                 onChange={(e) => setIsDefault(e.target.checked)}
                 className="rounded"
               />
-              Set as default
+              Imposta come predefinita
             </label>
           </div>
           <div className="flex items-center gap-2">
@@ -192,13 +192,13 @@ export function SignatureEditor() {
               disabled={!name.trim()}
               className="px-3 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-md transition-colors disabled:opacity-50"
             >
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Aggiorna" : "Salva"}
             </button>
             <button
               onClick={resetForm}
               className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary rounded-md transition-colors"
             >
-              Cancel
+              Annulla
             </button>
           </div>
         </div>
@@ -207,7 +207,7 @@ export function SignatureEditor() {
           onClick={() => setShowForm(true)}
           className="text-xs text-accent hover:text-accent-hover"
         >
-          + Add signature
+          + Aggiungi firma
         </button>
       )}
     </div>

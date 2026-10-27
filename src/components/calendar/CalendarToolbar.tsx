@@ -42,7 +42,7 @@ export function CalendarToolbar({
             onClick={onToday}
             className="px-2.5 py-1 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
           >
-            Today
+            Oggi
           </button>
           <button
             onClick={onNext}
@@ -58,7 +58,7 @@ export function CalendarToolbar({
           <button
             onClick={onToggleCalendarList}
             className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
-            title="Toggle calendar list"
+            title="Mostra/nascondi elenco calendari"
           >
             <CalendarDays size={16} />
           </button>
@@ -74,7 +74,7 @@ export function CalendarToolbar({
                   : "text-text-tertiary hover:text-text-secondary"
               }`}
             >
-              {v}
+              {VIEW_LABELS[v]}
             </button>
           ))}
         </div>
@@ -83,15 +83,17 @@ export function CalendarToolbar({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-md transition-colors"
         >
           <Plus size={14} />
-          Create
+          Crea
         </button>
       </div>
     </div>
   );
 }
 
+const VIEW_LABELS: Record<CalendarView, string> = { day: "Giorno", week: "Settimana", month: "Mese" };
+
 function formatTitle(date: Date, view: CalendarView): string {
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
   if (view === "month") {
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   }
@@ -101,9 +103,9 @@ function formatTitle(date: Date, view: CalendarView): string {
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
     if (start.getMonth() === end.getMonth()) {
-      return `${months[start.getMonth()]} ${start.getDate()}-${end.getDate()}, ${start.getFullYear()}`;
+      return `${start.getDate()}-${end.getDate()} ${months[start.getMonth()]} ${start.getFullYear()}`;
     }
-    return `${months[start.getMonth()]?.slice(0, 3)} ${start.getDate()} - ${months[end.getMonth()]?.slice(0, 3)} ${end.getDate()}, ${end.getFullYear()}`;
+    return `${start.getDate()} ${months[start.getMonth()]?.slice(0, 3)} - ${end.getDate()} ${months[end.getMonth()]?.slice(0, 3)} ${end.getFullYear()}`;
   }
-  return date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  return date.toLocaleDateString("it-IT", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }

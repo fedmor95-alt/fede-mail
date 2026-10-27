@@ -48,7 +48,7 @@ export function UpdateToast() {
       >
         <div className="px-4 py-3 space-y-2">
           <p className="text-sm font-medium text-text-primary">
-            Velo v{version} is available
+            Velo v{version} è disponibile
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -56,14 +56,14 @@ export function UpdateToast() {
               disabled={installing}
               className="text-xs text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
             >
-              Later
+              Più tardi
             </button>
             <button
               onClick={handleInstall}
               disabled={installing}
               className="text-xs font-medium text-accent hover:text-accent-hover transition-colors disabled:opacity-50"
             >
-              {installing ? "Updating..." : "Update Now"}
+              {installing ? "Aggiornamento..." : "Aggiorna ora"}
             </button>
           </div>
         </div>

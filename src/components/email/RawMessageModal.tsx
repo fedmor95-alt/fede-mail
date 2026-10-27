@@ -69,22 +69,22 @@ export function RawMessageModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Message Source"
+      title="Sorgente del messaggio"
       width="w-[720px] max-w-[90vw]"
       renderHeader={
         <div className="px-4 py-3 border-b border-border-primary flex items-center justify-between">
           <h3 className="text-sm font-semibold text-text-primary">
-            Message Source
+            Sorgente del messaggio
           </h3>
           <div className="flex items-center gap-2">
             {raw && (
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary px-2 py-1 rounded hover:bg-bg-hover transition-colors"
-                title="Copy to clipboard"
+                title="Copia negli appunti"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? "Copied" : "Copy"}
+                {copied ? "Copiato" : "Copia"}
               </button>
             )}
             <button
@@ -100,12 +100,12 @@ export function RawMessageModal({
       <div className="max-h-[70vh] overflow-y-auto p-4">
         {loading && (
           <div className="flex items-center justify-center py-12 text-text-tertiary text-sm">
-            Loading message source...
+            Caricamento sorgente del messaggio...
           </div>
         )}
         {error && (
           <div className="text-danger text-sm py-4">
-            Failed to load message source: {error}
+            Impossibile caricare il sorgente del messaggio: {error}
           </div>
         )}
         {raw && (

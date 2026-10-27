@@ -23,20 +23,20 @@ export function PhishingBanner({ scanResult, onTrustSender }: PhishingBannerProp
       <ShieldAlert size={18} className={`shrink-0 ${iconClass}`} />
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-medium ${textClass}`}>
-          {isHigh ? "High risk" : "Suspicious"} links detected
+          Link {isHigh ? "ad alto rischio" : "sospetti"} rilevati
         </p>
         <p className="text-xs text-text-tertiary mt-0.5">
           {scanResult.suspiciousLinkCount === 1
-            ? "1 suspicious link found"
-            : `${scanResult.suspiciousLinkCount} suspicious links found`}
-          {" "}in this message. Be cautious before clicking any links.
+            ? "Trovato 1 link sospetto"
+            : `Trovati ${scanResult.suspiciousLinkCount} link sospetti`}
+          {" "}in questo messaggio. Fai attenzione prima di cliccare sui link.
         </p>
       </div>
       <button
         onClick={onTrustSender}
         className={`shrink-0 text-xs px-2.5 py-1 rounded-md border transition-colors ${buttonClass}`}
       >
-        Trust this sender
+        Fidati di questo mittente
       </button>
     </div>
   );

@@ -41,18 +41,18 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const commands: Command[] = useMemo(() => [
     // Navigation
-    { id: "go-inbox", label: "Go to Inbox", shortcut: "g i", category: "Navigation", action: () => { navigateToLabel("inbox"); onClose(); } },
-    { id: "go-starred", label: "Go to Starred", shortcut: "g s", category: "Navigation", action: () => { navigateToLabel("starred"); onClose(); } },
-    { id: "go-sent", label: "Go to Sent", shortcut: "g t", category: "Navigation", action: () => { navigateToLabel("sent"); onClose(); } },
-    { id: "go-drafts", label: "Go to Drafts", shortcut: "g d", category: "Navigation", action: () => { navigateToLabel("drafts"); onClose(); } },
-    { id: "go-snoozed", label: "Go to Snoozed", category: "Navigation", action: () => { navigateToLabel("snoozed"); onClose(); } },
-    { id: "go-trash", label: "Go to Trash", category: "Navigation", action: () => { navigateToLabel("trash"); onClose(); } },
-    { id: "go-all", label: "Go to All Mail", category: "Navigation", action: () => { navigateToLabel("all"); onClose(); } },
+    { id: "go-inbox", label: "Vai a Posta in arrivo", shortcut: "g i", category: "Navigazione", action: () => { navigateToLabel("inbox"); onClose(); } },
+    { id: "go-starred", label: "Vai a Speciali", shortcut: "g s", category: "Navigazione", action: () => { navigateToLabel("starred"); onClose(); } },
+    { id: "go-sent", label: "Vai a Inviata", shortcut: "g t", category: "Navigazione", action: () => { navigateToLabel("sent"); onClose(); } },
+    { id: "go-drafts", label: "Vai a Bozze", shortcut: "g d", category: "Navigazione", action: () => { navigateToLabel("drafts"); onClose(); } },
+    { id: "go-snoozed", label: "Vai a Posticipati", category: "Navigazione", action: () => { navigateToLabel("snoozed"); onClose(); } },
+    { id: "go-trash", label: "Vai a Cestino", category: "Navigazione", action: () => { navigateToLabel("trash"); onClose(); } },
+    { id: "go-all", label: "Vai a Tutta la posta", category: "Navigazione", action: () => { navigateToLabel("all"); onClose(); } },
 
     // Actions
-    { id: "compose", label: "Compose New Email", shortcut: "c", category: "Actions", action: () => { openComposer(); onClose(); } },
-    { id: "deselect", label: "Close Thread", shortcut: "Esc", category: "Actions", action: () => { navigateBack(); onClose(); } },
-    { id: "spam", label: activeLabel === "spam" ? "Not Spam" : "Report Spam", shortcut: "!", category: "Actions", action: async () => {
+    { id: "compose", label: "Scrivi nuova email", shortcut: "c", category: "Azioni", action: () => { openComposer(); onClose(); } },
+    { id: "deselect", label: "Chiudi conversazione", shortcut: "Esc", category: "Azioni", action: () => { navigateBack(); onClose(); } },
+    { id: "spam", label: activeLabel === "spam" ? "Non è indesiderata" : "Segnala come indesiderata", shortcut: "!", category: "Azioni", action: async () => {
       onClose();
       const selectedId = getSelectedThreadId();
       const accountId = useAccountStore.getState().activeAccountId;
@@ -71,34 +71,34 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     } },
 
     // Tasks
-    { id: "task-create", label: "Create Task", category: "Tasks", action: () => {
+    { id: "task-create", label: "Crea attività", category: "Attività", action: () => {
       onClose();
       useUIStore.getState().setTaskSidebarVisible(true);
     } },
-    { id: "task-extract", label: "Create Task from Email (AI)", shortcut: "t", category: "Tasks", action: () => {
+    { id: "task-extract", label: "Crea attività dall'email (IA)", shortcut: "t", category: "Attività", action: () => {
       onClose();
       const threadId = getSelectedThreadId();
       if (threadId) {
         window.dispatchEvent(new CustomEvent("velo-extract-task", { detail: { threadId } }));
       }
     } },
-    { id: "task-view", label: "View Tasks", shortcut: "g k", category: "Tasks", action: () => { navigateToLabel("tasks"); onClose(); } },
-    { id: "task-toggle-panel", label: "Toggle Task Panel", category: "Tasks", action: () => { useUIStore.getState().toggleTaskSidebar(); onClose(); } },
+    { id: "task-view", label: "Mostra attività", shortcut: "g k", category: "Attività", action: () => { navigateToLabel("tasks"); onClose(); } },
+    { id: "task-toggle-panel", label: "Mostra/nascondi pannello attività", category: "Attività", action: () => { useUIStore.getState().toggleTaskSidebar(); onClose(); } },
 
     // AI
-    { id: "ask-ai", label: "Ask AI about your inbox", category: "AI", action: () => { onClose(); window.dispatchEvent(new Event("velo-toggle-ask-inbox")); } },
+    { id: "ask-ai", label: "Chiedi all'IA sulla tua posta", category: "IA", action: () => { onClose(); window.dispatchEvent(new Event("velo-toggle-ask-inbox")); } },
 
     // Settings
-    { id: "toggle-sidebar", label: "Toggle Sidebar", shortcut: "Ctrl+Shift+E", category: "Settings", action: () => { toggleSidebar(); onClose(); } },
-    { id: "theme-light", label: "Switch to Light Theme", category: "Settings", action: () => { setTheme("light"); onClose(); } },
-    { id: "theme-dark", label: "Switch to Dark Theme", category: "Settings", action: () => { setTheme("dark"); onClose(); } },
-    { id: "theme-system", label: "Use System Theme", category: "Settings", action: () => { setTheme("system"); onClose(); } },
+    { id: "toggle-sidebar", label: "Mostra/nascondi barra laterale", shortcut: "Ctrl+Shift+E", category: "Impostazioni", action: () => { toggleSidebar(); onClose(); } },
+    { id: "theme-light", label: "Passa al tema chiaro", category: "Impostazioni", action: () => { setTheme("light"); onClose(); } },
+    { id: "theme-dark", label: "Passa al tema scuro", category: "Impostazioni", action: () => { setTheme("dark"); onClose(); } },
+    { id: "theme-system", label: "Usa il tema di sistema", category: "Impostazioni", action: () => { setTheme("system"); onClose(); } },
 
     // Templates
     ...templates.map((tmpl) => ({
       id: `template-${tmpl.id}`,
-      label: `Insert: ${tmpl.name}`,
-      category: "Templates",
+      label: `Inserisci: ${tmpl.name}`,
+      category: "Modelli",
       action: () => {
         openComposer({
           mode: "new" as const,
@@ -161,7 +161,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               setSelectedIdx(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Type a command..."
+            placeholder="Digita un comando..."
             className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
           />
         </div>
@@ -170,7 +170,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         <div className="max-h-80 overflow-y-auto py-1">
           {filtered.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-text-tertiary">
-              No commands found
+              Nessun comando trovato
             </div>
           ) : (
             categories.map((cat) => (

@@ -102,7 +102,7 @@ describe("GmailClient.request", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     await expect(client.request("/threads/t1")).rejects.toThrow("Gmail API error: 429 Rate Limit Exceeded");
-    expect(mockFetch).toHaveBeenCalledTimes(3); // 3 attempts total
+    expect(mockFetch).toHaveBeenCalledTimes(4); // 4 attempts total
   });
 
   it("should use exponential backoff when no Retry-After header", async () => {

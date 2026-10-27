@@ -3,8 +3,10 @@ import { useDraggable } from "@dnd-kit/core";
 import type { Thread } from "@/stores/threadStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useAccountStore } from "@/stores/accountStore";
 import { useActiveLabel } from "@/hooks/useRouteNavigation";
 import { formatRelativeDate } from "@/utils/date";
+import { PecStatusBadge } from "./PecBadge";
 import { Paperclip, Star, Check, Pin, BellRing, VolumeX } from "lucide-react";
 import type { DragData } from "@/components/dnd/DndProvider";
 
@@ -13,6 +15,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   Promotions: "bg-green-500/15 text-green-600 dark:text-green-400",
   Social: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
   Newsletters: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  Updates: "Aggiornamenti",
+  Promotions: "Promozioni",
+  Social: "Social",
+  Newsletters: "Newsletter",
 };
 
 interface ThreadCardProps {
@@ -25,6 +34,9 @@ interface ThreadCardProps {
   hasFollowUp?: boolean;
 }
 
+/** Per-account dot colors in the unified view (Apple Mail-like palette). */
+export const ACCOUNT_COLORS = ["#0a84ff", "#ff9f0a", "#30d158", "#bf5af2", "#ff375f", "#64d2ff"];
+
 export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick, onContextMenu, category, showCategoryBadge, hasFollowUp }: ThreadCardProps) {
   const isMultiSelected = useThreadStore((s) => s.selectedThreadIds.has(thread.id));
   const hasMultiSelect = useThreadStore((s) => s.selectedThreadIds.size > 0);
@@ -33,6 +45,13 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
   const activeLabel = useActiveLabel();
   const emailDensity = useUIStore((s) => s.emailDensity);
   const isSpam = thread.labelIds.includes("SPAM");
+  // Selectors must return primitives (zustand v5 compares by reference)
+  const accountIdx = useAccountStore((s) =>
+    s.unifiedView && s.accounts.length > 1 ? s.accounts.findIndex((a) => a.id === thread.accountId) : -1,
+  );
+  const accountEmail = useAccountStore((s) => s.accounts.find((a) => a.id === thread.accountId)?.email ?? "");
+  const accountTag =
+    accountIdx >= 0 ? { color: ACCOUNT_COLORS[accountIdx % ACCOUNT_COLORS.length]!, email: accountEmail } : null;
 
   // Read selectedThreadIds lazily for drag — avoids subscribing all cards to the Set reference
   const dragData: DragData = useMemo(() => ({
@@ -77,7 +96,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
       {...listeners}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
-      aria-label={`${thread.isRead ? "" : "Unread "}email from ${thread.fromName ?? thread.fromAddress ?? "Unknown"}: ${thread.subject ?? "(No subject)"}`}
+      aria-label={`${thread.isRead ? "" : "Non letta: "}email da ${thread.fromName ?? thread.fromAddress ?? "Sconosciuto"}: ${thread.subject ?? "(Nessun oggetto)"}`}
       aria-selected={isSelected}
       className={`w-full text-left border-b border-border-secondary group hover-lift press-scale ${
         emailDensity === "compact" ? "px-3 py-1.5" : emailDensity === "spacious" ? "px-4 py-4" : "px-4 py-3"
@@ -108,13 +127,20 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
           {/* First row: sender + date */}
           <div className="flex items-center justify-between gap-2">
             <span
-              className={`text-sm truncate ${
+              className={`text-sm truncate flex items-center gap-1.5 ${
                 thread.isRead
                   ? "text-text-secondary"
                   : "font-semibold text-text-primary"
               }`}
             >
-              {thread.fromName ?? thread.fromAddress ?? "Unknown"}
+              {accountTag && (
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: accountTag.color }}
+                  title={accountTag.email}
+                />
+              )}
+              <span className="truncate">{thread.fromName ?? thread.fromAddress ?? "Sconosciuto"}</span>
             </span>
             <span className="text-xs text-text-tertiary whitespace-nowrap shrink-0">
               {formatRelativeDate(thread.lastMessageAt)}
@@ -127,7 +153,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
               thread.isRead ? "text-text-secondary" : "text-text-primary"
             }`}
           >
-            {thread.subject ?? "(No subject)"}
+            {thread.subject ?? "(Nessun oggetto)"}
           </div>
 
           {/* Snippet + indicators */}
@@ -135,33 +161,34 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
             <span className="text-xs text-text-tertiary truncate flex-1">
               {thread.snippet}
             </span>
+            <PecStatusBadge status={thread.pecStatus} />
             {showCategoryBadge && category && category !== "Primary" && CATEGORY_COLORS[category] && (
               <span className={`shrink-0 text-[0.625rem] px-1.5 rounded-full leading-normal ${CATEGORY_COLORS[category]}`}>
-                {category}
+                {CATEGORY_LABELS[category] ?? category}
               </span>
             )}
             {hasFollowUp && (
-              <span className="shrink-0 text-accent" title="Follow-up reminder set">
+              <span className="shrink-0 text-accent" title="Promemoria di sollecito impostato">
                 <BellRing size={12} />
               </span>
             )}
             {thread.isMuted && (
-              <span className="shrink-0 text-warning" title="Muted">
+              <span className="shrink-0 text-warning" title="Silenziata">
                 <VolumeX size={12} />
               </span>
             )}
             {thread.isPinned && (
-              <span className="shrink-0 text-accent" title="Pinned">
+              <span className="shrink-0 text-accent" title="Fissata">
                 <Pin size={12} className="fill-current" />
               </span>
             )}
             {thread.hasAttachments && (
-              <span className="shrink-0 text-text-tertiary" title="Has attachments">
+              <span className="shrink-0 text-text-tertiary" title="Con allegati">
                 <Paperclip size={12} />
               </span>
             )}
             {thread.isStarred && (
-              <span className="shrink-0 text-warning star-animate" title="Starred">
+              <span className="shrink-0 text-warning star-animate" title="Contrassegnata">
                 <Star size={12} className="fill-current" />
               </span>
             )}

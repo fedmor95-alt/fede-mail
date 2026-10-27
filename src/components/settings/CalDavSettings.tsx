@@ -83,17 +83,17 @@ export function CalDavSettings({ account, onSaved }: CalDavSettingsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-text-primary">Calendar (CalDAV)</h4>
+        <h4 className="text-sm font-medium text-text-primary">Calendario (CalDAV)</h4>
         {isConfigured && (
-          <span className="text-xs text-success font-medium">Connected</span>
+          <span className="text-xs text-success font-medium">Connesso</span>
         )}
       </div>
       <p className="text-xs text-text-tertiary">
-        Connect a CalDAV calendar server to enable calendar features for this IMAP account.
+        Collega un server calendario CalDAV per abilitare le funzioni del calendario per questo account IMAP.
       </p>
 
       <TextField
-        label="CalDAV Server URL"
+        label="URL del server CalDAV"
         type="url"
         value={caldavUrl}
         onChange={(e) => setCaldavUrl(e.target.value)}
@@ -101,7 +101,7 @@ export function CalDavSettings({ account, onSaved }: CalDavSettingsProps) {
       />
 
       <TextField
-        label="Username"
+        label="Nome utente"
         type="text"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
@@ -109,11 +109,11 @@ export function CalDavSettings({ account, onSaved }: CalDavSettingsProps) {
       />
 
       <TextField
-        label="Password / App Password"
+        label="Password / Password per app"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="App-specific password"
+        placeholder="Password specifica per app"
       />
 
       {testResult && (
@@ -131,7 +131,7 @@ export function CalDavSettings({ account, onSaved }: CalDavSettingsProps) {
           disabled={testing || !caldavUrl || !password}
         >
           {testing && <Loader2 size={14} className="animate-spin" />}
-          {testing ? "Testing..." : "Test Connection"}
+          {testing ? "Verifica in corso..." : "Verifica connessione"}
         </Button>
 
         <Button
@@ -140,7 +140,7 @@ export function CalDavSettings({ account, onSaved }: CalDavSettingsProps) {
           onClick={handleSave}
           disabled={saving || !caldavUrl || !password}
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? "Salvataggio..." : "Salva"}
         </Button>
 
         {isConfigured && (
@@ -150,7 +150,7 @@ export function CalDavSettings({ account, onSaved }: CalDavSettingsProps) {
             onClick={handleRemove}
             disabled={saving}
           >
-            Remove
+            Rimuovi
           </Button>
         )}
       </div>

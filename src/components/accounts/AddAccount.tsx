@@ -106,10 +106,10 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
 
   if (view === "gmail") {
     return (
-      <Modal isOpen={true} onClose={onClose} title="Add Gmail Account" width="w-full max-w-md">
+      <Modal isOpen={true} onClose={onClose} title="Aggiungi account Gmail" width="w-full max-w-md">
         <div className="p-4">
           <p className="text-text-secondary text-sm mb-6">
-            Sign in with your Google account to connect it to Velo.
+            Accedi con il tuo account Google per collegarlo a Velo.
           </p>
 
           {error && (
@@ -120,9 +120,9 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
 
           {status === "authenticating" && (
             <div className="text-center py-4 text-text-secondary text-sm">
-              <div className="mb-2">Waiting for Google sign-in...</div>
+              <div className="mb-2">In attesa dell'accesso a Google...</div>
               <div className="text-xs text-text-tertiary">
-                Complete the sign-in in your browser, then return here.
+                Completa l'accesso nel browser, poi torna qui.
               </div>
             </div>
           )}
@@ -136,14 +136,14 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
               }}
               className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
-              Back
+              Indietro
             </button>
             <div className="flex gap-3">
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
-                Cancel
+                Annulla
               </button>
               <button
                 onClick={handleAddGmailAccount}
@@ -151,10 +151,10 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
                 className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {status === "authenticating"
-                  ? "Waiting..."
+                  ? "In attesa..."
                   : status === "checking"
-                    ? "Checking..."
-                    : "Sign in with Google"}
+                    ? "Verifica..."
+                    : "Accedi con Google"}
               </button>
             </div>
           </div>
@@ -165,10 +165,10 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
 
   // Provider selection view
   return (
-    <Modal isOpen={true} onClose={onClose} title="Add Account" width="w-full max-w-md">
+    <Modal isOpen={true} onClose={onClose} title="Aggiungi account" width="w-full max-w-md">
       <div className="p-4">
         <p className="text-text-secondary text-sm mb-4">
-          Choose how you want to connect your email account.
+          Scegli come collegare il tuo account email.
         </p>
 
         <div className="space-y-3">
@@ -201,7 +201,7 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
                 Google (Gmail)
               </div>
               <div className="text-xs text-text-tertiary mt-0.5">
-                Connect via OAuth with full Gmail API support
+                Collega tramite OAuth con supporto completo all'API di Gmail
               </div>
             </div>
           </button>
@@ -218,7 +218,7 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
                 IMAP / SMTP
               </div>
               <div className="text-xs text-text-tertiary mt-0.5">
-                Connect any email provider with manual server configuration
+                Collega qualsiasi provider email con configurazione manuale del server
               </div>
             </div>
           </button>
@@ -232,10 +232,10 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
-                CalDAV (Calendar Only)
+                CalDAV (solo calendario)
               </div>
               <div className="text-xs text-text-tertiary mt-0.5">
-                Connect iCloud, Fastmail, Nextcloud, or any CalDAV calendar server
+                Collega iCloud, Fastmail, Nextcloud o qualsiasi server di calendari CalDAV
               </div>
             </div>
           </button>
@@ -246,7 +246,7 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
             onClick={onClose}
             className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
-            Cancel
+            Annulla
           </button>
         </div>
       </div>

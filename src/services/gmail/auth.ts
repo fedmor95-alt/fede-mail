@@ -6,6 +6,8 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const OAUTH_CALLBACK_PORT = 17248;
 
 const SCOPES = [
+  // Full IMAP access, used only to hold an IDLE connection for push notifications
+  "https://mail.google.com/",
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/gmail.send",

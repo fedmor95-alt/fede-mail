@@ -47,10 +47,10 @@ export function EditorToolbar({ editor, onToggleAiAssist, aiAssistOpen }: Editor
 
   return (
     <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border-secondary bg-bg-secondary flex-wrap">
-      {btn("B", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "Bold (Ctrl+B)")}
-      {btn("I", editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "Italic (Ctrl+I)")}
-      {btn("U", editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), "Underline (Ctrl+U)")}
-      {btn("S̶", editor.isActive("strike"), () => editor.chain().focus().toggleStrike().run(), "Strikethrough")}
+      {btn("B", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "Grassetto (Ctrl+B)")}
+      {btn("I", editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "Corsivo (Ctrl+I)")}
+      {btn("U", editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), "Sottolineato (Ctrl+U)")}
+      {btn("S̶", editor.isActive("strike"), () => editor.chain().focus().toggleStrike().run(), "Barrato")}
 
       <div className="w-px h-4 bg-border-primary mx-1" />
 
@@ -60,14 +60,14 @@ export function EditorToolbar({ editor, onToggleAiAssist, aiAssistOpen }: Editor
 
       <div className="w-px h-4 bg-border-primary mx-1" />
 
-      {btn("• List", editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run())}
-      {btn("1. List", editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run())}
-      {btn("Quote", editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run())}
-      {btn("< > Code", editor.isActive("codeBlock"), () => editor.chain().focus().toggleCodeBlock().run())}
+      {btn("• Elenco", editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run())}
+      {btn("1. Elenco", editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run())}
+      {btn("Citazione", editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run())}
+      {btn("< > Codice", editor.isActive("codeBlock"), () => editor.chain().focus().toggleCodeBlock().run())}
 
       <div className="w-px h-4 bg-border-primary mx-1" />
 
-      {btn("— Rule", false, () => editor.chain().focus().setHorizontalRule().run())}
+      {btn("— Linea", false, () => editor.chain().focus().setHorizontalRule().run())}
       {btn("Link", editor.isActive("link"), () => {
         if (editor.isActive("link")) {
           editor.chain().focus().unsetLink().run();
@@ -82,7 +82,7 @@ export function EditorToolbar({ editor, onToggleAiAssist, aiAssistOpen }: Editor
         className="hidden"
         onChange={handleImageSelect}
       />
-      {btn("Image", false, () => imageInputRef.current?.click(), "Insert image")}
+      {btn("Immagine", false, () => imageInputRef.current?.click(), "Inserisci immagine")}
 
       <div className="flex-1" />
 
@@ -90,7 +90,7 @@ export function EditorToolbar({ editor, onToggleAiAssist, aiAssistOpen }: Editor
         <button
           type="button"
           onClick={onToggleAiAssist}
-          title="AI Assist"
+          title="Assistente IA"
           className={`px-1.5 py-1 text-xs rounded hover:bg-bg-hover transition-colors flex items-center gap-1 ${
             aiAssistOpen ? "bg-accent/10 text-accent font-semibold" : "text-text-secondary"
           }`}
@@ -100,8 +100,8 @@ export function EditorToolbar({ editor, onToggleAiAssist, aiAssistOpen }: Editor
         </button>
       )}
 
-      {btn("Undo", false, () => editor.chain().focus().undo().run())}
-      {btn("Redo", false, () => editor.chain().focus().redo().run())}
+      {btn("Annulla", false, () => editor.chain().focus().undo().run())}
+      {btn("Ripeti", false, () => editor.chain().focus().redo().run())}
       <InputDialog
         isOpen={showLinkDialog}
         onClose={() => setShowLinkDialog(false)}
@@ -110,9 +110,9 @@ export function EditorToolbar({ editor, onToggleAiAssist, aiAssistOpen }: Editor
             editor.chain().focus().setLink({ href: values.url }).run();
           }
         }}
-        title="Insert Link"
+        title="Inserisci link"
         fields={[{ key: "url", label: "URL", placeholder: "https://..." }]}
-        submitLabel="Insert"
+        submitLabel="Inserisci"
       />
     </div>
   );

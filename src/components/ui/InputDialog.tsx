@@ -25,7 +25,7 @@ export function InputDialog({
   onSubmit,
   title,
   fields,
-  submitLabel = "Save",
+  submitLabel = "Salva",
 }: InputDialogProps) {
   const buildInitial = useCallback(
     () =>
@@ -87,7 +87,7 @@ export function InputDialog({
         ))}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            Annulla
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={!isValid}>
             {submitLabel}

@@ -119,8 +119,8 @@ export function DndProvider({ children }: DndProviderProps) {
         {dragData && (
           <div className="bg-accent text-white text-sm font-medium px-3 py-1.5 rounded-lg shadow-lg pointer-events-none">
             {dragData.threadIds.length === 1
-              ? "1 conversation"
-              : `${dragData.threadIds.length} conversations`}
+              ? "1 conversazione"
+              : `${dragData.threadIds.length} conversazioni`}
           </div>
         )}
       </DragOverlay>

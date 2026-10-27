@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { searchMessages } from "@/services/db/search";
+import { runUnifiedSearch } from "@/services/search/unifiedSearch";
 import { useAccountStore } from "@/stores/accountStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useSmartFolderStore } from "@/stores/smartFolderStore";
@@ -11,6 +11,7 @@ export function SearchBar() {
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
 
   const [showSaveModal, setShowSaveModal] = useState(false);
 
@@ -27,24 +28,28 @@ export function SearchBar() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
       if (value.trim().length < 2) {
+        cancelRef.current?.();
         setSearch(value, null);
+        useThreadStore.getState().setSearchResults(null, false);
         return;
       }
 
-      debounceRef.current = setTimeout(async () => {
-        try {
-          const hits = await searchMessages(value, activeAccountId ?? undefined, 100);
-          const threadIds = new Set(hits.map((h) => h.thread_id));
-          useThreadStore.getState().setSearch(value, threadIds);
-        } catch {
-          useThreadStore.getState().setSearch(value, null);
-        }
-      }, 200);
+      debounceRef.current = setTimeout(() => {
+        cancelRef.current?.();
+        const { accounts, unifiedView, activeAccountId: activeId } = useAccountStore.getState();
+        const scope = unifiedView ? accounts.filter((a) => a.provider !== "caldav") : accounts.filter((a) => a.id === activeId);
+        useThreadStore.getState().setSearchResults(useThreadStore.getState().searchResults ?? [], true);
+        cancelRef.current = runUnifiedSearch(value.trim(), scope, (results, pending) => {
+          if (useThreadStore.getState().searchQuery !== value) return;
+          useThreadStore.getState().setSearchResults(results, pending);
+        });
+      }, 300);
     },
-    [activeAccountId],
+    [],
   );
 
   const handleClear = useCallback(() => {
+    cancelRef.current?.();
     useThreadStore.getState().clearSearch();
     inputRef.current?.focus();
   }, []);
@@ -68,7 +73,7 @@ export function SearchBar() {
         value={searchQuery}
         onChange={(e) => handleChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Search... (from: to: has:attachment)"
+        placeholder="Cerca in tutte le caselle (from: to: has:attachment)"
         className="w-full bg-bg-tertiary text-text-primary text-sm pl-8 pr-14 py-1.5 rounded-md border border-border-primary focus:border-accent focus:outline-none placeholder:text-text-tertiary"
       />
       {searchQuery && (
@@ -77,7 +82,7 @@ export function SearchBar() {
             <button
               onClick={handleSaveAsSmartFolder}
               className="text-text-tertiary hover:text-accent transition-colors"
-              title="Save as Smart Folder"
+              title="Salva come cartella smart"
             >
               <FolderPlus size={14} />
             </button>
@@ -96,11 +101,11 @@ export function SearchBar() {
         onSubmit={(values) => {
           useSmartFolderStore.getState().createFolder(values.name!.trim(), useThreadStore.getState().searchQuery.trim(), activeAccountId ?? undefined);
         }}
-        title="Save as Smart Folder"
+        title="Salva come cartella smart"
         fields={[
-          { key: "name", label: "Name", defaultValue: searchQuery.trim() },
+          { key: "name", label: "Nome", defaultValue: searchQuery.trim() },
         ]}
-        submitLabel="Save"
+        submitLabel="Salva"
       />
     </div>
   );

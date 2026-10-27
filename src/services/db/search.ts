@@ -41,7 +41,9 @@ export async function searchMessages(
     }
   }
 
-  // Fall through to standard FTS5 search
+  // Fall through to standard FTS5 search. Quote the text as a phrase so
+  // characters like @ . - don't break the FTS5 query syntax.
+  const matchQuery = `"${ftsQuery.replace(/"/g, '""')}"`;
   if (accountId) {
     return db.select<SearchResult[]>(
       `SELECT
@@ -59,7 +61,7 @@ export async function searchMessages(
       WHERE messages_fts MATCH $1 AND m.account_id = $2
       ORDER BY rank
       LIMIT $3`,
-      [ftsQuery, accountId, limit],
+      [matchQuery, accountId, limit],
     );
   }
 
@@ -79,6 +81,6 @@ export async function searchMessages(
     WHERE messages_fts MATCH $1
     ORDER BY rank
     LIMIT $2`,
-    [ftsQuery, limit],
+    [matchQuery, limit],
   );
 }

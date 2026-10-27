@@ -12,7 +12,7 @@ export function HelpCard({ card, isExpanded, onToggle }: HelpCardProps) {
   const Icon = card.icon;
 
   return (
-    <div className="rounded-lg border border-border-secondary bg-bg-primary/60 overflow-hidden transition-colors hover:border-border-primary">
+    <div className="rounded-lg border border-border-secondary bg-bg-primary overflow-hidden transition-colors hover:border-border-primary">
       {/* Collapsed header: icon + title + summary + chevron */}
       <button
         onClick={onToggle}
@@ -69,7 +69,7 @@ export function HelpCard({ card, isExpanded, onToggle }: HelpCardProps) {
                 }}
                 className="text-xs text-accent hover:text-accent-hover transition-colors"
               >
-                Open in Settings &rarr;
+                Apri nelle Impostazioni &rarr;
               </button>
             )}
           </div>

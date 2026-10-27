@@ -104,6 +104,19 @@ const wellKnownProviders: WellKnownProvider[] = [
     authMethods: ["password"],
   },
   {
+    // Aruba PEC (posta elettronica certificata)
+    domains: ["pec.it", "arubapec.it"],
+    settings: {
+      imapHost: "imaps.pec.aruba.it",
+      imapPort: 993,
+      imapSecurity: "ssl",
+      smtpHost: "smtps.pec.aruba.it",
+      smtpPort: 465,
+      smtpSecurity: "ssl",
+    },
+    authMethods: ["password"],
+  },
+  {
     domains: ["protonmail.com", "proton.me", "pm.me"],
     settings: {
       imapHost: "127.0.0.1",

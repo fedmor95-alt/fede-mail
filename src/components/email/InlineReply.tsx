@@ -49,7 +49,7 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
     extensions: [
       StarterKit.configure({ heading: false, link: { openOnClick: false } }),
       Placeholder.configure({
-        placeholder: "Write your reply...",
+        placeholder: "Scrivi la tua risposta...",
       }),
     ],
     content: "",
@@ -313,27 +313,27 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
         <button
           onClick={() => activateMode("reply")}
           disabled={noReply}
-          title={noReply ? "This sender does not accept replies" : undefined}
+          title={noReply ? "Questo mittente non accetta risposte" : undefined}
           className="flex items-center gap-1.5 px-4 py-2 text-xs text-text-secondary border border-border-primary rounded-lg hover:bg-bg-hover hover:text-text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-secondary"
         >
           <Reply size={14} />
-          Reply
+          Rispondi
         </button>
         <button
           onClick={() => activateMode("replyAll")}
           disabled={noReply}
-          title={noReply ? "This sender does not accept replies" : undefined}
+          title={noReply ? "Questo mittente non accetta risposte" : undefined}
           className="flex items-center gap-1.5 px-4 py-2 text-xs text-text-secondary border border-border-primary rounded-lg hover:bg-bg-hover hover:text-text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-secondary"
         >
           <ReplyAll size={14} />
-          Reply All
+          Rispondi a tutti
         </button>
         <button
           onClick={() => activateMode("forward")}
           className="flex items-center gap-1.5 px-4 py-2 text-xs text-text-secondary border border-border-primary rounded-lg hover:bg-bg-hover hover:text-text-primary transition-colors"
         >
           <Forward size={14} />
-          Forward
+          Inoltra
         </button>
       </div>
     );
@@ -359,13 +359,13 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
                     : "text-text-tertiary hover:text-text-primary"
                 }`}
               >
-                {m === "reply" ? "Reply" : m === "replyAll" ? "Reply All" : "Forward"}
+                {m === "reply" ? "Rispondi" : m === "replyAll" ? "Rispondi a tutti" : "Inoltra"}
               </button>
             ))}
           </div>
           {to.length > 0 && (
             <span className="text-[0.6875rem] text-text-tertiary truncate max-w-[200px]">
-              to {to.join(", ")}
+              a {to.join(", ")}
             </span>
           )}
         </div>
@@ -373,7 +373,7 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
           onClick={() => setMode(null)}
           className="text-xs text-text-tertiary hover:text-text-primary transition-colors"
         >
-          Cancel
+          Annulla
         </button>
       </div>
 
@@ -381,10 +381,10 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
       <div className="relative">
         <EditorContent editor={editor} />
         {autoDraftLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-bg-primary/60 backdrop-blur-[1px]">
+          <div className="absolute inset-0 flex items-center justify-center bg-bg-primary backdrop-blur-[1px]">
             <div className="flex items-center gap-2 text-xs text-text-secondary">
               <Loader2 size={14} className="animate-spin" />
-              Generating draft...
+              Generazione bozza...
             </div>
           </div>
         )}
@@ -395,30 +395,30 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
         <div className="flex items-center gap-1">
           <button
             onClick={handleExpandToComposer}
-            title="Expand to full composer"
+            title="Espandi nel compositore completo"
             className="flex items-center gap-1.5 px-2 py-1 text-xs text-text-tertiary hover:text-text-primary transition-colors"
           >
             <Maximize2 size={12} />
-            Expand
+            Espandi
           </button>
           {hasAutoDraft && mode !== "forward" && (
             <>
               <button
                 onClick={handleRegenerateDraft}
                 disabled={autoDraftLoading}
-                title="Regenerate AI draft"
+                title="Rigenera bozza IA"
                 className="flex items-center gap-1 px-2 py-1 text-xs text-text-tertiary hover:text-accent transition-colors disabled:opacity-50"
               >
                 <RotateCcw size={11} />
-                Regenerate
+                Rigenera
               </button>
               <button
                 onClick={handleClearDraft}
-                title="Clear AI draft"
+                title="Elimina bozza IA"
                 className="flex items-center gap-1 px-2 py-1 text-xs text-text-tertiary hover:text-danger transition-colors"
               >
                 <X size={11} />
-                Clear
+                Elimina
               </button>
             </>
           )}

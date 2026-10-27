@@ -6,8 +6,8 @@ describe("SHORTCUTS", () => {
     expect(SHORTCUTS.length).toBeGreaterThanOrEqual(3);
 
     const categoryNames = SHORTCUTS.map((c) => c.category);
-    expect(categoryNames).toContain("Navigation");
-    expect(categoryNames).toContain("Actions");
+    expect(categoryNames).toContain("Navigazione");
+    expect(categoryNames).toContain("Azioni");
     expect(categoryNames).toContain("App");
   });
 

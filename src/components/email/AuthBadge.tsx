@@ -36,22 +36,22 @@ export function AuthBadge({ authResults }: AuthBadgeProps) {
     case "pass":
       icon = <ShieldCheck {...iconProps} />;
       colorClass = "text-success";
-      label = "Authentication passed";
+      label = "Autenticazione riuscita";
       break;
     case "warning":
       icon = <ShieldAlert {...iconProps} />;
       colorClass = "text-warning";
-      label = "Authentication warning";
+      label = "Avviso di autenticazione";
       break;
     case "fail":
       icon = <ShieldX {...iconProps} />;
       colorClass = "text-danger";
-      label = "Authentication failed";
+      label = "Autenticazione non riuscita";
       break;
     default:
       icon = <ShieldQuestion {...iconProps} />;
       colorClass = "text-text-tertiary";
-      label = "Authentication unknown";
+      label = "Autenticazione sconosciuta";
       break;
   }
 

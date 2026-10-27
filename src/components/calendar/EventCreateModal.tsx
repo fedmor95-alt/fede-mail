@@ -41,20 +41,20 @@ export function EventCreateModal({ calendars, onClose, onCreate }: EventCreateMo
   }, [summary, description, location, startTime, endTime, calendarId, onCreate]);
 
   return (
-    <Modal isOpen={true} onClose={onClose} title="Create Event" width="w-full max-w-md">
+    <Modal isOpen={true} onClose={onClose} title="Crea evento" width="w-full max-w-md">
       <form onSubmit={handleSubmit} className="p-4 space-y-3">
         <TextField
-          label="Title"
+          label="Titolo"
           type="text"
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          placeholder="Event title"
+          placeholder="Titolo dell'evento"
           autoFocus
         />
 
         {calendars && calendars.length > 1 && (
           <div>
-            <label className="text-xs text-text-secondary block mb-1">Calendar</label>
+            <label className="text-xs text-text-secondary block mb-1">Calendario</label>
             <select
               value={calendarId}
               onChange={(e) => setCalendarId(e.target.value)}
@@ -62,8 +62,8 @@ export function EventCreateModal({ calendars, onClose, onCreate }: EventCreateMo
             >
               {calendars.map((cal) => (
                 <option key={cal.id} value={cal.id}>
-                  {cal.display_name ?? "Calendar"}
-                  {cal.is_primary ? " (Primary)" : ""}
+                  {cal.display_name ?? "Calendario"}
+                  {cal.is_primary ? " (Principale)" : ""}
                 </option>
               ))}
             </select>
@@ -72,13 +72,13 @@ export function EventCreateModal({ calendars, onClose, onCreate }: EventCreateMo
 
         <div className="grid grid-cols-2 gap-3">
           <TextField
-            label="Start"
+            label="Inizio"
             type="datetime-local"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
           />
           <TextField
-            label="End"
+            label="Fine"
             type="datetime-local"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
@@ -86,19 +86,19 @@ export function EventCreateModal({ calendars, onClose, onCreate }: EventCreateMo
         </div>
 
         <TextField
-          label="Location"
+          label="Luogo"
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Add location"
+          placeholder="Aggiungi luogo"
         />
 
         <div>
-          <label className="text-xs text-text-secondary block mb-1">Description</label>
+          <label className="text-xs text-text-secondary block mb-1">Descrizione</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add description"
+            placeholder="Aggiungi descrizione"
             rows={3}
             className="w-full px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary outline-none focus:border-accent resize-none"
           />
@@ -111,7 +111,7 @@ export function EventCreateModal({ calendars, onClose, onCreate }: EventCreateMo
             size="md"
             onClick={onClose}
           >
-            Cancel
+            Annulla
           </Button>
           <Button
             type="submit"
@@ -119,7 +119,7 @@ export function EventCreateModal({ calendars, onClose, onCreate }: EventCreateMo
             size="md"
             disabled={!summary.trim()}
           >
-            Create
+            Crea
           </Button>
         </div>
       </form>
