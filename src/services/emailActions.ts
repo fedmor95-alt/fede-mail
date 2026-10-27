@@ -410,6 +410,7 @@ async function commitEmailAction(accountId: string, action: EmailAction): Promis
   // 4. Try online execution
   try {
     const data = await executeViaProvider(accountId, action);
+    if (action.type === "markRead") console.info(`[markRead] ${action.threadId} saved on server (read=${action.read})`);
     return { success: true, data };
   } catch (err) {
     const classified = classifyError(err);

@@ -50,6 +50,20 @@ async function processAndStoreThread(
   }
 
   const isRead = parsedMessages.every((m) => m.isRead);
+  if (!isRead) {
+    // Diagnostic only: spot syncs that flip a locally read thread back.
+    try {
+      const rows = await (await getDb()).select<{ is_read: number }[]>(
+        "SELECT is_read FROM threads WHERE account_id = $1 AND id = $2",
+        [accountId, thread.id],
+      );
+      if (rows?.[0]?.is_read === 1) {
+        console.info(`[syncManager] ${thread.id} is unread on Gmail but was read locally; using Gmail's state`);
+      }
+    } catch {
+      // ignore
+    }
+  }
   const isStarred = parsedMessages.some((m) => m.isStarred);
   const isImportant = allLabelIds.has("IMPORTANT");
   const hasAttachments = parsedMessages.some((m) => m.hasAttachments);

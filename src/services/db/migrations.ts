@@ -785,6 +785,11 @@ const MIGRATIONS = [
       CREATE INDEX idx_messages_pec_ref ON messages(account_id, pec_ref);
     `,
   },
+  {
+    version: 25,
+    description: "Load remote images by default",
+    sql: `INSERT OR REPLACE INTO settings (key, value) VALUES ('block_remote_images', 'false');`,
+  },
 ];
 
 /**

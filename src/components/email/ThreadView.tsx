@@ -75,10 +75,9 @@ export function ThreadView({ thread }: ThreadViewProps) {
   const toggleContactSidebar = useUIStore((s) => s.toggleContactSidebar);
   const taskSidebarVisible = useUIStore((s) => s.taskSidebarVisible);
   const [showTaskExtract, setShowTaskExtract] = useState(false);
-  const updateThread = useThreadStore((s) => s.updateThread);
   const [messages, setMessages] = useState<DbMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const markedReadRef = useRef<string | null>(null);
+  const markedReadRef = useRef<{ id: string; attempts: number } | null>(null);
   // null = not yet loaded; defer iframe rendering until setting is known
   const [blockImages, setBlockImages] = useState<boolean | null>(null);
   const [allowlistedSenders, setAllowlistedSenders] = useState<Set<string>>(new Set());
@@ -119,17 +118,28 @@ export function ThreadView({ thread }: ThreadViewProps) {
     return () => { cancelled = true; };
   }, [activeAccountId, messages]);
 
-  // Auto-mark unread threads as read when opened (respects mark-as-read setting)
+  // Auto-mark unread threads as read when opened (respects mark-as-read setting).
+  // Uses the thread's own account (unified inbox), and if a list reload flips
+  // the open thread back to unread, marks it once more.
   const markAsReadBehavior = useUIStore((s) => s.markAsReadBehavior);
   useEffect(() => {
-    if (!activeAccountId || thread.isRead || markedReadRef.current === thread.id) return;
-    if (markAsReadBehavior === "manual") return;
+    if (thread.isRead || markAsReadBehavior === "manual") return;
+    const prev = markedReadRef.current;
+    const attempts = prev?.id === thread.id ? prev.attempts : 0;
+    if (attempts >= 2) {
+      console.warn(`[markRead] ${thread.id} still unread after ${attempts} attempts`);
+      return;
+    }
 
     const markRead = () => {
-      markedReadRef.current = thread.id;
-      markThreadRead(activeAccountId, thread.id, [], true).catch((err) => {
-        console.error("Failed to mark thread as read:", err);
-      });
+      markedReadRef.current = { id: thread.id, attempts: attempts + 1 };
+      console.info(`[markRead] ${thread.accountId} ${thread.id} attempt ${attempts + 1}`);
+      markThreadRead(thread.accountId, thread.id, [], true)
+        .then((r) => {
+          if (!r.success) console.warn(`[markRead] ${thread.id} failed: ${r.error}`);
+          else if (r.queued) console.warn(`[markRead] ${thread.id} queued for retry`);
+        })
+        .catch((err) => console.error("[markRead] failed:", err));
     };
 
     if (markAsReadBehavior === "2s") {
@@ -139,7 +149,7 @@ export function ThreadView({ thread }: ThreadViewProps) {
 
     // instant
     markRead();
-  }, [activeAccountId, thread.id, thread.isRead, updateThread, markAsReadBehavior]);
+  }, [thread.accountId, thread.id, thread.isRead, markAsReadBehavior]);
 
   const openComposer = useComposerStore((s) => s.openComposer);
   const openMenu = useContextMenuStore((s) => s.openMenu);
