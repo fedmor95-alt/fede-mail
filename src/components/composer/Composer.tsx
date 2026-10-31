@@ -517,6 +517,7 @@ export function Composer() {
           <FromSelector
             aliases={allAliases.length > 0 ? allAliases : aliases}
             selectedEmail={fromEmail ?? activeAccount?.email ?? ""}
+            selectedAccountId={activeAccountId}
             onChange={(alias) => {
               if (alias.accountId !== activeAccountId) setSendAccountId(alias.accountId);
               setFromEmail(alias.email);

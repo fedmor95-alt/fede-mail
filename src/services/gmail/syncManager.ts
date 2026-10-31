@@ -72,7 +72,7 @@ async function syncGmailAccount(accountId: string): Promise<void> {
         // Fallback to full sync
         await initialSync(client, accountId, syncDays, (progress) => {
           statusCallback?.(accountId, "syncing", progress);
-        });
+        }, true);
       } else {
         throw err;
       }

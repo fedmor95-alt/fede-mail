@@ -24,6 +24,21 @@ use super::types::ImapConfig;
 const IDLE_REFRESH: Duration = Duration::from_secs(9 * 60);
 const BACKOFF_MIN: Duration = Duration::from_secs(5);
 const BACKOFF_MAX: Duration = Duration::from_secs(5 * 60);
+/// Upper bound for every single command (connect, CAPABILITY, SELECT, IDLE,
+/// DONE). Without it a half-dead connection would block the watcher forever.
+const COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Run an IMAP step with a timeout, mapping both errors to `WatchError::Other`.
+async fn step<T, E: std::fmt::Display>(
+    what: &str,
+    fut: impl std::future::Future<Output = Result<T, E>>,
+) -> Result<T, WatchError> {
+    match tokio::time::timeout(COMMAND_TIMEOUT, fut).await {
+        Ok(Ok(v)) => Ok(v),
+        Ok(Err(e)) => Err(WatchError::Other(format!("{what} failed: {e}"))),
+        Err(_) => Err(WatchError::Other(format!("{what} timed out after {}s", COMMAND_TIMEOUT.as_secs()))),
+    }
+}
 
 #[derive(Default)]
 pub struct IdleWatchers {
@@ -88,27 +103,20 @@ async fn watch_once(
     folder: &str,
     backoff: &mut Duration,
 ) -> Result<(), WatchError> {
-    let mut session = connect(config).await.map_err(|e| {
-        if is_auth_error(&e, config.auth_method == "oauth2") {
-            WatchError::Auth(e)
-        } else {
-            WatchError::Other(e)
-        }
-    })?;
+    let mut session = match tokio::time::timeout(COMMAND_TIMEOUT, connect(config)).await {
+        Ok(Ok(s)) => s,
+        Ok(Err(e)) if is_auth_error(&e, config.auth_method == "oauth2") => return Err(WatchError::Auth(e)),
+        Ok(Err(e)) => return Err(WatchError::Other(e)),
+        Err(_) => return Err(WatchError::Other(format!("connect timed out after {}s", COMMAND_TIMEOUT.as_secs()))),
+    };
 
-    let caps = session
-        .capabilities()
-        .await
-        .map_err(|e| WatchError::Other(format!("CAPABILITY failed: {e}")))?;
+    let caps = step("CAPABILITY", session.capabilities()).await?;
     if !caps.has_str("IDLE") {
-        let _ = session.logout().await;
+        let _ = tokio::time::timeout(COMMAND_TIMEOUT, session.logout()).await;
         return Err(WatchError::Unsupported);
     }
 
-    session
-        .select(folder)
-        .await
-        .map_err(|e| WatchError::Other(format!("SELECT {folder} failed: {e}")))?;
+    step(&format!("SELECT {folder}"), session.select(folder)).await?;
 
     *backoff = BACKOFF_MIN;
     emit(app, account_id, folder, "connected", None);
@@ -117,17 +125,16 @@ async fn watch_once(
 
     loop {
         let mut idle = session.idle();
-        idle.init()
-            .await
-            .map_err(|e| WatchError::Other(format!("IDLE failed: {e}")))?;
+        step("IDLE", idle.init()).await?;
         let (wait, _stop) = idle.wait_with_timeout(IDLE_REFRESH);
-        let resp = wait
-            .await
-            .map_err(|e| WatchError::Other(format!("IDLE wait failed: {e}")))?;
-        session = idle
-            .done()
-            .await
-            .map_err(|e| WatchError::Other(format!("IDLE DONE failed: {e}")))?;
+        // wait_with_timeout already bounds this by IDLE_REFRESH; give the
+        // server a little slack on top before declaring the connection dead.
+        let resp = match tokio::time::timeout(IDLE_REFRESH + COMMAND_TIMEOUT, wait).await {
+            Ok(Ok(r)) => r,
+            Ok(Err(e)) => return Err(WatchError::Other(format!("IDLE wait failed: {e}"))),
+            Err(_) => return Err(WatchError::Other("IDLE wait hung".to_string())),
+        };
+        session = step("IDLE DONE", idle.done()).await?;
 
         let mut changed = match &resp {
             IdleResponse::NewData(data) => is_mailbox_change(data.parsed()),

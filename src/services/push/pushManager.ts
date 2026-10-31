@@ -41,6 +41,19 @@ const authRetries = new Map<string, number>();
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const states = new Map<string, PushState>();
 let activeAccountIds: string[] = [];
+/**
+ * start/stop are serialised through this chain, and every async step checks
+ * `generation` so a watcher from a superseded start can't resurrect itself
+ * after a stop (e.g. account removed while its IDLE was still connecting).
+ */
+let chain: Promise<void> = Promise.resolve();
+let generation = 0;
+
+function serialized<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn, fn);
+  chain = run.then(() => undefined, () => undefined);
+  return run;
+}
 
 function setState(accountId: string, state: PushState): void {
   states.set(accountId, state);
@@ -77,12 +90,15 @@ async function buildIdleConfig(accountId: string, forceRefresh = false): Promise
 }
 
 async function startWatcher(accountId: string, forceRefresh = false): Promise<void> {
+  const gen = generation;
   try {
     const config = await buildIdleConfig(accountId, forceRefresh);
     if (!config) return;
+    if (gen !== generation || !activeAccountIds.includes(accountId)) return;
     setState(accountId, "connecting");
     await invoke("imap_idle_start", { accountId, config, folder: "INBOX" });
   } catch (err) {
+    if (gen !== generation || !activeAccountIds.includes(accountId)) return;
     console.warn(`[push] Cannot start IDLE for ${accountId}:`, err);
     enableFallback(accountId);
   }
@@ -158,16 +174,24 @@ async function handleEvent(ev: IdleEvent): Promise<void> {
 }
 
 /** Start push for the given accounts, replacing any previous watchers. */
-export async function startPush(accountIds: string[]): Promise<void> {
-  await stopPush();
-  activeAccountIds = [...accountIds];
-  unlisten = await listen<IdleEvent>("imap-idle", (e) => {
-    handleEvent(e.payload).catch((err) => console.warn("[push] event error:", err));
+export function startPush(accountIds: string[]): Promise<void> {
+  return serialized(async () => {
+    await stopPushNow();
+    const gen = ++generation;
+    activeAccountIds = [...accountIds];
+    const un = await listen<IdleEvent>("imap-idle", (e) => {
+      if (gen !== generation) return;
+      handleEvent(e.payload).catch((err) => console.warn("[push] event error:", err));
+    });
+    if (gen !== generation) {
+      un();
+      return;
+    }
+    unlisten = un;
+    window.addEventListener("online", restartPush);
+    // Watchers connect in parallel; a slow account must not delay the others.
+    await Promise.all(accountIds.map((id) => startWatcher(id)));
   });
-  window.addEventListener("online", restartPush);
-  for (const id of accountIds) {
-    await startWatcher(id);
-  }
 }
 
 /** Reconnect one account's watcher, e.g. after it was re-authorized. */
@@ -185,7 +209,12 @@ function restartPush(): void {
   }
 }
 
-export async function stopPush(): Promise<void> {
+export function stopPush(): Promise<void> {
+  return serialized(stopPushNow);
+}
+
+async function stopPushNow(): Promise<void> {
+  generation++;
   window.removeEventListener("online", restartPush);
   unlisten?.();
   unlisten = null;

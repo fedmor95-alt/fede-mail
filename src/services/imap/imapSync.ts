@@ -17,7 +17,8 @@ import {
 import type { ParsedMessage, ParsedAttachment } from "../gmail/messageParser";
 import type { SyncResult } from "../email/types";
 import { upsertMessage, updateMessageThreadIds } from "../db/messages";
-import { upsertThread, setThreadLabels, deleteThread } from "../db/threads";
+import { upsertThread, setThreadLabels, deleteThread, getThreadById, getThreadLabelIds } from "../db/threads";
+import { getDb } from "../db/connection";
 import { upsertAttachment } from "../db/attachments";
 import { getAccount, updateAccountSyncState } from "../db/accounts";
 import { withTransaction } from "../db/connection";
@@ -229,8 +230,6 @@ async function storeThreadsAndMessages(
 
     await withTransaction(async () => {
       for (const group of batch) {
-        if (skippedThreadIds.has(group.threadId)) continue;
-
         const messages = group.messageIds
           .map((id) => parsedByLocalId.get(id))
           .filter((m): m is ParsedMessage => m !== undefined);
@@ -273,21 +272,27 @@ async function storeThreadsAndMessages(
         const isStarred = messages.some((m) => m.isStarred);
         const hasAttachments = messages.some((m) => m.hasAttachments);
 
-        await upsertThread({
-          id: group.threadId,
-          accountId,
-          subject: firstMessage.subject,
-          snippet: lastMessage.snippet,
-          lastMessageAt: lastMessage.date,
-          messageCount: messages.length,
-          isRead,
-          isStarred,
-          isImportant: false,
-          hasAttachments,
-        });
+        // A delta sync only carries the *new* messages of a thread. Merge
+        // with what is already stored instead of overwriting it, otherwise a
+        // reply would wipe the thread's labels, count and flags.
+        const existing = await getThreadById(accountId, group.threadId);
+        const existingLabels = existing ? await getThreadLabelIds(accountId, group.threadId) : [];
+        const hasPendingOps = skippedThreadIds.has(group.threadId);
 
-        const labelArray = [...allLabelIds];
-        await setThreadLabels(accountId, group.threadId, labelArray);
+        if (!existing) {
+          await upsertThread({
+            id: group.threadId,
+            accountId,
+            subject: firstMessage.subject,
+            snippet: lastMessage.snippet,
+            lastMessageAt: lastMessage.date,
+            messageCount: messages.length,
+            isRead,
+            isStarred,
+            isImportant: false,
+            hasAttachments,
+          });
+        }
 
         // Store messages sequentially to avoid concurrent DB writes
         for (const parsed of messages) {
@@ -340,11 +345,36 @@ async function storeThreadsAndMessages(
 
           storedMessages.push(parsed);
         }
+
+        if (existing) {
+          await refreshThreadAggregates(accountId, group.threadId, hasAttachments || existing.has_attachments === 1);
+        }
+        // Local changes still waiting to reach the server (archive, read...)
+        // win over labels and flags; the new messages are stored anyway.
+        if (!hasPendingOps) {
+          await setThreadLabels(accountId, group.threadId, [...new Set([...existingLabels, ...allLabelIds])]);
+        }
       }
     });
   }
 
   return storedMessages;
+}
+
+/** Recompute count, flags, date and snippet of a thread from its messages. */
+async function refreshThreadAggregates(accountId: string, threadId: string, hasAttachments: boolean): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE threads SET
+       message_count = (SELECT COUNT(*) FROM messages m WHERE m.account_id = $1 AND m.thread_id = $2),
+       is_read = (SELECT MIN(m.is_read) FROM messages m WHERE m.account_id = $1 AND m.thread_id = $2),
+       is_starred = (SELECT MAX(m.is_starred) FROM messages m WHERE m.account_id = $1 AND m.thread_id = $2),
+       last_message_at = (SELECT MAX(m.date) FROM messages m WHERE m.account_id = $1 AND m.thread_id = $2),
+       snippet = (SELECT m.snippet FROM messages m WHERE m.account_id = $1 AND m.thread_id = $2 ORDER BY m.date DESC LIMIT 1),
+       has_attachments = $3
+     WHERE account_id = $1 AND id = $2`,
+    [accountId, threadId, hasAttachments ? 1 : 0],
+  );
 }
 
 // ---------------------------------------------------------------------------

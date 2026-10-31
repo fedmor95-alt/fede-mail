@@ -275,12 +275,17 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
 
   const clearSearch = useThreadStore((s) => s.clearSearch);
 
+  // Folder switches can overlap with slow loads; only the newest request
+  // may write to the list.
+  const loadRequestRef = useRef(0);
   const loadThreads = useCallback(async () => {
     if (!hasAccount) {
       setThreads([]);
       return;
     }
 
+    const request = ++loadRequestRef.current;
+    const isCurrent = () => request === loadRequestRef.current;
     setLoading(true);
     setHasMore(true);
     try {
@@ -294,6 +299,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
         const db = await getDb();
         const rows = await db.select<SmartFolderRow[]>(sql, params);
         const mapped = await mapSmartFolderRows(rows);
+        if (!isCurrent()) return;
         setThreads(mapped);
         setHasMore(false); // Smart folders load all at once
       } else {
@@ -312,13 +318,14 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
         }
 
         const mapped = await mapDbThreads(dbThreads);
+        if (!isCurrent()) return;
         setThreads(mapped);
         setHasMore(dbThreads.length === PAGE_SIZE);
       }
     } catch (err) {
       console.error("Failed to load threads:", err);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [hasAccount, listAccountId, isSmartFolder ? activeAccountId : null, activeLabel, activeCategory, isSmartFolder, activeSmartFolder, setThreads, setLoading, mapDbThreads]);
 

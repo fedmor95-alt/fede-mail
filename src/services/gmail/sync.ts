@@ -208,6 +208,9 @@ export async function initialSync(
   accountId: string,
   daysBack = 365,
   onProgress?: SyncProgressCallback,
+  /** Re-fetch threads already stored: after the history ID expired their
+   *  labels and flags may have changed without us noticing. */
+  refreshExisting = false,
 ): Promise<void> {
   onProgress?.({ phase: "labels", current: 0, total: 1 });
   const profile = await client.getProfile();
@@ -220,7 +223,7 @@ export async function initialSync(
 
   const db = await getDb();
   const existingRows = await db.select<{ id: string }[]>("SELECT id FROM threads WHERE account_id = $1", [accountId]);
-  const existing = new Set(existingRows.map((r) => r.id));
+  const existing = new Set(refreshExisting ? [] : existingRows.map((r) => r.id));
   const autoArchiveCategories = await loadAutoArchiveCategories();
 
   let listed = 0;

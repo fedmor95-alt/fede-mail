@@ -77,7 +77,12 @@ function getNextThreadId(currentId: string): string | null {
   // Only auto-advance if the removed thread is the one being viewed
   const selectedId = getSelectedThreadId();
   if (selectedId !== currentId) return null;
-  const { threads } = useThreadStore.getState();
+  // Walk the list the user actually sees (search results when searching).
+  const { threads: allThreads, searchResults } = useThreadStore.getState();
+  const readFilter = useUIStore.getState().readFilter;
+  const threads = (searchResults ?? allThreads).filter((t) =>
+    readFilter === "unread" ? !t.isRead : readFilter === "read" ? t.isRead : true,
+  );
   const idx = threads.findIndex((t) => t.id === currentId);
   if (idx === -1) return null;
   // Prefer next thread, fall back to previous
