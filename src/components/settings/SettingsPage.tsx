@@ -63,6 +63,7 @@ import type { SidebarNavItem } from "@/stores/uiStore";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import appIcon from "@/assets/icon.png";
+import { UiZoomSelect } from "./UiZoomSelect";
 
 type SettingsTab = "general" | "notifications" | "composing" | "mail-rules" | "people" | "accounts" | "shortcuts" | "ai" | "about";
 
@@ -470,6 +471,9 @@ export function SettingsPage() {
                         <option value="spacious">Ampia</option>
                       </select>
                     </SettingRow>
+                    <SettingRow label="Dimensione interfaccia">
+                      <UiZoomSelect />
+                    </SettingRow>
                     <SettingRow label="Dimensione carattere">
                       <select
                         value={fontScale}
@@ -538,7 +542,7 @@ export function SettingsPage() {
                   <Section title="Avvio">
                     <ToggleRow
                       label="Apri all'accesso"
-                      description="Avvia Velo automaticamente quando accedi (ridotto a icona nell'area di notifica)"
+                      description="Avvia Velo Fedmor automaticamente quando accedi (ridotto a icona nell'area di notifica)"
                       checked={autostartEnabled}
                       onToggle={handleAutostartToggle}
                     />
@@ -1771,11 +1775,11 @@ function AboutTab() {
 
   return (
     <>
-      <Section title="Velo Mail">
+      <Section title="Velo Fedmor">
         <div className="flex items-center gap-3 mb-2">
-          <img src={appIcon} alt="Velo" className="w-12 h-12 rounded-xl" />
+          <img src={appIcon} alt="Velo Fedmor" className="w-12 h-12 rounded-xl" />
           <div>
-            <h3 className="text-base font-semibold text-text-primary">Velo</h3>
+            <h3 className="text-base font-semibold text-text-primary">Velo Fedmor</h3>
             <p className="text-sm text-text-tertiary">
               {appVersion ? `Versione ${appVersion}` : "Caricamento..."}
             </p>

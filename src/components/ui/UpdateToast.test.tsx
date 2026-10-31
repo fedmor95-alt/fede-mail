@@ -29,7 +29,7 @@ describe("UpdateToast", () => {
   it("renders when an update is available on mount", () => {
     mockGetAvailableUpdate.mockReturnValue({ version: "2.0.0", body: null });
     render(<UpdateToast />);
-    expect(screen.getByText("Velo v2.0.0 è disponibile")).toBeTruthy();
+    expect(screen.getByText("Velo Fedmor v2.0.0 è disponibile")).toBeTruthy();
     expect(screen.getByText("Più tardi")).toBeTruthy();
     expect(screen.getByText("Aggiorna ora")).toBeTruthy();
   });
@@ -50,7 +50,7 @@ describe("UpdateToast", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Velo v3.0.0 è disponibile")).toBeTruthy();
+      expect(screen.getByText("Velo Fedmor v3.0.0 è disponibile")).toBeTruthy();
     });
   });
 
@@ -60,7 +60,7 @@ describe("UpdateToast", () => {
     fireEvent.click(screen.getByText("Più tardi"));
 
     await waitFor(() => {
-      expect(screen.queryByText("Velo v2.0.0 è disponibile")).toBeNull();
+      expect(screen.queryByText("Velo Fedmor v2.0.0 è disponibile")).toBeNull();
     });
   });
 

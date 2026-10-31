@@ -48,7 +48,7 @@ export function UpdateToast() {
       >
         <div className="px-4 py-3 space-y-2">
           <p className="text-sm font-medium text-text-primary">
-            Velo v{version} è disponibile
+            Velo Fedmor v{version} è disponibile
           </p>
           <div className="flex items-center gap-2">
             <button

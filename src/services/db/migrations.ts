@@ -801,6 +801,13 @@ const MIGRATIONS = [
       INSERT OR REPLACE INTO settings (key, value) VALUES ('theme', 'system');
     `,
   },
+  {
+    version: 27,
+    // Unified thread list orders every account's threads at once; without
+    // this the page query sorts the whole table on each reload.
+    description: "Index for the unified thread list order",
+    sql: `CREATE INDEX IF NOT EXISTS idx_threads_order ON threads(is_pinned DESC, last_message_at DESC);`,
+  },
 ];
 
 /**

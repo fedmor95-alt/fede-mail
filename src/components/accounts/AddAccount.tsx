@@ -109,7 +109,7 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
       <Modal isOpen={true} onClose={onClose} title="Aggiungi account Gmail" width="w-full max-w-md">
         <div className="p-4">
           <p className="text-text-secondary text-sm mb-6">
-            Accedi con il tuo account Google per collegarlo a Velo.
+            Accedi con il tuo account Google per collegarlo a Velo Fedmor.
           </p>
 
           {error && (

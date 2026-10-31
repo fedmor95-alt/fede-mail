@@ -2,11 +2,40 @@ import { getSetting, getSecureSetting } from "@/services/db/settings";
 import { AiError } from "./errors";
 import type { AiProvider, AiProviderClient } from "./types";
 import { DEFAULT_MODELS, MODEL_SETTINGS } from "./types";
-import { createClaudeProvider, clearClaudeProvider } from "./providers/claudeProvider";
-import { createOpenAIProvider, clearOpenAIProvider } from "./providers/openaiProvider";
-import { createGeminiProvider, clearGeminiProvider } from "./providers/geminiProvider";
-import { createOllamaProvider, clearOllamaProvider } from "./providers/ollamaProvider";
-import { createCopilotProvider, clearCopilotProvider } from "./providers/copilotProvider";
+
+// The provider SDKs (Anthropic, OpenAI, Google) weigh several hundred KB and
+// most sessions never touch AI: load each one only when it is first used.
+const clearers = new Set<() => void>();
+
+async function loadProvider(name: AiProvider) {
+  switch (name) {
+    case "claude": {
+      const m = await import("./providers/claudeProvider");
+      clearers.add(m.clearClaudeProvider);
+      return m.createClaudeProvider;
+    }
+    case "openai": {
+      const m = await import("./providers/openaiProvider");
+      clearers.add(m.clearOpenAIProvider);
+      return m.createOpenAIProvider;
+    }
+    case "gemini": {
+      const m = await import("./providers/geminiProvider");
+      clearers.add(m.clearGeminiProvider);
+      return m.createGeminiProvider;
+    }
+    case "copilot": {
+      const m = await import("./providers/copilotProvider");
+      clearers.add(m.clearCopilotProvider);
+      return m.createCopilotProvider;
+    }
+    case "ollama": {
+      const m = await import("./providers/ollamaProvider");
+      clearers.add(m.clearOllamaProvider);
+      return m.createOllamaProvider;
+    }
+  }
+}
 
 const API_KEY_SETTINGS: Record<Exclude<AiProvider, "ollama">, string> = {
   claude: "claude_api_key",
@@ -35,7 +64,7 @@ export async function getActiveProvider(): Promise<AiProviderClient> {
       return cachedProvider.client;
     }
 
-    const client = createOllamaProvider(serverUrl, model);
+    const client = (await loadProvider("ollama"))(serverUrl, model);
     cachedProvider = { name: "ollama", key: cacheKey, client };
     return client;
   }
@@ -54,21 +83,7 @@ export async function getActiveProvider(): Promise<AiProviderClient> {
     return cachedProvider.client;
   }
 
-  let client: AiProviderClient;
-  switch (providerName) {
-    case "claude":
-      client = createClaudeProvider(apiKey, model);
-      break;
-    case "openai":
-      client = createOpenAIProvider(apiKey, model);
-      break;
-    case "gemini":
-      client = createGeminiProvider(apiKey, model);
-      break;
-    case "copilot":
-      client = createCopilotProvider(apiKey, model);
-      break;
-  }
+  const client: AiProviderClient = (await loadProvider(providerName))(apiKey, model);
 
   cachedProvider = { name: providerName, key: cacheKey, client };
   return client;
@@ -95,9 +110,5 @@ export async function isAiAvailable(): Promise<boolean> {
 
 export function clearProviderClients(): void {
   cachedProvider = null;
-  clearClaudeProvider();
-  clearOpenAIProvider();
-  clearGeminiProvider();
-  clearOllamaProvider();
-  clearCopilotProvider();
+  for (const clear of clearers) clear();
 }

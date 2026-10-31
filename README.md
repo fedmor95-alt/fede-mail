@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/icon.png?v1" alt="Fede Mail" width="160" height="160" />
+  <img src="assets/icon.png?v1" alt="Velo Fedmor" width="160" height="160" />
 </p>
 
-<h1 align="center">Fede Mail</h1>
+<h1 align="center">Velo Fedmor</h1>
 
 <p align="center">
   Client di posta desktop per Windows, Fedora e macOS, con push, inbox unificata e PEC.<br />
@@ -165,8 +165,8 @@ Per firmare e notarizzare l'app Mac servirà un account Apple Developer: i passi
 
 Dopo qualche minuto le app installate si aggiornano da sole.
 
-Su Fedora l'rpm si installa con `sudo dnf install ./Fede*.rpm`. L'aggiornamento automatico di Tauri funziona per l'installer Windows, per l'AppImage e per l'app macOS. L'rpm si aggiorna reinstallando il nuovo pacchetto.
+Su Fedora l'rpm si installa con `sudo dnf install ./Velo*Fedmor*.rpm`. L'aggiornamento automatico di Tauri funziona per l'installer Windows, per l'AppImage e per l'app macOS. L'rpm si aggiorna reinstallando il nuovo pacchetto.
 
 ## Crediti e licenza
 
-Fede Mail è una versione modificata di [Velo](https://github.com/avihaymenahem/velo) di Avihay Menahem e dei contributori di Velo. Come l'originale, è distribuita con licenza [Apache 2.0](LICENSE). Le modifiche sono elencate in [NOTICE](NOTICE). Il README originale di Velo, con la documentazione completa delle funzioni ereditate, è in [docs/README-velo.md](docs/README-velo.md).
+Velo Fedmor è una versione modificata di [Velo](https://github.com/avihaymenahem/velo) di Avihay Menahem e dei contributori di Velo. Come l'originale, è distribuita con licenza [Apache 2.0](LICENSE). Le modifiche sono elencate in [NOTICE](NOTICE). Il README originale di Velo, con la documentazione completa delle funzioni ereditate, è in [docs/README-velo.md](docs/README-velo.md).

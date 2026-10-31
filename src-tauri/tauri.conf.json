@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Velo",
+  "productName": "Velo Fedmor",
   "version": "../package.json",
   "identifier": "com.velomail.app",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Velo",
+        "title": "Velo Fedmor",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

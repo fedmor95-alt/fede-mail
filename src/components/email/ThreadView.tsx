@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from "react";
 import { MessageItem } from "./MessageItem";
 import { ActionBar } from "./ActionBar";
 import { type DbMessage } from "@/services/db/messages";
@@ -16,13 +16,15 @@ import { escapeHtml, sanitizeHtml } from "@/utils/sanitize";
 import { isNoReplyAddress } from "@/utils/noReply";
 import { ThreadSummary } from "./ThreadSummary";
 import { SmartReplySuggestions } from "./SmartReplySuggestions";
-import { InlineReply } from "./InlineReply";
 import { ContactSidebar } from "./ContactSidebar";
 import { TaskSidebar } from "@/components/tasks/TaskSidebar";
 import { AiTaskExtractDialog } from "@/components/tasks/AiTaskExtractDialog";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { MessageSkeleton } from "@/components/ui/Skeleton";
 import { RawMessageModal } from "./RawMessageModal";
+
+// Pulls in the TipTap editor; fetched in the background when a thread opens.
+const InlineReply = lazy(() => import("./InlineReply").then((m) => ({ default: m.InlineReply })));
 
 interface ThreadViewProps {
   thread: Thread;
@@ -483,6 +485,7 @@ export function ThreadView({ thread }: ThreadViewProps) {
 
           {/* Inline Reply */}
           {activeAccountId && (
+            <Suspense fallback={null}>
             <InlineReply
               thread={thread}
               messages={messages}
@@ -495,6 +498,7 @@ export function ThreadView({ thread }: ThreadViewProps) {
                   .catch(console.error);
               }}
             />
+            </Suspense>
           )}
         </div>
       </div>

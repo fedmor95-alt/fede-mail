@@ -1,11 +1,25 @@
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useRouterState } from "@tanstack/react-router";
 import { Minus, Square, X, Copy } from "lucide-react";
+import { SearchBar } from "../search/SearchBar";
+import appIcon from "@/assets/icon.png";
 
 const isMac = navigator.userAgent.includes("Macintosh");
 
+/** Pages that have nothing to do with the mail list: no search box there. */
+const NON_MAIL_ROUTES = ["/settings", "/tasks", "/calendar", "/help", "/attachments"];
+
+/**
+ * Window title bar, Outlook/Windows 11 style: it carries the search box, so
+ * the app spends one row on chrome instead of two. The empty parts are the
+ * drag region; the window buttons sit on the right (native traffic lights on
+ * macOS, hence the left padding there).
+ */
 export function TitleBar() {
   const [maximized, setMaximized] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const showSearch = !NON_MAIL_ROUTES.some((r) => pathname.startsWith(r));
 
   useEffect(() => {
     const appWindow = getCurrentWindow();
@@ -27,41 +41,49 @@ export function TitleBar() {
   return (
     <div
       data-tauri-drag-region
-      className="flex items-center justify-between h-9 bg-sidebar-bg border-b border-border-primary select-none shrink-0"
+      onDoubleClick={(e) => {
+        if (e.target === e.currentTarget) handleMaximize();
+      }}
+      className="grid grid-cols-[1fr_minmax(0,560px)_1fr] items-center h-11 bg-sidebar-bg border-b border-border-primary select-none shrink-0"
     >
-      {/* App title — left side (extra padding on macOS for traffic light buttons) */}
-      <div data-tauri-drag-region className={`flex items-center gap-2 ${isMac ? "pl-20" : "pl-4"}`}>
-        <span data-tauri-drag-region className="text-xs font-semibold text-sidebar-text tracking-wide">
-          Velo
-        </span>
+      <div data-tauri-drag-region className={`flex items-center h-full ${isMac ? "pl-20" : "pl-3"}`}>
+        {!isMac && (
+          <img src={appIcon} alt="" draggable={false} data-tauri-drag-region className="w-4 h-4 rounded-[3px]" />
+        )}
       </div>
 
-      {/* Window controls — right side (hidden on macOS, uses native traffic lights) */}
-      {!isMac && (
-        <div className="flex items-center h-full">
-          <button
-            onClick={handleMinimize}
-            className="h-full px-3.5 flex items-center justify-center text-sidebar-text/70 hover:bg-sidebar-hover transition-colors"
-            title="Riduci a icona"
-          >
-            <Minus size={14} />
-          </button>
-          <button
-            onClick={handleMaximize}
-            className="h-full px-3.5 flex items-center justify-center text-sidebar-text/70 hover:bg-sidebar-hover transition-colors"
-            title={maximized ? "Ripristina" : "Ingrandisci"}
-          >
-            {maximized ? <Copy size={12} /> : <Square size={12} />}
-          </button>
-          <button
-            onClick={handleClose}
-            className="h-full px-3.5 flex items-center justify-center text-sidebar-text/70 hover:bg-danger hover:text-white transition-colors"
-            title="Chiudi"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      <div data-tauri-drag-region className="px-2">
+        {showSearch && <SearchBar />}
+      </div>
+
+      {/* Window controls (macOS uses the native traffic lights) */}
+      <div data-tauri-drag-region className="flex items-center justify-end h-full">
+        {!isMac && (
+          <>
+            <button
+              onClick={handleMinimize}
+              className="h-full w-11 flex items-center justify-center text-sidebar-text/70 hover:bg-sidebar-hover transition-colors"
+              title="Riduci a icona"
+            >
+              <Minus size={14} />
+            </button>
+            <button
+              onClick={handleMaximize}
+              className="h-full w-11 flex items-center justify-center text-sidebar-text/70 hover:bg-sidebar-hover transition-colors"
+              title={maximized ? "Ripristina" : "Ingrandisci"}
+            >
+              {maximized ? <Copy size={12} /> : <Square size={12} />}
+            </button>
+            <button
+              onClick={handleClose}
+              className="h-full w-11 flex items-center justify-center text-sidebar-text/70 hover:bg-[#c42b1c] hover:text-white transition-colors"
+              title="Chiudi"
+            >
+              <X size={14} />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

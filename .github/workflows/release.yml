@@ -102,7 +102,7 @@ jobs:
           # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "Fede Mail ${{ github.ref_name }}"
+          releaseName: "Velo Fedmor ${{ github.ref_name }}"
           releaseBody: "Vedi CHANGELOG.md. L'app installata si aggiorna da sola."
           releaseDraft: false
           prerelease: false

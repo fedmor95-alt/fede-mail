@@ -2,7 +2,6 @@ import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { CSSTransition } from "react-transition-group";
 import { ThreadCard } from "../email/ThreadCard";
 import { CategoryTabs } from "../email/CategoryTabs";
-import { SearchBar } from "../search/SearchBar";
 import { EmailListSkeleton } from "../ui/Skeleton";
 import { useThreadStore, type Thread } from "@/stores/threadStore";
 import { useAccountStore } from "@/stores/accountStore";
@@ -527,11 +526,6 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
       }`}
       style={readingPanePosition === "right" && width ? { width } : undefined}
     >
-      {/* Search */}
-      <div className="px-3 py-2 border-b border-border-secondary">
-        <SearchBar />
-      </div>
-
       {/* Header */}
       <div className="px-4 py-2 border-b border-border-primary flex items-center justify-between">
         <div>

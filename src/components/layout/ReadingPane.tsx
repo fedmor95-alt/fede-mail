@@ -24,7 +24,7 @@ export function ReadingPane() {
   if (!selectedThread) {
     return (
       <div className="flex-1 flex flex-col bg-bg-primary glass-panel">
-        <EmptyState illustration={ReadingPaneIllustration} title="Velo" subtitle="Seleziona un'email da leggere" />
+        <EmptyState illustration={ReadingPaneIllustration} title="Velo Fedmor" subtitle="Seleziona un'email da leggere" />
       </div>
     );
   }

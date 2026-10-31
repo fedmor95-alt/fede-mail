@@ -20,6 +20,28 @@ export interface DbThread {
   pec_status?: string | null;
 }
 
+/**
+ * Thread list query. The page (ORDER BY + LIMIT) is picked from `threads`
+ * first and the sender of the latest message is looked up only for those
+ * rows; joining messages before paging made SQLite walk every thread of every
+ * account on each list reload (~50x slower with a few thousand threads).
+ */
+function threadPageSql(filter: string): string {
+  return `SELECT t.*, m.from_name, m.from_address FROM (
+      SELECT t.* FROM threads t
+      WHERE ($1 IS NULL OR t.account_id = $1) AND ${filter}
+      ORDER BY t.is_pinned DESC, t.last_message_at DESC, t.id DESC
+      LIMIT $3 OFFSET $4) t
+    LEFT JOIN messages m ON m.rowid = (
+      SELECT m2.rowid FROM messages m2
+      WHERE m2.account_id = t.account_id AND m2.thread_id = t.id
+      ORDER BY m2.date DESC LIMIT 1)
+    ORDER BY t.is_pinned DESC, t.last_message_at DESC, t.id DESC`;
+}
+
+const HAS_LABEL = `EXISTS (SELECT 1 FROM thread_labels tl
+  WHERE tl.account_id = t.account_id AND tl.thread_id = t.id AND tl.label_id = $2)`;
+
 /** accountId = null lists threads from every account (unified view). */
 export async function getThreadsForAccount(
   accountId: string | null,
@@ -29,26 +51,9 @@ export async function getThreadsForAccount(
 ): Promise<DbThread[]> {
   const db = await getDb();
   if (labelId) {
-    return db.select<DbThread[]>(
-      `SELECT t.*, m.from_name, m.from_address FROM threads t
-       INNER JOIN thread_labels tl ON tl.account_id = t.account_id AND tl.thread_id = t.id
-       LEFT JOIN messages m ON m.account_id = t.account_id AND m.thread_id = t.id
-         AND m.date = (SELECT MAX(m2.date) FROM messages m2 WHERE m2.account_id = t.account_id AND m2.thread_id = t.id)
-       WHERE ($1 IS NULL OR t.account_id = $1) AND tl.label_id = $2
-       GROUP BY t.account_id, t.id
-       ORDER BY t.is_pinned DESC, t.last_message_at DESC
-       LIMIT $3 OFFSET $4`,
-      [accountId, labelId, limit, offset],
-    );
+    return db.select<DbThread[]>(threadPageSql(HAS_LABEL), [accountId, labelId, limit, offset]);
   }
-  return db.select<DbThread[]>(
-    `SELECT t.*, m.from_name, m.from_address FROM threads t
-     LEFT JOIN messages m ON m.account_id = t.account_id AND m.thread_id = t.id
-       AND m.date = (SELECT MAX(m2.date) FROM messages m2 WHERE m2.account_id = t.account_id AND m2.thread_id = t.id)
-     WHERE ($1 IS NULL OR t.account_id = $1)
-     ORDER BY t.is_pinned DESC, t.last_message_at DESC LIMIT $2 OFFSET $3`,
-    [accountId, limit, offset],
-  );
+  return db.select<DbThread[]>(threadPageSql("$2 IS NULL"), [accountId, null, limit, offset]);
 }
 
 export async function getThreadsForCategory(
@@ -58,33 +63,15 @@ export async function getThreadsForCategory(
   offset = 0,
 ): Promise<DbThread[]> {
   const db = await getDb();
-  if (category === "Primary") {
-    // Primary includes threads with NULL category (uncategorized)
-    return db.select<DbThread[]>(
-      `SELECT t.*, m.from_name, m.from_address FROM threads t
-       INNER JOIN thread_labels tl ON tl.account_id = t.account_id AND tl.thread_id = t.id
-       LEFT JOIN thread_categories tc ON tc.account_id = t.account_id AND tc.thread_id = t.id
-       LEFT JOIN messages m ON m.account_id = t.account_id AND m.thread_id = t.id
-         AND m.date = (SELECT MAX(m2.date) FROM messages m2 WHERE m2.account_id = t.account_id AND m2.thread_id = t.id)
-       WHERE ($1 IS NULL OR t.account_id = $1) AND tl.label_id = 'INBOX' AND (tc.category IS NULL OR tc.category = 'Primary')
-       GROUP BY t.account_id, t.id
-       ORDER BY t.is_pinned DESC, t.last_message_at DESC
-       LIMIT $2 OFFSET $3`,
-      [accountId, limit, offset],
-    );
-  }
-  return db.select<DbThread[]>(
-    `SELECT t.*, m.from_name, m.from_address FROM threads t
-     INNER JOIN thread_labels tl ON tl.account_id = t.account_id AND tl.thread_id = t.id
-     INNER JOIN thread_categories tc ON tc.account_id = t.account_id AND tc.thread_id = t.id
-     LEFT JOIN messages m ON m.account_id = t.account_id AND m.thread_id = t.id
-       AND m.date = (SELECT MAX(m2.date) FROM messages m2 WHERE m2.account_id = t.account_id AND m2.thread_id = t.id)
-     WHERE ($1 IS NULL OR t.account_id = $1) AND tl.label_id = 'INBOX' AND tc.category = $2
-     GROUP BY t.account_id, t.id
-     ORDER BY t.is_pinned DESC, t.last_message_at DESC
-     LIMIT $3 OFFSET $4`,
-    [accountId, category, limit, offset],
-  );
+  const inInbox = `EXISTS (SELECT 1 FROM thread_labels tl
+    WHERE tl.account_id = t.account_id AND tl.thread_id = t.id AND tl.label_id = 'INBOX')`;
+  // Primary includes threads with no category yet
+  const inCategory = category === "Primary"
+    ? `NOT EXISTS (SELECT 1 FROM thread_categories tc
+        WHERE tc.account_id = t.account_id AND tc.thread_id = t.id AND tc.category IS NOT NULL AND tc.category <> 'Primary')`
+    : `EXISTS (SELECT 1 FROM thread_categories tc
+        WHERE tc.account_id = t.account_id AND tc.thread_id = t.id AND tc.category = $2)`;
+  return db.select<DbThread[]>(threadPageSql(`${inInbox} AND ${inCategory}`), [accountId, category, limit, offset]);
 }
 
 export async function upsertThread(thread: {

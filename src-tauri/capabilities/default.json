@@ -13,6 +13,7 @@
     "log:default",
     "core:window:default",
     "core:webview:allow-create-webview-window",
+    "core:webview:allow-set-webview-zoom",
     "sql:default",
     "sql:allow-load",
     "sql:allow-execute",

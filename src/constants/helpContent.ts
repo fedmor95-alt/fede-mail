@@ -1035,7 +1035,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         title: "Gestione delle attività",
         summary: "Gestione completa delle attività con priorità, scadenze e sottoattività.",
         description:
-          "Velo include un gestore di attività integrato, accessibile dalla barra laterale o con la scorciatoia g poi k. Crea attività con titolo, descrizione, priorità (nessuna, bassa, media, alta, urgente), scadenza e tag. Le attività possono avere un livello di sottoattività per suddividere gli elementi complessi. Trascina per riordinare le attività, filtra per stato o priorità e raggruppa per priorità, scadenza o tag. Le attività completate possono essere mostrate o nascoste. Il pannello laterale delle attività mostra quelle collegate alla conversazione corrente.",
+          "Velo Fedmor include un gestore di attività integrato, accessibile dalla barra laterale o con la scorciatoia g poi k. Crea attività con titolo, descrizione, priorità (nessuna, bassa, media, alta, urgente), scadenza e tag. Le attività possono avere un livello di sottoattività per suddividere gli elementi complessi. Trascina per riordinare le attività, filtra per stato o priorità e raggruppa per priorità, scadenza o tag. Le attività completate possono essere mostrate o nascoste. Il pannello laterale delle attività mostra quelle collegate alla conversazione corrente.",
         tips: [
           { text: "Vai alla pagina Attività", shortcut: "g k" },
           { text: "Apri le attività dalla voce Attività della barra laterale." },

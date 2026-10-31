@@ -1,8 +1,26 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, lazy, Suspense } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout/Sidebar";
 import { AddAccount } from "./components/accounts/AddAccount";
-import { Composer } from "./components/composer/Composer";
+import { useComposerStore } from "./stores/composerStore";
+
+// The rich-text editor (TipTap + ProseMirror) is the heaviest part of the UI:
+// load it the first time the user writes, not at startup.
+const Composer = lazy(() => import("./components/composer/Composer").then((m) => ({ default: m.Composer })));
+
+function LazyComposer() {
+  const isOpen = useComposerStore((s) => s.isOpen);
+  const [wanted, setWanted] = useState(isOpen);
+  useEffect(() => {
+    if (isOpen) setWanted(true);
+  }, [isOpen]);
+  if (!wanted) return null;
+  return (
+    <Suspense fallback={null}>
+      <Composer />
+    </Suspense>
+  );
+}
 import { UndoSendToast } from "./components/composer/UndoSendToast";
 import { CommandPalette } from "./components/search/CommandPalette";
 import { ShortcutsHelp } from "./components/search/ShortcutsHelp";
@@ -571,7 +589,7 @@ export default function App() {
       )}
 
       <ErrorBoundary name="Composer">
-        <Composer />
+        <LazyComposer />
       </ErrorBoundary>
       <UndoSendToast />
       <UpdateToast />

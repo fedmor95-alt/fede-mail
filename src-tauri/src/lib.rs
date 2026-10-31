@@ -142,7 +142,7 @@ pub fn run() {
             #[cfg(not(target_os = "linux"))]
             {
                 // Build system tray menu
-                let show = MenuItem::with_id(app, "show", "Mostra Velo", true, None::<&str>)?;
+                let show = MenuItem::with_id(app, "show", "Mostra Velo Fedmor", true, None::<&str>)?;
                 let check_mail =
                     MenuItem::with_id(app, "check_mail", "Controlla la posta", true, None::<&str>)?;
                 let quit = MenuItem::with_id(app, "quit", "Esci", true, None::<&str>)?;
@@ -155,7 +155,7 @@ pub fn run() {
 
                 TrayIconBuilder::with_id("main-tray")
                     .icon(icon)
-                    .tooltip("Velo")
+                    .tooltip("Velo Fedmor")
                     .menu(&menu)
                     .show_menu_on_left_click(false)
                     .on_menu_event(|app, event| match event.id.as_ref() {
@@ -199,7 +199,7 @@ pub fn run() {
                 let app_handle = app.handle().clone();
 
                 std::thread::spawn(move || {
-                    let mut tray = match TrayItem::new("Velo", IconSource::Resource("mail-read")) {
+                    let mut tray = match TrayItem::new("Velo Fedmor", IconSource::Resource("mail-read")) {
                         Ok(t) => t,
                         Err(e) => {
                             log::warn!("Failed to create system tray: {e}");
@@ -208,7 +208,7 @@ pub fn run() {
                     };
 
                     let app_handle_show = app_handle.clone();
-                    if let Err(e) = tray.add_menu_item("Mostra Velo", move || {
+                    if let Err(e) = tray.add_menu_item("Mostra Velo Fedmor", move || {
                         if let Some(window) = app_handle_show.get_webview_window("main") {
                             let _ = window.show();
                             let _ = window.set_focus();
