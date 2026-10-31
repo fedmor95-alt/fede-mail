@@ -4,7 +4,6 @@ import { AccountSwitcher } from "../accounts/AccountSwitcher";
 import { LabelForm } from "../labels/LabelForm";
 import { InputDialog } from "../ui/InputDialog";
 import { useUIStore } from "@/stores/uiStore";
-import { useComposerStore } from "@/stores/composerStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { useLabelStore, type Label } from "@/stores/labelStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
@@ -28,8 +27,6 @@ import {
   ChevronDown,
   ChevronUp,
   HelpCircle,
-  PanelLeftClose,
-  PanelLeftOpen,
   Pencil,
   Columns2,
   Bell,
@@ -207,13 +204,11 @@ const LABELS_COLLAPSED_COUNT = 3;
 
 export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
   const activeLabel = useActiveLabel();
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const sidebarNavConfig = useUIStore((s) => s.sidebarNavConfig);
   const taskIncompleteCount = useTaskStore((s) => s.incompleteCount);
   const inboxViewMode = useUIStore((s) => s.inboxViewMode);
   const setInboxViewMode = useUIStore((s) => s.setInboxViewMode);
   const activeCategory = useActiveCategory();
-  const openComposer = useComposerStore((s) => s.openComposer);
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
   const labels = useLabelStore((s) => s.labels);
   const loadLabels = useLabelStore((s) => s.loadLabels);
@@ -347,28 +342,8 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
         collapsed ? "w-16" : "w-60"
       }`}
     >
-      {/* Sidebar toggle, top left as in Apple Mail (also Ctrl+Shift+E) */}
-      <div className={`flex px-2 pt-2 ${collapsed ? "justify-center" : "justify-start"}`}>
-        <button
-          onClick={toggleSidebar}
-          className="p-1.5 text-sidebar-text/60 hover:text-sidebar-text hover:bg-sidebar-hover rounded-md transition-colors"
-          title={collapsed ? "Mostra barra laterale" : "Nascondi barra laterale"}
-          aria-label={collapsed ? "Mostra barra laterale" : "Nascondi barra laterale"}
-        >
-          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-        </button>
-      </div>
+      <div className="pt-2" />
       <AccountSwitcher collapsed={collapsed} onAddAccount={onAddAccount} />
-
-      {/* Compose button */}
-      <div className="px-3 py-2">
-        <button
-          onClick={() => openComposer()}
-          className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white rounded-lg py-2 text-sm font-medium interactive-btn"
-        >
-          {collapsed ? <Plus size={16} /> : "Scrivi"}
-        </button>
-      </div>
 
       <nav className="flex-1 overflow-y-auto py-2">
         {visibleNavItems.map((item) => {

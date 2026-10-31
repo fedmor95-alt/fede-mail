@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useRouterState } from "@tanstack/react-router";
-import { Minus, Square, X, Copy } from "lucide-react";
+import { Minus, Square, X, Copy, PanelLeftClose, PanelLeftOpen, PenSquare } from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
+import { useComposerStore } from "@/stores/composerStore";
 import { SearchBar } from "../search/SearchBar";
 import appIcon from "@/assets/icon.png";
 
@@ -20,6 +22,9 @@ export function TitleBar() {
   const [maximized, setMaximized] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const showSearch = !NON_MAIL_ROUTES.some((r) => pathname.startsWith(r));
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const openComposer = useComposerStore((s) => s.openComposer);
 
   useEffect(() => {
     const appWindow = getCurrentWindow();
@@ -46,10 +51,26 @@ export function TitleBar() {
       }}
       className="grid grid-cols-[1fr_minmax(0,560px)_1fr] items-center h-11 bg-sidebar-bg border-b border-border-primary select-none shrink-0"
     >
-      <div data-tauri-drag-region className={`flex items-center h-full ${isMac ? "pl-20" : "pl-3"}`}>
+      <div data-tauri-drag-region className={`flex items-center gap-1.5 h-full ${isMac ? "pl-20" : "pl-3"}`}>
         {!isMac && (
-          <img src={appIcon} alt="" draggable={false} data-tauri-drag-region className="w-4 h-4 rounded-[3px]" />
+          <img src={appIcon} alt="" draggable={false} data-tauri-drag-region className="w-4 h-4 rounded-[3px] mr-1.5" />
         )}
+        <button
+          onClick={toggleSidebar}
+          className="p-1.5 text-sidebar-text/70 hover:text-sidebar-text hover:bg-sidebar-hover rounded-md transition-colors"
+          title={sidebarCollapsed ? "Mostra barra laterale (Ctrl+Shift+E)" : "Nascondi barra laterale (Ctrl+Shift+E)"}
+          aria-label={sidebarCollapsed ? "Mostra barra laterale" : "Nascondi barra laterale"}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+        </button>
+        <button
+          onClick={() => openComposer()}
+          className="flex items-center gap-1.5 h-7 px-3 rounded-md bg-accent hover:bg-accent-hover text-bg-primary text-[13px] font-medium transition-colors"
+          title="Scrivi nuova email (Ctrl+N)"
+        >
+          <PenSquare size={14} />
+          Scrivi
+        </button>
       </div>
 
       <div data-tauri-drag-region className="px-2">
