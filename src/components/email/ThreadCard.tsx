@@ -115,7 +115,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
                 ? "w-6 h-6 text-[0.6875rem]"
                 : emailDensity === "compact" ? "w-7 h-7 text-xs" : emailDensity === "spacious" ? "w-10 h-10 text-sm" : "w-9 h-9 text-sm"
             } ${
-              isMultiSelected ? "bg-accent" : thread.isRead ? "bg-text-tertiary" : "bg-accent"
+              isMultiSelected ? "bg-accent" : thread.isRead ? "bg-text-secondary" : "bg-accent"
             }`}
           >
             {isMultiSelected ? <Check size={avatarSize === "small" || emailDensity === "compact" ? 13 : 16} /> : initial}
@@ -129,13 +129,13 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
             <span
               className={`text-sm truncate ${
                 thread.isRead
-                  ? "text-text-secondary"
+                  ? "text-text-primary/85"
                   : "font-semibold text-text-primary"
               }`}
             >
               {thread.fromName ?? thread.fromAddress ?? "Sconosciuto"}
             </span>
-            <span className="text-xs text-text-tertiary whitespace-nowrap shrink-0">
+            <span className="text-xs text-text-secondary whitespace-nowrap shrink-0">
               {formatRelativeDate(thread.lastMessageAt)}
             </span>
           </div>
@@ -143,7 +143,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
           {/* Subject */}
           <div
             className={`text-sm truncate mt-0.5 ${
-              thread.isRead ? "text-text-secondary" : "text-text-primary"
+              thread.isRead ? "text-text-primary/85" : "text-text-primary"
             }`}
           >
             {thread.subject ?? "(Nessun oggetto)"}
@@ -151,7 +151,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
 
           {/* Snippet + indicators */}
           <div className={`flex items-center gap-1.5 mt-0.5 ${emailDensity === "compact" ? "hidden" : ""}`}>
-            <span className="text-xs text-text-tertiary truncate flex-1">
+            <span className="text-xs text-text-secondary truncate flex-1">
               {thread.snippet}
             </span>
             <PecStatusBadge status={thread.pecStatus} />
