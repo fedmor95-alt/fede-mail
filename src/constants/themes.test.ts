@@ -24,7 +24,7 @@ describe("themes", () => {
   });
 
   it("DEFAULT_COLOR_THEME is mail", () => {
-    expect(DEFAULT_COLOR_THEME).toBe("mail");
+    expect(DEFAULT_COLOR_THEME).toBe("windows");
   });
 
   it("getThemeById returns correct theme", () => {
@@ -35,6 +35,6 @@ describe("themes", () => {
 
   it("getThemeById falls back to mail for unknown ID", () => {
     const fallback = getThemeById("nonexistent");
-    expect(fallback.id).toBe("mail");
+    expect(fallback.id).toBe("windows");
   });
 });

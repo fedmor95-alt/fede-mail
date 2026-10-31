@@ -3,7 +3,7 @@
  * Each theme sets every colour token from styles/globals.css, in a light and
  * a dark variant; the variant follows the light/dark/system setting.
  */
-export type ColorThemeId = "mail" | "grafite" | "carta" | "nord" | "salvia" | "notte";
+export type ColorThemeId = "windows" | "mail" | "grafite" | "carta" | "nord" | "salvia" | "notte";
 
 interface ThemeColors {
   bgPrimary: string;
@@ -70,7 +70,47 @@ const MAIL_DARK: ThemeColors = {
   sidebarHover: "rgba(255, 255, 255, 0.06)",
 };
 
+/** Windows 11 (Fluent/Mica) palette. */
+const WINDOWS_LIGHT: ThemeColors = {
+  bgPrimary: "#ffffff",
+  bgSecondary: "#f3f3f3",
+  bgTertiary: "#e9e9e9",
+  bgHover: "rgba(0, 0, 0, 0.045)",
+  bgSelected: "rgba(0, 95, 184, 0.12)",
+  textPrimary: "#1b1b1b",
+  textSecondary: "#5d5d5d",
+  textTertiary: "#8a8a8a",
+  borderPrimary: "rgba(0, 0, 0, 0.09)",
+  borderSecondary: "rgba(0, 0, 0, 0.045)",
+  accent: "#005fb8",
+  accentHover: "#0067c0",
+  accentLight: "#e3eefb",
+  sidebarBg: "#f3f3f3",
+  sidebarText: "#1b1b1b",
+  sidebarHover: "rgba(0, 0, 0, 0.05)",
+};
+
+const WINDOWS_DARK: ThemeColors = {
+  bgPrimary: "#202020",
+  bgSecondary: "#272727",
+  bgTertiary: "#2d2d2d",
+  bgHover: "rgba(255, 255, 255, 0.06)",
+  bgSelected: "rgba(96, 205, 255, 0.16)",
+  textPrimary: "#ffffff",
+  textSecondary: "#c5c5c5",
+  textTertiary: "#8b8b8b",
+  borderPrimary: "rgba(255, 255, 255, 0.08)",
+  borderSecondary: "rgba(255, 255, 255, 0.045)",
+  accent: "#60cdff",
+  accentHover: "#8ad9ff",
+  accentLight: "#1f3340",
+  sidebarBg: "#1c1c1c",
+  sidebarText: "#e6e6e6",
+  sidebarHover: "rgba(255, 255, 255, 0.06)",
+};
+
 export const COLOR_THEMES: ColorTheme[] = [
+  { id: "windows", name: "Windows 11", swatch: "#60cdff", light: WINDOWS_LIGHT, dark: WINDOWS_DARK },
   { id: "mail", name: "Mail", swatch: "#0a84ff", light: MAIL_LIGHT, dark: MAIL_DARK },
   {
     id: "grafite",
@@ -231,7 +271,7 @@ export const COLOR_THEMES: ColorTheme[] = [
   },
 ];
 
-export const DEFAULT_COLOR_THEME: ColorThemeId = "mail";
+export const DEFAULT_COLOR_THEME: ColorThemeId = "windows";
 
 export function getThemeById(id: string): ColorTheme {
   return (

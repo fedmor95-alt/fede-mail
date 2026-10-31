@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { runUnifiedSearch } from "@/services/search/unifiedSearch";
 import { useAccountStore } from "@/stores/accountStore";
 import { useThreadStore } from "@/stores/threadStore";
@@ -14,6 +14,16 @@ export function SearchBar() {
   const cancelRef = useRef<(() => void) | null>(null);
 
   const [showSaveModal, setShowSaveModal] = useState(false);
+
+  // Ctrl+F / "/" from the keyboard shortcuts
+  useEffect(() => {
+    const focus = () => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("velo-focus-search", focus);
+    return () => window.removeEventListener("velo-focus-search", focus);
+  }, []);
 
   const handleSaveAsSmartFolder = useCallback(() => {
     if (useThreadStore.getState().searchQuery.trim().length < 2) return;

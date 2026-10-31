@@ -8,7 +8,8 @@ import { getSetting, setSetting, getSecureSetting, setSecureSetting } from "@/se
 import { PROVIDER_MODELS } from "@/services/ai/types";
 import { deleteAccount } from "@/services/db/accounts";
 import { removeClient, reauthorizeAccount } from "@/services/gmail/tokenManager";
-import { triggerSync, forceFullSync, resyncAccount } from "@/services/gmail/syncManager";
+import { triggerSync, forceFullSync, resyncAccount, startBackgroundSync } from "@/services/gmail/syncManager";
+import { startPush } from "@/services/push/pushManager";
 import {
   registerComposeShortcut,
   getCurrentShortcut,
@@ -47,7 +48,7 @@ import { SubscriptionManager } from "./SubscriptionManager";
 import { SmartFolderEditor } from "./SmartFolderEditor";
 import { QuickStepEditor } from "./QuickStepEditor";
 import { SmartLabelEditor } from "./SmartLabelEditor";
-import { SHORTCUTS, getDefaultKeyMap } from "@/constants/shortcuts";
+import { SHORTCUTS, getDefaultKeyMap, ALT_SUFFIX } from "@/constants/shortcuts";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { COLOR_THEMES } from "@/constants/themes";
 import {
@@ -320,6 +321,13 @@ export function SettingsPage() {
       removeClient(accountId);
       await deleteAccount(accountId);
       removeAccountFromStore(accountId);
+      // Restart sync and push without the removed account, otherwise its
+      // timer and IDLE watcher keep running against a deleted account.
+      const remaining = useAccountStore.getState().accounts.filter((a) => a.isActive);
+      startBackgroundSync(remaining.map((a) => a.id), true);
+      startPush(remaining.filter((a) => a.provider !== "caldav").map((a) => a.id)).catch((err) =>
+        console.warn("[push] restart failed:", err),
+      );
     },
     [removeAccountFromStore],
   );
@@ -1960,24 +1968,25 @@ function ShortcutsTab() {
       {SHORTCUTS.map((section) => (
         <Section key={section.category} title={section.category}>
           <div className="space-y-1">
-            {section.items.map((item) => {
-              const currentKey = keyMap[item.id] ?? item.keys;
-              const isDefault = currentKey === defaults[item.id];
-              const isRecording = recordingId === item.id;
+            {section.items.flatMap((item) => (item.alt ? [item.id, item.id + ALT_SUFFIX] : [item.id]).map((bindId) => {
+              const isAlt = bindId !== item.id;
+              const currentKey = keyMap[bindId] ?? (isAlt ? item.alt! : item.keys);
+              const isDefault = currentKey === defaults[bindId];
+              const isRecording = recordingId === bindId;
 
               return (
                 <div
-                  key={item.id}
+                  key={bindId}
                   className="flex items-center justify-between py-2 px-1"
                 >
-                  <span className="text-sm text-text-secondary">
-                    {item.desc}
+                  <span className={`text-sm ${isAlt ? "text-text-tertiary pl-4" : "text-text-secondary"}`}>
+                    {isAlt ? "oppure" : item.desc}
                   </span>
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <button
-                      onClick={() => setRecordingId(isRecording ? null : item.id)}
+                      onClick={() => setRecordingId(isRecording ? null : bindId)}
                       onKeyDown={(e) => {
-                        if (isRecording) handleKeyRecord(e, item.id);
+                        if (isRecording) handleKeyRecord(e, bindId);
                       }}
                       onBlur={() => { if (isRecording) setRecordingId(null); }}
                       className={`text-xs px-2.5 py-1 rounded-md font-mono transition-colors ${
@@ -1990,9 +1999,9 @@ function ShortcutsTab() {
                     </button>
                     {!isDefault && (
                       <button
-                        onClick={() => resetKey(item.id)}
+                        onClick={() => resetKey(bindId)}
                         className="text-xs text-text-tertiary hover:text-text-primary"
-                        title={`Ripristina a ${defaults[item.id]}`}
+                        title={`Ripristina a ${defaults[bindId]}`}
                       >
                         ×
                       </button>
@@ -2000,7 +2009,7 @@ function ShortcutsTab() {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </Section>
       ))}

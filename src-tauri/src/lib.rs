@@ -40,6 +40,12 @@ fn set_tray_tooltip(app: tauri::AppHandle, tooltip: String) -> Result<(), String
     }
 }
 
+/// Quit after the webview has committed any pending (undoable) actions.
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
 #[tauri::command]
 fn open_devtools(app: tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
@@ -88,6 +94,7 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .manage(imap::idle::IdleWatchers::default())
         .invoke_handler(tauri::generate_handler![
+            quit_app,
             oauth::start_oauth_server,
             oauth::oauth_exchange_token,
             oauth::oauth_refresh_token,
@@ -164,7 +171,12 @@ pub fn run() {
                             }
                         }
                         "quit" => {
-                            app.exit(0);
+                            // Let the webview flush deferred deletes first;
+                            // it calls `quit_app` when done.
+                            match app.get_webview_window("main") {
+                                Some(window) if window.emit("tray-quit", ()).is_ok() => {}
+                                _ => app.exit(0),
+                            }
                         }
                         _ => {}
                     })

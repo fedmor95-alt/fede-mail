@@ -172,6 +172,22 @@ export default function App() {
     };
   }, []);
 
+  // Tray "Esci": commit any delete/archive still in its undo window, then quit
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    import("@tauri-apps/api/event").then(({ listen }) => {
+      listen("tray-quit", async () => {
+        try {
+          await Promise.race([flushPendingUndo(), new Promise((r) => setTimeout(r, 4000))]);
+        } finally {
+          const { invoke } = await import("@tauri-apps/api/core");
+          await invoke("quit_app").catch(() => {});
+        }
+      }).then((fn) => { unlisten = fn; });
+    });
+    return () => { unlisten?.(); };
+  }, []);
+
   // Listen for tray "Check for Mail" button
   useEffect(() => {
     let unlisten: (() => void) | undefined;

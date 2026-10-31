@@ -790,6 +790,14 @@ const MIGRATIONS = [
     description: "Load remote images by default",
     sql: `INSERT OR REPLACE INTO settings (key, value) VALUES ('block_remote_images', 'false');`,
   },
+  {
+    version: 26,
+    description: "Windows 11 theme following the system light/dark mode",
+    sql: `
+      INSERT OR REPLACE INTO settings (key, value) VALUES ('color_theme', 'windows');
+      INSERT OR REPLACE INTO settings (key, value) VALUES ('theme', 'system');
+    `,
+  },
 ];
 
 /**

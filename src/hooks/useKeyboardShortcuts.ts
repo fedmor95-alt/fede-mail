@@ -4,9 +4,10 @@ import { useThreadStore } from "@/stores/threadStore";
 import { useComposerStore } from "@/stores/composerStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { useShortcutStore } from "@/stores/shortcutStore";
+import { baseActionId } from "@/constants/shortcuts";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
 import { navigateToLabel, navigateToThread, navigateBack, getActiveLabel, getSelectedThreadId } from "@/router/navigate";
-import { archiveThread, trashThread, permanentDeleteThread, starThread, spamThread, undoLastAction } from "@/services/emailActions";
+import { archiveThread, trashThread, permanentDeleteThread, starThread, spamThread, markThreadRead, undoLastAction } from "@/services/emailActions";
 import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb, muteThread as muteThreadDb, unmuteThread as unmuteThreadDb } from "@/services/db/threads";
 import { deleteDraftsForThread } from "@/services/gmail/draftDeletion";
 import { getGmailClient } from "@/services/gmail/tokenManager";
@@ -15,55 +16,91 @@ import { parseUnsubscribeUrl } from "@/components/email/MessageItem";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { triggerSync } from "@/services/gmail/syncManager";
 
+/** Split a binding like "Ctrl+Shift++" into modifiers and the final key. */
+function parseBinding(binding: string): { key: string; ctrl: boolean; shift: boolean; alt: boolean } {
+  let key: string;
+  let mods: string[];
+  if (binding.endsWith("++")) {
+    key = "+";
+    mods = binding.slice(0, -2).split("+").filter(Boolean);
+  } else {
+    const parts = binding.split("+");
+    key = parts.pop() || "+";
+    mods = parts;
+  }
+  return {
+    key,
+    ctrl: mods.some((p) => p === "Ctrl" || p === "Cmd"),
+    shift: mods.includes("Shift"),
+    alt: mods.includes("Alt"),
+  };
+}
+
+/** Physical-key fallbacks for bindings that depend on the keyboard layout. */
+const CODE_ALIASES: Record<string, string[]> = {
+  "+": ["Equal", "NumpadAdd", "BracketRight"],
+  "-": ["Minus", "NumpadSubtract", "Slash"],
+  "0": ["Digit0", "Numpad0"],
+};
+
 /**
- * Parse a key binding string and check if it matches a keyboard event.
- * Supports formats like: "j", "#", "Ctrl+K", "Ctrl+Shift+E", "Ctrl+Enter"
+ * Check if a key binding matches a keyboard event.
+ * Supports formats like: "j", "#", "Shift+U", "Ctrl+K", "Ctrl+Shift+E", "Ctrl+Enter", "Ctrl+Shift++".
+ * Symbol keys ("#", "!", "?", "/") ignore Shift/AltGr, since on many layouts
+ * (Italian included) they can only be typed with a modifier.
  */
 function matchesKey(binding: string, e: KeyboardEvent): boolean {
-  const parts = binding.split("+");
-  const key = parts[parts.length - 1]!;
-  const needsCtrl = parts.some((p) => p === "Ctrl" || p === "Cmd");
-  const needsShift = parts.some((p) => p === "Shift");
-  const needsAlt = parts.some((p) => p === "Alt");
+  const { key, ctrl, shift, alt } = parseBinding(binding);
+  const isSymbol = key.length === 1 && !/[a-z0-9]/i.test(key);
+  const hasCtrl = e.ctrlKey || e.metaKey;
 
-  const ctrlMatch = needsCtrl ? (e.ctrlKey || e.metaKey) : !(e.ctrlKey || e.metaKey);
-  const shiftMatch = needsShift ? e.shiftKey : !e.shiftKey;
-  const altMatch = needsAlt ? e.altKey : !e.altKey;
+  if (isSymbol && !ctrl) {
+    // AltGr arrives as ctrl+alt on Windows: accept it for symbols.
+    if (hasCtrl && !e.altKey) return false;
+    return e.key === key;
+  }
 
-  // For single character keys, compare case-insensitively
-  const keyMatch = key.length === 1
-    ? e.key === key || e.key === key.toLowerCase() || e.key === key.toUpperCase()
-    : e.key === key;
+  const ctrlMatch = ctrl ? hasCtrl : !hasCtrl;
+  const shiftMatch = shift ? e.shiftKey : !e.shiftKey;
+  const altMatch = alt ? e.altKey : !e.altKey;
+  if (!ctrlMatch || !shiftMatch || !altMatch) return false;
 
-  return ctrlMatch && shiftMatch && altMatch && keyMatch;
+  if (key.length === 1) {
+    if (e.key.toLowerCase() === key.toLowerCase()) return true;
+    const codes = CODE_ALIASES[key];
+    return !!codes && codes.includes(e.code);
+  }
+  return e.key === key;
 }
 
 /**
- * Build a reverse map: key binding -> action ID.
- * For "g then X" sequences, stores as "g then X" literally.
+ * Build a reverse map from the key map:
+ * - singleKey: plain key -> action ID
+ * - twoKeySequences: second key -> action ID (first key is always "g")
+ * - combos: action ID -> binding with modifiers (checked with matchesKey)
  */
 function buildReverseMap(keyMap: Record<string, string>): {
   singleKey: Map<string, string>;
-  twoKeySequences: Map<string, string>; // second key -> action ID (first key is always "g")
-  ctrlCombos: Map<string, string>;
+  twoKeySequences: Map<string, string>;
+  combos: Map<string, string>;
 } {
   const singleKey = new Map<string, string>();
   const twoKeySequences = new Map<string, string>();
-  const ctrlCombos = new Map<string, string>();
+  const combos = new Map<string, string>();
 
   for (const [id, keys] of Object.entries(keyMap)) {
+    if (!keys) continue;
     if (keys.includes(" then ")) {
-      // Two-key sequence like "g then i"
       const secondKey = keys.split(" then ")[1]!.trim();
       twoKeySequences.set(secondKey, id);
-    } else if (keys.includes("+") && (keys.includes("Ctrl") || keys.includes("Cmd"))) {
-      ctrlCombos.set(id, keys);
+    } else if (keys.length > 1 && keys.includes("+")) {
+      combos.set(id, keys);
     } else {
       singleKey.set(keys, id);
     }
   }
 
-  return { singleKey, twoKeySequences, ctrlCombos };
+  return { singleKey, twoKeySequences, combos };
 }
 
 // Cached reverse map to avoid rebuilding on every keypress
@@ -76,6 +113,22 @@ function getCachedReverseMap(keyMap: Record<string, string>): ReturnType<typeof 
   cachedReverseMap = buildReverseMap(keyMap);
   return cachedReverseMap;
 }
+
+/** Combos that also run while typing in a text field (they don't edit text). */
+const INPUT_SAFE_ACTIONS = new Set([
+  "action.compose",
+  "app.search",
+  "app.commandPalette",
+  "app.toggleSidebar",
+  "app.fontBigger",
+  "app.fontSmaller",
+  "app.fontReset",
+  "app.help",
+  "app.syncFolder",
+]);
+
+/** Plain keys that also run while typing (function keys only). */
+const INPUT_SAFE_KEYS = new Set(["F1", "F5"]);
 
 /**
  * Global keyboard shortcuts handler (Superhuman-inspired).
@@ -93,63 +146,43 @@ export function useKeyboardShortcuts() {
         useContextMenuStore.getState().closeMenu();
         return;
       }
+      if (e.isComposing) return;
 
       const target = e.target as HTMLElement;
       const isInputFocused =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
         target.isContentEditable;
 
       const keyMap = useShortcutStore.getState().keyMap;
-      const { singleKey, twoKeySequences, ctrlCombos } = getCachedReverseMap(keyMap);
+      const { singleKey, twoKeySequences, combos } = getCachedReverseMap(keyMap);
 
-      // Ctrl/Cmd shortcuts work everywhere
-      if (e.ctrlKey || e.metaKey) {
-        for (const [actionId, binding] of ctrlCombos) {
-          if (matchesKey(binding, e)) {
-            e.preventDefault();
-            executeAction(actionId);
-            return;
-          }
-        }
-        // Ctrl+K for command palette (also check binding)
-        if (e.key === "k" && !e.shiftKey) {
-          const paletteBinding = keyMap["app.commandPalette"];
-          if (paletteBinding === "Ctrl+K" || paletteBinding === "/" || !paletteBinding) {
-            e.preventDefault();
-            window.dispatchEvent(new Event("velo-toggle-command-palette"));
-            return;
-          }
-        }
-        if (e.key === "Enter") {
-          // Send email shortcut handled by composer
-          return;
-        }
-        // Ctrl+Z: take back the last delete/archive (outside text fields)
-        if (!isInputFocused && !e.shiftKey && e.key.toLowerCase() === "z") {
-          if (undoLastAction()) e.preventDefault();
-          return;
-        }
-        // Ctrl+Shift + / - / 0: text size (code-based, works on any layout)
-        if (e.shiftKey && ["Equal", "NumpadAdd", "BracketRight", "Minus", "NumpadSubtract", "Slash", "Digit0", "Numpad0"].includes(e.code)) {
+      // Combos with modifiers (Ctrl+N, Shift+U, ...)
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+        for (const [id, binding] of combos) {
+          if (!matchesKey(binding, e)) continue;
+          const actionId = baseActionId(id);
+          if (isInputFocused && !INPUT_SAFE_ACTIONS.has(actionId)) return;
           e.preventDefault();
-          stepFontScale(e.code === "Digit0" || e.code === "Numpad0" ? 0 : e.code === "Minus" || e.code === "NumpadSubtract" || e.code === "Slash" ? -1 : 1);
+          await executeAction(actionId);
           return;
         }
-        return;
+        // AltGr (ctrl+alt on Windows) types symbols like "?" and "#": let
+        // those reach the single-key shortcuts below.
+        const altGr = e.ctrlKey && e.altKey;
+        if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
       }
 
-      // F5 sync works even when input is focused
-      if (e.key === "F5") {
+      // Function keys work even when a text field is focused
+      const plainId = singleKey.get(e.key);
+      if (plainId && INPUT_SAFE_KEYS.has(e.key)) {
         e.preventDefault();
-        const syncActionId = singleKey.get("F5");
-        if (syncActionId) {
-          await executeAction(syncActionId);
-        }
+        await executeAction(baseActionId(plainId));
         return;
       }
 
-      // Don't process single-key shortcuts when typing in inputs
+      // Don't process single-key shortcuts when typing
       if (isInputFocused) return;
 
       const key = e.key;
@@ -164,7 +197,7 @@ export function useKeyboardShortcuts() {
         const actionId = twoKeySequences.get(key);
         if (actionId) {
           e.preventDefault();
-          executeAction(actionId);
+          await executeAction(baseActionId(actionId));
           return;
         }
       }
@@ -178,29 +211,23 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Arrow keys navigate the thread list when no thread is open full-screen
-      // (In split-pane mode or list-only view, arrows move between threads)
+      // Arrow keys: when the reading pane is hidden and a thread is open,
+      // ThreadView uses them to move between messages.
       if (key === "ArrowDown" || key === "ArrowUp") {
-        const selectedId = getSelectedThreadId();
         const paneOff = useUIStore.getState().readingPanePosition === "hidden";
-        // Only handle here if no thread is open in full-screen mode
-        // (when pane is off and a thread is selected, ThreadView handles arrows for message nav)
-        if (!(paneOff && selectedId)) {
-          e.preventDefault();
-          await executeAction(key === "ArrowDown" ? "nav.next" : "nav.prev");
-          return;
-        }
+        if (paneOff && getSelectedThreadId()) return;
       }
 
-      // Single key shortcuts
+      // Enter on a focused button must still click it
+      if (key === "Enter" && (target.tagName === "BUTTON" || target.tagName === "A")) return;
+
       let actionId = singleKey.get(key);
-      // Delete and Backspace always trigger delete action
       if (!actionId && (key === "Delete" || key === "Backspace")) {
         actionId = "action.delete";
       }
       if (actionId) {
         e.preventDefault();
-        await executeAction(actionId);
+        await executeAction(baseActionId(actionId));
       }
     };
 
@@ -221,6 +248,12 @@ function stepFontScale(direction: -1 | 0 | 1): void {
   const idx = FONT_SCALES.indexOf(ui.fontScale);
   const next = FONT_SCALES[Math.max(0, Math.min(FONT_SCALES.length - 1, idx + direction))]!;
   ui.setFontScale(next);
+}
+
+/** Account that owns a thread (unified view can mix accounts in one list). */
+function accountOf(threadId: string): string | null {
+  return useThreadStore.getState().threadMap.get(threadId)?.accountId
+    ?? useAccountStore.getState().activeAccountId;
 }
 
 async function executeAction(actionId: string): Promise<void> {
@@ -306,6 +339,20 @@ async function executeAction(actionId: string): Promise<void> {
     case "action.compose":
       useComposerStore.getState().openComposer();
       break;
+    case "action.undo":
+      undoLastAction();
+      break;
+    case "action.toggleRead": {
+      const ids = useThreadStore.getState().selectedThreadIds.size > 0
+        ? [...useThreadStore.getState().selectedThreadIds]
+        : selectedId ? [selectedId] : [];
+      const anyUnread = ids.some((id) => !useThreadStore.getState().threadMap.get(id)?.isRead);
+      for (const id of ids) {
+        const acc = accountOf(id);
+        if (acc) await markThreadRead(acc, id, [], anyUnread);
+      }
+      break;
+    }
     case "action.reply": {
       if (selectedId) {
         const replyMode = useUIStore.getState().defaultReplyMode;
@@ -328,10 +375,10 @@ async function executeAction(actionId: string): Promise<void> {
       if (multiIds.size > 0 && activeAccountId) {
         const ids = [...multiIds];
         for (const id of ids) {
-          await archiveThread(activeAccountId, id, []);
+          await archiveThread(accountOf(id)!, id, []);
         }
       } else if (selectedId && activeAccountId) {
-        await archiveThread(activeAccountId, selectedId, []);
+        await archiveThread(accountOf(selectedId)!, selectedId, []);
       }
       break;
     }
@@ -344,34 +391,36 @@ async function executeAction(actionId: string): Promise<void> {
         const ids = [...multiDeleteIds];
         for (const id of ids) {
           if (isTrashView) {
-            await permanentDeleteThread(activeAccountId, id, []);
-            await deleteThreadFromDb(activeAccountId, id);
+            await permanentDeleteThread(accountOf(id)!, id, []);
+            await deleteThreadFromDb(accountOf(id)!, id);
           } else if (isDraftsView) {
             try {
-              const client = await getGmailClient(activeAccountId);
-              await deleteDraftsForThread(client, activeAccountId, id);
+              const acc = accountOf(id)!;
+              const client = await getGmailClient(acc);
+              await deleteDraftsForThread(client, acc, id);
               useThreadStore.getState().removeThread(id);
             } catch (err) {
               console.error("Draft delete failed:", err);
             }
           } else {
-            await trashThread(activeAccountId, id, []);
+            await trashThread(accountOf(id)!, id, []);
           }
         }
       } else if (selectedId && activeAccountId) {
         if (isTrashView) {
-          await permanentDeleteThread(activeAccountId, selectedId, []);
-          await deleteThreadFromDb(activeAccountId, selectedId);
+          await permanentDeleteThread(accountOf(selectedId)!, selectedId, []);
+          await deleteThreadFromDb(accountOf(selectedId)!, selectedId);
         } else if (isDraftsView) {
           try {
-            const client = await getGmailClient(activeAccountId);
-            await deleteDraftsForThread(client, activeAccountId, selectedId);
+            const acc = accountOf(selectedId)!;
+            const client = await getGmailClient(acc);
+            await deleteDraftsForThread(client, acc, selectedId);
             useThreadStore.getState().removeThread(selectedId);
           } catch (err) {
             console.error("Draft delete failed:", err);
           }
         } else {
-          await trashThread(activeAccountId, selectedId, []);
+          await trashThread(accountOf(selectedId)!, selectedId, []);
         }
       }
       break;
@@ -380,7 +429,7 @@ async function executeAction(actionId: string): Promise<void> {
       if (selectedId && activeAccountId) {
         const thread = threads.find((t) => t.id === selectedId);
         if (thread) {
-          await starThread(activeAccountId, selectedId, [], !thread.isStarred);
+          await starThread(accountOf(selectedId)!, selectedId, [], !thread.isStarred);
         }
       }
       break;
@@ -391,10 +440,10 @@ async function executeAction(actionId: string): Promise<void> {
       if (multiSpamIds.size > 0 && activeAccountId) {
         const ids = [...multiSpamIds];
         for (const id of ids) {
-          await spamThread(activeAccountId, id, [], !isSpamView);
+          await spamThread(accountOf(id)!, id, [], !isSpamView);
         }
       } else if (selectedId && activeAccountId) {
-        await spamThread(activeAccountId, selectedId, [], !isSpamView);
+        await spamThread(accountOf(selectedId)!, selectedId, [], !isSpamView);
       }
       break;
     }
@@ -406,9 +455,9 @@ async function executeAction(actionId: string): Promise<void> {
           useThreadStore.getState().updateThread(selectedId, { isPinned: newPinned });
           try {
             if (newPinned) {
-              await pinThreadDb(activeAccountId, selectedId);
+              await pinThreadDb(accountOf(selectedId)!, selectedId);
             } else {
-              await unpinThreadDb(activeAccountId, selectedId);
+              await unpinThreadDb(accountOf(selectedId)!, selectedId);
             }
           } catch (err) {
             console.error("Pin failed:", err);
@@ -429,13 +478,13 @@ async function executeAction(actionId: string): Promise<void> {
     case "action.unsubscribe": {
       if (selectedId && activeAccountId) {
         try {
-          const msgs = await getMessagesWithBodies(activeAccountId, selectedId);
+          const msgs = await getMessagesWithBodies(accountOf(selectedId)!, selectedId);
           const unsubMsg = msgs.find((m) => m.list_unsubscribe);
           if (unsubMsg) {
             const url = parseUnsubscribeUrl(unsubMsg.list_unsubscribe!);
             if (url) {
               await openUrl(url);
-              await archiveThread(activeAccountId, selectedId, []);
+              await archiveThread(accountOf(selectedId)!, selectedId, []);
             }
           }
         } catch (err) {
@@ -451,22 +500,22 @@ async function executeAction(actionId: string): Promise<void> {
         for (const id of ids) {
           const t = threads.find((thread) => thread.id === id);
           if (t?.isMuted) {
-            await unmuteThreadDb(activeAccountId, id);
+            await unmuteThreadDb(accountOf(id)!, id);
             useThreadStore.getState().updateThread(id, { isMuted: false });
           } else {
-            await muteThreadDb(activeAccountId, id);
-            await archiveThread(activeAccountId, id, []);
+            await muteThreadDb(accountOf(id)!, id);
+            await archiveThread(accountOf(id)!, id, []);
           }
         }
       } else if (selectedId && activeAccountId) {
         const thread = threads.find((t) => t.id === selectedId);
         if (thread) {
           if (thread.isMuted) {
-            await unmuteThreadDb(activeAccountId, selectedId);
+            await unmuteThreadDb(accountOf(selectedId)!, selectedId);
             useThreadStore.getState().updateThread(selectedId, { isMuted: false });
           } else {
-            await muteThreadDb(activeAccountId, selectedId);
-            await archiveThread(activeAccountId, selectedId, []);
+            await muteThreadDb(accountOf(selectedId)!, selectedId);
+            await archiveThread(accountOf(selectedId)!, selectedId, []);
           }
         }
       }
@@ -488,6 +537,18 @@ async function executeAction(actionId: string): Promise<void> {
     }
     case "app.commandPalette":
       window.dispatchEvent(new Event("velo-toggle-command-palette"));
+      break;
+    case "app.search":
+      window.dispatchEvent(new Event("velo-focus-search"));
+      break;
+    case "app.fontBigger":
+      stepFontScale(1);
+      break;
+    case "app.fontSmaller":
+      stepFontScale(-1);
+      break;
+    case "app.fontReset":
+      stepFontScale(0);
       break;
     case "app.toggleSidebar":
       useUIStore.getState().toggleSidebar();

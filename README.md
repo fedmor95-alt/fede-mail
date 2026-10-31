@@ -21,19 +21,28 @@
   - Le ricevute di accettazione, consegna e mancata consegna vengono collegate al messaggio inviato tramite il `msgid` di `daticert.xml` / `X-Riferimento-Message-ID`.
   - La lista mostra lo stato: Accettata, Consegnata o Errore.
   - Le ricevute non compaiono in Posta in arrivo. Per mostrarle: Impostazioni → «Mostra ricevute PEC in Posta in arrivo».
-- **Aspetto.** Pannelli pieni in stile Apple Mail e sei temi: Mail, Grafite, Carta, Nord, Salvia e Notte. Ogni tema ha una variante chiara e una scura, che segue il sistema.
+- **Aspetto.** Pannelli pieni, tema predefinito «Windows 11» (Fluent) più Mail, Grafite, Carta, Nord, Salvia e Notte. Ogni tema ha una variante chiara e una scura, che segue il sistema.
 
 ### Scorciatoie principali
 
 | Tasto | Azione |
 |---|---|
-| ↑ / ↓ | Messaggio precedente / successivo |
-| Backspace / Canc | Elimina |
+| ↑ / ↓ (o J / K) | Messaggio precedente / successivo |
+| Invio (o O) | Apri conversazione |
+| Canc / Backspace | Elimina |
 | E | Archivia |
 | Ctrl+Z | Annulla l'ultima eliminazione o archiviazione (entro 6 secondi) |
-| Ctrl+Shift + / − / 0 | Testo più grande / più piccolo / normale |
+| M (o Shift+U) | Segna come letto / da leggere |
+| Ctrl+N (o C) | Scrivi nuova email |
+| Ctrl+R (o R) | Rispondi |
+| Ctrl+Shift+R (o A) | Rispondi a tutti |
+| Ctrl+L (o F) | Inoltra |
+| Ctrl+J (o !) | Posta indesiderata |
+| Ctrl+F (o /) | Cerca |
+| Ctrl+K | Riquadro comandi |
 | Ctrl+Shift+E | Mostra / nasconde la barra laterale |
-| C, R, A, F | Scrivi, Rispondi, Rispondi a tutti, Inoltra |
+| Ctrl+Shift + / − / 0 | Testo più grande / più piccolo / normale |
+| ? (o F1) | Elenco delle scorciatoie |
 
 L'elenco completo è in Impostazioni → Scorciatoie.
 
