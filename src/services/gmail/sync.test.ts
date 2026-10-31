@@ -11,6 +11,9 @@ vi.mock("../db/threads", () => ({
 vi.mock("../db/messages", () => ({
   upsertMessage: vi.fn(),
 }));
+vi.mock("../db/connection", () => ({
+  getDb: vi.fn().mockResolvedValue({ execute: vi.fn(), select: vi.fn().mockResolvedValue([]) }),
+}));
 vi.mock("../db/attachments", () => ({
   upsertAttachment: vi.fn(),
 }));

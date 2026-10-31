@@ -1729,9 +1729,15 @@ fn parse_message(
 /// `pec:<outer section>|<section inside the inner message>`.
 const PEC_PART_PREFIX: &str = "pec:";
 
-fn header_text(message: &mail_parser::Message, name: &str) -> Option<String> {
+/// Header value, trimmed, case kept (Message-IDs are case-sensitive).
+fn header_raw(message: &mail_parser::Message, name: &str) -> Option<String> {
     extract_header_text(message.header(mail_parser::HeaderName::Other(name.to_string().into())))
-        .map(|s| s.trim().to_lowercase())
+        .map(|s| s.trim().to_string())
+}
+
+/// Header value lowercased, for keyword headers like X-Ricevuta.
+fn header_text(message: &mail_parser::Message, name: &str) -> Option<String> {
+    header_raw(message, name).map(|s| s.to_lowercase())
 }
 
 fn strip_msgid(id: &str) -> String {
@@ -1781,7 +1787,7 @@ fn apply_pec(message: &mail_parser::Message, msg: &mut ImapMessage) {
         (None, Some(t)) => t.clone(),
         _ => return,
     };
-    let ref_header = header_text(message, "X-Riferimento-Message-ID").map(|s| strip_msgid(&s));
+    let ref_header = header_raw(message, "X-Riferimento-Message-ID").map(|s| strip_msgid(&s));
     let mut pec = PecInfo {
         kind,
         ref_message_id: ref_header.or_else(|| daticert_msgid(message)),

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useThreadStore, type Thread } from "./threadStore";
+import { useThreadStore, clearPendingRemovals, type Thread } from "./threadStore";
 
 const mockThread: Thread = {
   id: "thread-1",
@@ -37,6 +37,7 @@ const mockThread2: Thread = {
 
 describe("threadStore", () => {
   beforeEach(() => {
+    clearPendingRemovals();
     useThreadStore.setState({
       threads: [],
       threadMap: new Map(),

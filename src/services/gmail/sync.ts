@@ -97,8 +97,9 @@ async function processAndStoreThread(
       });
       await setThreadCategory(accountId, thread.id, category, false);
 
-      // Auto-archive if category matches
-      if (client && autoArchiveCategories && autoArchiveCategories.has(category) && category !== "Primary") {
+      // Auto-archive if category matches (new threads only, so a thread the
+      // user moved back to the inbox stays there)
+      if (!existing && client && autoArchiveCategories && autoArchiveCategories.has(category) && category !== "Primary") {
         try {
           await client.modifyThread(thread.id, undefined, ["INBOX"]);
           allLabelIds.delete("INBOX");
@@ -297,6 +298,28 @@ async function parallelLimit<T>(
   return results;
 }
 
+const failedDeltaRounds = new Map<string, number>();
+
+/** Remove a thread and everything hanging off it from the local DB. */
+async function removeLocalThread(accountId: string, threadId: string): Promise<void> {
+  const db = await getDb();
+  await db.execute("DELETE FROM attachments WHERE account_id = $1 AND message_id IN (SELECT id FROM messages WHERE account_id = $1 AND thread_id = $2)", [accountId, threadId]);
+  await db.execute("DELETE FROM messages WHERE account_id = $1 AND thread_id = $2", [accountId, threadId]);
+  await db.execute("DELETE FROM thread_labels WHERE account_id = $1 AND thread_id = $2", [accountId, threadId]);
+  await db.execute("DELETE FROM threads WHERE account_id = $1 AND id = $2", [accountId, threadId]);
+}
+
+/** Drop local messages of a thread that the server no longer has. */
+async function removeMissingMessages(accountId: string, threadId: string, keepIds: string[]): Promise<void> {
+  if (keepIds.length === 0) return;
+  const db = await getDb();
+  const placeholders = keepIds.map((_, i) => `$${i + 3}`).join(", ");
+  await db.execute(
+    `DELETE FROM messages WHERE account_id = $1 AND thread_id = $2 AND id NOT IN (${placeholders})`,
+    [accountId, threadId, ...keepIds],
+  );
+}
+
 /**
  * Delta sync: fetch only changes since last sync using history API.
  */
@@ -365,6 +388,7 @@ export async function deltaSync(
 
     // Re-fetch affected threads in parallel (max 5 concurrent)
     const threadIds = [...affectedThreadIds];
+    let failed = 0;
     await parallelLimit(
       threadIds.map((threadId) => async () => {
         try {
@@ -375,12 +399,26 @@ export async function deltaSync(
             return;
           }
 
-          const thread = await client.getThread(threadId, "metadata");
+          let thread;
+          try {
+            thread = await client.getThread(threadId, "metadata");
+          } catch (err) {
+            // Deleted on the server (e.g. trash emptied): drop the local copy.
+            if (String(err).includes("Gmail API error: 404")) {
+              await removeLocalThread(accountId, threadId);
+              return;
+            }
+            throw err;
+          }
 
-          if (!thread.messages || thread.messages.length === 0) return;
+          if (!thread.messages || thread.messages.length === 0) {
+            await removeLocalThread(accountId, threadId);
+            return;
+          }
 
           const parsedMessages = thread.messages.map(parseGmailMessage);
           await processAndStoreThread(thread, accountId, parsedMessages, client, autoArchiveCategories);
+          await removeMissingMessages(accountId, threadId, parsedMessages.map((m) => m.id));
 
           // Auto-archive muted threads that reappear in INBOX
           if (mutedThreadIds.has(threadId)) {
@@ -430,12 +468,24 @@ export async function deltaSync(
               .catch((err) => console.error("Smart label error:", err));
           }
         } catch (err) {
+          failed++;
           console.error(`Failed to re-sync thread ${threadId}:`, err);
         }
       }),
       10,
     );
 
+    // Keep the old history ID when threads failed, so the next delta retries
+    // them. Give up after a few rounds so one broken thread can't stall sync.
+    if (failed > 0) {
+      const rounds = (failedDeltaRounds.get(accountId) ?? 0) + 1;
+      if (rounds < 3) {
+        failedDeltaRounds.set(accountId, rounds);
+        console.warn(`[deltaSync] ${failed} thread(s) failed, retrying from history ${lastHistoryId}`);
+        return;
+      }
+    }
+    failedDeltaRounds.delete(accountId);
     await updateAccountSyncState(accountId, latestHistoryId);
 
     // Fire-and-forget AI categorization for new threads

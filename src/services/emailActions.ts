@@ -1,5 +1,5 @@
 import { useUIStore } from "@/stores/uiStore";
-import { useThreadStore } from "@/stores/threadStore";
+import { useThreadStore, clearPendingRemovals } from "@/stores/threadStore";
 import { getEmailProvider } from "@/services/email/providerFactory";
 import { enqueuePendingOperation } from "@/services/db/pendingOperations";
 import { classifyError } from "@/utils/networkErrors";
@@ -346,7 +346,12 @@ export async function executeEmailAction(
 
 const UNDO_WINDOW_MS = 6000;
 type DeferredRun = () => Promise<ActionResult>;
-let undoBatch: { kind: "trash" | "archive"; runs: DeferredRun[]; timer: ReturnType<typeof setTimeout> } | null = null;
+let undoBatch: {
+  kind: "trash" | "archive";
+  runs: DeferredRun[];
+  threadIds: string[];
+  timer: ReturnType<typeof setTimeout>;
+} | null = null;
 
 function flushUndoBatch(): Promise<ActionResult[]> {
   if (!undoBatch) return Promise.resolve([]);
@@ -361,12 +366,13 @@ function scheduleUndoable(action: EmailAction & { type: "trash" | "archive" }, r
   // A different kind of action starts a new batch; the old one commits now.
   if (undoBatch && undoBatch.kind !== action.type) flushUndoBatch();
   if (!undoBatch) {
-    undoBatch = { kind: action.type, runs: [], timer: setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS) };
+    undoBatch = { kind: action.type, runs: [], threadIds: [], timer: setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS) };
   } else {
     clearTimeout(undoBatch.timer);
     undoBatch.timer = setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS);
   }
   undoBatch.runs.push(run);
+  undoBatch.threadIds.push(action.threadId);
   window.dispatchEvent(
     new CustomEvent("velo-undo-available", { detail: { kind: action.type, count: undoBatch.runs.length } }),
   );
@@ -376,6 +382,7 @@ function scheduleUndoable(action: EmailAction & { type: "trash" | "archive" }, r
 export function undoLastAction(): boolean {
   if (!undoBatch) return false;
   clearTimeout(undoBatch.timer);
+  clearPendingRemovals(undoBatch.threadIds);
   undoBatch = null;
   window.dispatchEvent(new Event("velo-undo-done"));
   // Nothing reached the DB yet, so reloading the list brings the threads back.

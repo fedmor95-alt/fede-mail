@@ -99,7 +99,7 @@ export function InlineReply({ thread, messages, accountId, noReply, onSent }: In
   // Load default signature
   useEffect(() => {
     getDefaultSignature(accountId).then((sig) => {
-      if (sig) setSignatureHtml(sig.body_html);
+      setSignatureHtml(sig?.body_html ?? "");
     });
   }, [accountId]);
 

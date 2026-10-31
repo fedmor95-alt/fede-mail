@@ -14,7 +14,7 @@ import { getSetting, setSetting } from "../db/settings";
 export type PecStatus = "errore" | "consegnata" | "accettata" | "ricevuta";
 
 const ENVELOPE_KINDS = "('posta-certificata', 'errore')";
-const ERROR_KINDS = "('errore-consegna', 'non-accettazione', 'preavviso-errore-consegna', 'rilevazione-virus')";
+const ERROR_KINDS = "('errore', 'errore-consegna', 'non-accettazione', 'preavviso-errore-consegna', 'rilevazione-virus')";
 
 export const SHOW_PEC_RECEIPTS_SETTING = "show_pec_receipts";
 
@@ -39,6 +39,42 @@ export const PEC_KIND_LABELS: Record<string, string> = {
 
 export async function refreshPecState(accountId: string): Promise<void> {
   const db = await getDb();
+
+  const MATCHED_RECEIPT = `account_id = $1 AND pec_ref IS NOT NULL
+       AND pec_kind IS NOT NULL AND pec_kind NOT IN ${ENVELOPE_KINDS}
+       AND EXISTS (
+         SELECT 1 FROM messages o
+         WHERE o.account_id = messages.account_id
+           AND trim(o.message_id_header, '<>') = messages.pec_ref
+           AND (o.pec_kind IS NULL OR o.pec_kind IN ${ENVELOPE_KINDS})
+           AND o.thread_id <> messages.thread_id)`;
+  const moved = await db.select<{ thread_id: string }[]>(
+    `SELECT DISTINCT thread_id FROM messages WHERE ${MATCHED_RECEIPT}`,
+    [accountId],
+  );
+
+  // The threader only follows In-Reply-To; receipts of a reply, or ones whose
+  // original arrived later, can end up in a thread of their own. Move every
+  // receipt next to the message it refers to.
+  await db.execute(
+    `UPDATE messages SET thread_id = (
+       SELECT o.thread_id FROM messages o
+       WHERE o.account_id = messages.account_id AND trim(o.message_id_header, '<>') = messages.pec_ref
+         AND (o.pec_kind IS NULL OR o.pec_kind IN ${ENVELOPE_KINDS})
+       LIMIT 1)
+     WHERE ${MATCHED_RECEIPT}`,
+    [accountId],
+  );
+  // Threads emptied by the move.
+  for (const { thread_id } of moved) {
+    const left = await db.select<{ n: number }[]>(
+      "SELECT COUNT(*) AS n FROM messages WHERE account_id = $1 AND thread_id = $2",
+      [accountId, thread_id],
+    );
+    if ((left[0]?.n ?? 0) > 0) continue;
+    await db.execute("DELETE FROM thread_labels WHERE account_id = $1 AND thread_id = $2", [accountId, thread_id]);
+    await db.execute("DELETE FROM threads WHERE account_id = $1 AND id = $2", [accountId, thread_id]);
+  }
   await db.execute(
     `UPDATE threads SET pec_status = (
        SELECT CASE
@@ -64,15 +100,25 @@ export async function refreshPecState(accountId: string): Promise<void> {
     return;
   }
 
-  // Threads whose only inbox messages are receipts leave the inbox; the
-  // receipts stay visible inside the sent message's thread.
+  // Threads whose only inbox messages are receipts leave the inbox, but only
+  // when the receipts sit next to the sent message (so they stay visible
+  // there) and none of them reports an error.
   await db.execute(
     `DELETE FROM thread_labels
      WHERE account_id = $1 AND label_id = 'INBOX' AND thread_id IN (
        SELECT thread_id FROM messages WHERE account_id = $1
        GROUP BY thread_id
        HAVING SUM(imap_folder = 'INBOX' AND (pec_kind IS NULL OR pec_kind IN ${ENVELOPE_KINDS})) = 0
-          AND SUM(pec_kind IS NOT NULL AND pec_kind NOT IN ${ENVELOPE_KINDS}) > 0)`,
+          AND SUM(pec_kind IS NOT NULL AND pec_kind NOT IN ${ENVELOPE_KINDS}) > 0
+          AND SUM(pec_kind IS NULL OR pec_kind IN ${ENVELOPE_KINDS}) > 0
+          AND SUM(pec_kind IN ${ERROR_KINDS}) = 0)`,
+    [accountId],
+  );
+  // Error receipts always show up in the inbox.
+  await db.execute(
+    `INSERT OR IGNORE INTO thread_labels (account_id, thread_id, label_id)
+     SELECT DISTINCT account_id, thread_id, 'INBOX' FROM messages
+     WHERE account_id = $1 AND imap_folder = 'INBOX' AND pec_kind IN ${ERROR_KINDS}`,
     [accountId],
   );
 }

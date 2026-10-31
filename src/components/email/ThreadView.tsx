@@ -70,7 +70,9 @@ function prefetchNeighbours(threadId: string) {
 }
 
 export function ThreadView({ thread }: ThreadViewProps) {
-  const activeAccountId = useAccountStore((s) => s.activeAccountId);
+  const storeAccountId = useAccountStore((s) => s.activeAccountId);
+  // Everything in the reader acts on the account that owns the thread.
+  const activeAccountId = thread.accountId || storeAccountId;
   const contactSidebarVisible = useUIStore((s) => s.contactSidebarVisible);
   const toggleContactSidebar = useUIStore((s) => s.toggleContactSidebar);
   const taskSidebarVisible = useUIStore((s) => s.taskSidebarVisible);
@@ -87,18 +89,22 @@ export function ThreadView({ thread }: ThreadViewProps) {
     getSetting("block_remote_images").then((val) => setBlockImages(val !== "false"));
   }, []);
 
-  // Load messages
+  // Load messages (from the thread's own account; ignore late results after
+  // the user has moved on to another thread)
   useEffect(() => {
-    if (!activeAccountId) return;
+    let cancelled = false;
     setLoading(true);
-    getMessagesWithBodies(activeAccountId, thread.id)
-      .then(setMessages)
+    setMessages([]);
+    getMessagesWithBodies(thread.accountId, thread.id)
+      .then((msgs) => { if (!cancelled) setMessages(msgs); })
       .catch(console.error)
       .finally(() => {
+        if (cancelled) return;
         setLoading(false);
         prefetchNeighbours(thread.id);
       });
-  }, [activeAccountId, thread.id]);
+    return () => { cancelled = true; };
+  }, [thread.accountId, thread.id]);
 
   // Check per-sender allowlist (single batch query instead of N queries)
   useEffect(() => {

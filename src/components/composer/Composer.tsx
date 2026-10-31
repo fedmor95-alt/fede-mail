@@ -185,11 +185,9 @@ export function Composer() {
       if (cancelled) return;
       const store = useComposerStore.getState();
 
-      // Signature
-      if (sig) {
-        store.setSignatureHtml(sig.body_html);
-        store.setSignatureId(sig.id);
-      }
+      // Signature: switching to an account without one must drop the old one
+      store.setSignatureHtml(sig?.body_html ?? "");
+      store.setSignatureId(sig?.id ?? null);
 
       // Aliases + fromEmail resolution
       const mapped = dbAliases.map(mapDbAlias);

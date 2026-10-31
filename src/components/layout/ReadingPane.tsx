@@ -10,16 +10,16 @@ export function ReadingPane() {
   const selectedThreadId = useSelectedThreadId();
   const selectedThread = useThreadStore((s) => selectedThreadId ? s.threadMap.get(selectedThreadId) ?? null : null);
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
-  const unifiedView = useAccountStore((s) => s.unifiedView);
   const accountMismatch = !!selectedThread && selectedThread.accountId !== activeAccountId;
 
-  // Unified view: the active account follows the opened thread, so the
-  // reader, replies and actions all run against the thread's own account.
+  // The active account follows the opened thread (unified view, or a search
+  // result from another account), so the reader, replies and actions all
+  // run against the thread's own account.
   useEffect(() => {
-    if (unifiedView && selectedThread && accountMismatch) {
+    if (selectedThread && accountMismatch) {
       useAccountStore.setState({ activeAccountId: selectedThread.accountId });
     }
-  }, [unifiedView, selectedThread, accountMismatch]);
+  }, [selectedThread, accountMismatch]);
 
   if (!selectedThread) {
     return (
@@ -33,7 +33,7 @@ export function ReadingPane() {
 
   return (
     <div className="flex-1 bg-bg-primary overflow-hidden glass-panel">
-      <ThreadView thread={selectedThread} />
+      <ThreadView key={`${selectedThread.accountId}:${selectedThread.id}`} thread={selectedThread} />
     </div>
   );
 }

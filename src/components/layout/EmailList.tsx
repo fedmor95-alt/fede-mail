@@ -14,6 +14,7 @@ import { getCategoriesForThreads, getCategoryUnreadCounts } from "@/services/db/
 import { getActiveFollowUpThreadIds } from "@/services/db/followUpReminders";
 import { getBundleRules, getHeldThreadIds, getBundleSummaries, type DbBundleRule } from "@/services/db/bundleRules";
 import { getGmailClient } from "@/services/gmail/tokenManager";
+import { archiveThread, trashThread, permanentDeleteThread, spamThread } from "@/services/emailActions";
 import { useLabelStore } from "@/stores/labelStore";
 import { useSmartFolderStore } from "@/stores/smartFolderStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
@@ -124,9 +125,11 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
   }, [openMenu]);
 
   const handleDraftClick = useCallback(async (thread: Thread) => {
-    if (!activeAccountId) return;
+    // Drafts belong to the thread's account (the unified view mixes them).
+    const accountId = thread.accountId || activeAccountId;
+    if (!accountId) return;
     try {
-      const messages = await getMessagesForThread(activeAccountId, thread.id);
+      const messages = await getMessagesForThread(accountId, thread.id);
       // Get the last message (the draft)
       const draftMsg = messages[messages.length - 1];
       if (!draftMsg) return;
@@ -134,7 +137,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
       // Look up the Gmail draft ID so auto-save can update the existing draft
       let draftId: string | null = null;
       try {
-        const client = await getGmailClient(activeAccountId);
+        const client = await getGmailClient(accountId);
         const drafts = await client.listDrafts();
         const match = drafts.find((d) => d.message.id === draftMsg.id);
         if (match) draftId = match.id;
@@ -152,6 +155,8 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
         ? draftMsg.bcc_addresses.split(",").map((a) => a.trim()).filter(Boolean)
         : [];
 
+      // The composer sends from the active account
+      useAccountStore.setState({ activeAccountId: accountId });
       openComposer({
         mode: "new",
         to,
@@ -175,53 +180,38 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
     }
   }, [activeLabel, handleDraftClick]);
 
+  // Bulk actions go through emailActions: each thread runs against its own
+  // account (selections can span accounts), with undo and offline queueing.
   const handleBulkDelete = async () => {
     if (!activeAccountId || multiSelectCount === 0) return;
-    const isTrashView = activeLabel === "trash";
     const ids = [...selectedThreadIds];
-    removeThreads(ids);
-    try {
-      const client = await getGmailClient(activeAccountId);
-      await Promise.all(ids.map(async (id) => {
-        if (isTrashView) {
-          await client.deleteThread(id);
-          await deleteThreadFromDb(activeAccountId, id);
-        } else {
-          await client.modifyThread(id, ["TRASH"], ["INBOX"]);
+    if (activeLabel === "trash") {
+      removeThreads(ids);
+      for (const id of ids) {
+        const accountId = useThreadStore.getState().threadMap.get(id)?.accountId ?? activeAccountId;
+        try {
+          await permanentDeleteThread(accountId, id, []);
+          await deleteThreadFromDb(accountId, id);
+        } catch (err) {
+          console.error("Bulk delete failed:", err);
         }
-      }));
-    } catch (err) {
-      console.error("Bulk delete failed:", err);
+      }
+      return;
     }
+    await Promise.all(ids.map((id) => trashThread(activeAccountId, id, [])));
   };
 
   const handleBulkArchive = async () => {
     if (!activeAccountId || multiSelectCount === 0) return;
     const ids = [...selectedThreadIds];
-    removeThreads(ids);
-    try {
-      const client = await getGmailClient(activeAccountId);
-      await Promise.all(ids.map((id) => client.modifyThread(id, undefined, ["INBOX"])));
-    } catch (err) {
-      console.error("Bulk archive failed:", err);
-    }
+    await Promise.all(ids.map((id) => archiveThread(activeAccountId, id, [])));
   };
 
   const handleBulkSpam = async () => {
     if (!activeAccountId || multiSelectCount === 0) return;
     const ids = [...selectedThreadIds];
     const isSpamView = activeLabel === "spam";
-    removeThreads(ids);
-    try {
-      const client = await getGmailClient(activeAccountId);
-      await Promise.all(ids.map((id) =>
-        isSpamView
-          ? client.modifyThread(id, ["INBOX"], ["SPAM"])
-          : client.modifyThread(id, ["SPAM"], ["INBOX"]),
-      ));
-    } catch (err) {
-      console.error("Bulk spam failed:", err);
-    }
+    await Promise.all(ids.map((id) => spamThread(activeAccountId, id, [], !isSpamView)));
   };
 
   const searchThreadIds = useThreadStore((s) => s.searchThreadIds);
@@ -291,7 +281,6 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
       return;
     }
 
-    clearSearch();
     setLoading(true);
     setHasMore(true);
     try {
@@ -331,7 +320,12 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
     } finally {
       setLoading(false);
     }
-  }, [hasAccount, listAccountId, isSmartFolder ? activeAccountId : null, activeLabel, activeCategory, isSmartFolder, activeSmartFolder, setThreads, setLoading, mapDbThreads, clearSearch]);
+  }, [hasAccount, listAccountId, isSmartFolder ? activeAccountId : null, activeLabel, activeCategory, isSmartFolder, activeSmartFolder, setThreads, setLoading, mapDbThreads]);
+
+  // A search ends when the user changes folder, not when a sync reloads the list
+  useEffect(() => {
+    clearSearch();
+  }, [listAccountId, activeLabel, activeCategory, activeSmartFolder?.id, clearSearch]);
 
   const loadMore = useCallback(async () => {
     if (!hasAccount || loadingMore || !hasMore) return;
@@ -354,7 +348,12 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
 
       const mapped = await mapDbThreads(dbThreads);
       if (mapped.length > 0) {
-        setThreads([...threads, ...mapped]);
+        // Read the list now (a sync may have reloaded it meanwhile) and skip
+        // threads already shown: offsets shift when threads are added/removed.
+        const current = useThreadStore.getState().threads;
+        const seen = new Set(current.map((t) => t.id));
+        const fresh = mapped.filter((t) => !seen.has(t.id));
+        if (fresh.length > 0) setThreads([...current, ...fresh]);
       }
       setHasMore(dbThreads.length === PAGE_SIZE);
     } catch (err) {

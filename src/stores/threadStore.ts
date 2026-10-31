@@ -68,6 +68,33 @@ function applyFlagOverrides(threads: Thread[]): Thread[] {
   });
 }
 
+/**
+ * Threads removed from the view whose delete/archive hasn't reached the DB
+ * yet (Ctrl+Z window): list reloads must not bring them back.
+ */
+const PENDING_REMOVAL_MS = 10_000; // a bit longer than the 6 s undo window
+const pendingRemovals = new Map<string, number>();
+
+/** Called when a deferred delete/archive is undone: let reloads show them again. */
+export function clearPendingRemovals(ids?: Iterable<string>): void {
+  if (!ids) {
+    pendingRemovals.clear();
+    return;
+  }
+  for (const id of ids) pendingRemovals.delete(id);
+}
+
+function markPendingRemoval(id: string): void {
+  pendingRemovals.set(id, Date.now() + PENDING_REMOVAL_MS);
+}
+
+function withoutPending(threads: Thread[]): Thread[] {
+  if (pendingRemovals.size === 0) return threads;
+  const now = Date.now();
+  for (const [id, until] of pendingRemovals) if (until < now) pendingRemovals.delete(id);
+  return threads.filter((t) => !pendingRemovals.has(t.id));
+}
+
 export const useThreadStore = create<ThreadState>((set, get) => ({
   threads: [],
   threadMap: new Map(),
@@ -93,7 +120,7 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
 
   setThreads: (loaded) =>
     set((state) => {
-      const threads = applyFlagOverrides(loaded);
+      const threads = withoutPending(applyFlagOverrides(loaded));
       return {
         threads,
         threadMap: new Map(
@@ -165,16 +192,21 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
       const threadMap = new Map(state.threadMap);
       const existing = threadMap.get(id);
       if (existing) threadMap.set(id, { ...existing, ...updates });
-      return { threads, threadMap };
+      const searchResults = state.searchResults?.map((t) =>
+        t.id === id ? { ...t, ...updates } : t,
+      ) ?? null;
+      return { threads, threadMap, searchResults };
     }),
   removeThread: (id) =>
     set((state) => {
+      markPendingRemoval(id);
       const threadMap = new Map(state.threadMap);
       threadMap.delete(id);
       const next = new Set(state.selectedThreadIds);
       next.delete(id);
       return {
         threads: state.threads.filter((t) => t.id !== id),
+        searchResults: state.searchResults?.filter((t) => t.id !== id) ?? null,
         threadMap,
         selectedThreadId:
           state.selectedThreadId === id ? null : state.selectedThreadId,
@@ -184,12 +216,14 @@ export const useThreadStore = create<ThreadState>((set, get) => ({
   removeThreads: (ids) =>
     set((state) => {
       const idsSet = new Set(ids);
+      for (const id of ids) markPendingRemoval(id);
       const threadMap = new Map(state.threadMap);
       for (const id of ids) threadMap.delete(id);
       const next = new Set(state.selectedThreadIds);
       for (const id of ids) next.delete(id);
       return {
         threads: state.threads.filter((t) => !idsSet.has(t.id)),
+        searchResults: state.searchResults?.filter((t) => !idsSet.has(t.id)) ?? null,
         threadMap,
         selectedThreadId:
           state.selectedThreadId && idsSet.has(state.selectedThreadId)
