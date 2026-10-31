@@ -48,7 +48,8 @@ import { SubscriptionManager } from "./SubscriptionManager";
 import { SmartFolderEditor } from "./SmartFolderEditor";
 import { QuickStepEditor } from "./QuickStepEditor";
 import { SmartLabelEditor } from "./SmartLabelEditor";
-import { SHORTCUTS, getDefaultKeyMap, ALT_SUFFIX } from "@/constants/shortcuts";
+import { SHORTCUTS, getDefaultKeyMap, ALT_SUFFIX, formatShortcut } from "@/constants/shortcuts";
+import { isMac } from "@/utils/platform";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { COLOR_THEMES } from "@/constants/themes";
 import {
@@ -1881,7 +1882,7 @@ function ShortcutsTab() {
     e.stopPropagation();
 
     const parts: string[] = [];
-    if (e.ctrlKey || e.metaKey) parts.push("CmdOrCtrl");
+    if (isMac() ? e.metaKey : e.ctrlKey || e.metaKey) parts.push("CmdOrCtrl");
     if (e.altKey) parts.push("Alt");
     if (e.shiftKey) parts.push("Shift");
 
@@ -1901,8 +1902,9 @@ function ShortcutsTab() {
     e.preventDefault();
     e.stopPropagation();
 
+    // "Ctrl" is stored as the primary modifier: ⌘ on macOS.
     const parts: string[] = [];
-    if (e.ctrlKey || e.metaKey) parts.push("Ctrl");
+    if (isMac() ? e.metaKey : e.ctrlKey || e.metaKey) parts.push("Ctrl");
     if (e.altKey) parts.push("Alt");
     if (e.shiftKey) parts.push("Shift");
 
@@ -1933,7 +1935,7 @@ function ShortcutsTab() {
           </div>
           <div className="flex items-center gap-2">
             <kbd className="text-xs bg-bg-tertiary px-2 py-1 rounded border border-border-primary font-mono">
-              {composeShortcut}
+              {formatShortcut(composeShortcut)}
             </kbd>
             <button
               ref={globalRecorderRef}
@@ -1995,7 +1997,7 @@ function ShortcutsTab() {
                           : "bg-bg-tertiary text-text-tertiary hover:text-text-primary border border-border-primary"
                       }`}
                     >
-                      {isRecording ? "Premi un tasto..." : currentKey}
+                      {isRecording ? "Premi un tasto..." : formatShortcut(currentKey)}
                     </button>
                     {!isDefault && (
                       <button

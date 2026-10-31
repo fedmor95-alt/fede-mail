@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { CSSTransition } from "react-transition-group";
 import { useUIStore } from "@/stores/uiStore";
+import { formatShortcut } from "@/constants/shortcuts";
 import { useComposerStore } from "@/stores/composerStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useAccountStore } from "@/stores/accountStore";
@@ -193,7 +194,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         <span className="text-text-primary">{cmd.label}</span>
                         {cmd.shortcut && (
                           <kbd className="text-[0.625rem] text-text-tertiary bg-bg-tertiary px-1.5 py-0.5 rounded">
-                            {cmd.shortcut}
+                            {formatShortcut(cmd.shortcut)}
                           </kbd>
                         )}
                       </button>

@@ -3,6 +3,8 @@
  * Each theme sets every colour token from styles/globals.css, in a light and
  * a dark variant; the variant follows the light/dark/system setting.
  */
+import { isMac } from "@/utils/platform";
+
 export type ColorThemeId = "windows" | "mail" | "grafite" | "carta" | "nord" | "salvia" | "notte";
 
 interface ThemeColors {
@@ -271,7 +273,8 @@ export const COLOR_THEMES: ColorTheme[] = [
   },
 ];
 
-export const DEFAULT_COLOR_THEME: ColorThemeId = "windows";
+/** Theme for new installs: Mail on macOS, Windows 11 everywhere else. */
+export const DEFAULT_COLOR_THEME: ColorThemeId = isMac() ? "mail" : "windows";
 
 export function getThemeById(id: string): ColorTheme {
   return (

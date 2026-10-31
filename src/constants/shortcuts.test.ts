@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SHORTCUTS, getDefaultKeyMap } from "./shortcuts";
+import { SHORTCUTS, getDefaultKeyMap, formatShortcut } from "./shortcuts";
 
 describe("SHORTCUTS", () => {
   it("has at least 3 categories (Navigation, Actions, App)", () => {
@@ -45,5 +45,29 @@ describe("SHORTCUTS", () => {
     for (const id of allIds) {
       expect(map[id]).toBeDefined();
     }
+  });
+});
+
+describe("formatShortcut", () => {
+  it("leaves bindings untouched outside macOS", () => {
+    expect(formatShortcut("Ctrl+Shift+R", false)).toBe("Ctrl+Shift+R");
+    expect(formatShortcut("CmdOrCtrl+Shift+M", false)).toBe("CmdOrCtrl+Shift+M");
+  });
+
+  it("uses the Apple notation on macOS", () => {
+    expect(formatShortcut("Ctrl+N", true)).toBe("⌘N");
+    expect(formatShortcut("Ctrl+Shift+R", true)).toBe("⇧⌘R");
+    expect(formatShortcut("Ctrl+Shift++", true)).toBe("⇧⌘+");
+    expect(formatShortcut("Ctrl+Shift+-", true)).toBe("⇧⌘-");
+    expect(formatShortcut("Ctrl+Enter", true)).toBe("⌘↩");
+    expect(formatShortcut("CmdOrCtrl+Shift+M", true)).toBe("⇧⌘M");
+    expect(formatShortcut("Shift+U", true)).toBe("⇧U");
+  });
+
+  it("keeps plain keys and sequences readable on macOS", () => {
+    expect(formatShortcut("j", true)).toBe("j");
+    expect(formatShortcut("?", true)).toBe("?");
+    expect(formatShortcut("g then i", true)).toBe("g then i");
+    expect(formatShortcut("Backspace", true)).toBe("⌫");
   });
 });

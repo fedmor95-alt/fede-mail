@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   COLOR_THEMES,
   DEFAULT_COLOR_THEME,
@@ -23,8 +23,18 @@ describe("themes", () => {
     }
   });
 
-  it("DEFAULT_COLOR_THEME is mail", () => {
+  it("DEFAULT_COLOR_THEME is windows outside macOS", () => {
     expect(DEFAULT_COLOR_THEME).toBe("windows");
+  });
+
+  it("DEFAULT_COLOR_THEME is mail on macOS", async () => {
+    const ua = vi
+      .spyOn(navigator, "userAgent", "get")
+      .mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15");
+    vi.resetModules();
+    const fresh = await import("./themes");
+    expect(fresh.DEFAULT_COLOR_THEME).toBe("mail");
+    ua.mockRestore();
   });
 
   it("getThemeById returns correct theme", () => {

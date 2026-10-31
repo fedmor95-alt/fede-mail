@@ -5,7 +5,7 @@
 <h1 align="center">Fede Mail</h1>
 
 <p align="center">
-  Client di posta desktop per Windows e Fedora, con push, inbox unificata e PEC.<br />
+  Client di posta desktop per Windows, Fedora e macOS, con push, inbox unificata e PEC.<br />
   Basato su <a href="https://github.com/avihaymenahem/velo">Velo</a> (Apache-2.0), costruito con Tauri, React e Rust.
 </p>
 
@@ -21,30 +21,31 @@
   - Le ricevute di accettazione, consegna e mancata consegna vengono collegate al messaggio inviato tramite il `msgid` di `daticert.xml` / `X-Riferimento-Message-ID`.
   - La lista mostra lo stato: Accettata, Consegnata o Errore.
   - Le ricevute non compaiono in Posta in arrivo. Per mostrarle: Impostazioni → «Mostra ricevute PEC in Posta in arrivo».
-- **Aspetto.** Pannelli pieni, tema predefinito «Windows 11» (Fluent) più Mail, Grafite, Carta, Nord, Salvia e Notte. Ogni tema ha una variante chiara e una scura, che segue il sistema.
+- **Aspetto.** Pannelli pieni, tema predefinito «Windows 11» (Fluent; su macOS il predefinito è «Mail») più Mail, Grafite, Carta, Nord, Salvia e Notte. Ogni tema ha una variante chiara e una scura, che segue il sistema.
 
 ### Scorciatoie principali
 
-| Tasto | Azione |
-|---|---|
-| ↑ / ↓ (o J / K) | Messaggio precedente / successivo |
-| Invio (o O) | Apri conversazione |
-| Canc / Backspace | Elimina |
-| E | Archivia |
-| Ctrl+Z | Annulla l'ultima eliminazione o archiviazione (entro 6 secondi) |
-| M (o Shift+U) | Segna come letto / da leggere |
-| Ctrl+N (o C) | Scrivi nuova email |
-| Ctrl+R (o R) | Rispondi |
-| Ctrl+Shift+R (o A) | Rispondi a tutti |
-| Ctrl+L (o F) | Inoltra |
-| Ctrl+J (o !) | Posta indesiderata |
-| Ctrl+F (o /) | Cerca |
-| Ctrl+K | Riquadro comandi |
-| Ctrl+Shift+E | Mostra / nasconde la barra laterale |
-| Ctrl+Shift + / − / 0 | Testo più grande / più piccolo / normale |
-| ? (o F1) | Elenco delle scorciatoie |
+| Windows / Linux | macOS | Azione |
+|---|---|---|
+| ↑ / ↓ (o J / K) | ↑ / ↓ (o J / K) | Messaggio precedente / successivo |
+| Invio (o O) | ↩ (o O) | Apri conversazione |
+| Canc / Backspace | ⌫ | Elimina |
+| E | E | Archivia |
+| Ctrl+Z | ⌘Z | Annulla l'ultima eliminazione o archiviazione (entro 6 secondi) |
+| M (o Shift+U) | M (o ⇧U) | Segna come letto / da leggere |
+| Ctrl+N (o C) | ⌘N (o C) | Scrivi nuova email |
+| Ctrl+R (o R) | ⌘R (o R) | Rispondi |
+| Ctrl+Shift+R (o A) | ⇧⌘R (o A) | Rispondi a tutti |
+| Ctrl+L (o F) | ⌘L (o F) | Inoltra |
+| Ctrl+J (o !) | ⌘J (o !) | Posta indesiderata |
+| Ctrl+F (o /) | ⌘F (o /) | Cerca |
+| Ctrl+K | ⌘K | Riquadro comandi |
+| Ctrl+, | ⌘, | Impostazioni |
+| Ctrl+Shift+E | ⇧⌘E | Mostra / nasconde la barra laterale |
+| Ctrl+Shift + / − / 0 | ⇧⌘ + / − / 0 | Testo più grande / più piccolo / normale |
+| ? (o F1) | ? (o F1) | Elenco delle scorciatoie |
 
-L'elenco completo è in Impostazioni → Scorciatoie.
+Su Mac il tasto Ctrl delle combinazioni diventa ⌘ (Cmd), e la guida dell'app (?) e Impostazioni → Scorciatoie mostrano già i tasti Mac. L'elenco completo è in Impostazioni → Scorciatoie.
 
 ## Configurazione
 
@@ -72,8 +73,38 @@ Nome utente: l'indirizzo PEC completo. La password resta cifrata nel database lo
 
 ### Dove stanno i dati
 
-- Database e cache: `%APPDATA%\com.velomail.app\` (Windows), `~/.local/share/com.velomail.app/` (Linux)
-- Log, compresi gli errori dell'interfaccia: `%LOCALAPPDATA%\com.velomail.app\logs\Velo.log`
+- Database e cache: `%APPDATA%\com.velomail.app\` (Windows), `~/.local/share/com.velomail.app/` (Linux), `~/Library/Application Support/com.velomail.app/` (macOS)
+- Log, compresi gli errori dell'interfaccia: `%LOCALAPPDATA%\com.velomail.app\logs\` (Windows), `~/Library/Logs/com.velomail.app/` (macOS)
+
+## macOS
+
+La release contiene un'app universale (Apple Silicon e Intel) per macOS 10.15 o successivo: il file `.dmg` da installare e il `.app.tar.gz` usato dagli aggiornamenti automatici.
+
+### Installazione
+
+1. Apri il `.dmg` e trascina l'app nella cartella Applicazioni.
+2. L'app non è firmata con un certificato Apple né notarizzata (non c'è un account Apple Developer), quindi al primo avvio macOS la blocca. Per aprirla:
+   - in Finder, **tasto destro sull'app → Apri**, poi conferma con «Apri». Su macOS 15 o successivo, se manca il pulsante: Impostazioni di Sistema → Privacy e sicurezza → «Apri comunque»;
+   - oppure, da Terminale, togli la quarantena:
+
+     ```bash
+     xattr -dr com.apple.quarantine /Applications/Velo*.app
+     ```
+
+     Il nome dell'app è quello che vedi in Applicazioni: se non inizia con «Velo», sostituisci `Velo*.app` con il nome esatto, tra virgolette. Se macOS dice che l'app «è danneggiata», si risolve con lo stesso comando.
+
+Serve una volta sola: dopo, l'app si apre normalmente.
+
+### Aggiornamenti
+
+L'aggiornamento automatico sostituisce il `.app` installato con quello nuovo, scaricato dalla release (`.app.tar.gz` firmato con la chiave dell'updater). Il `.dmg` serve solo per la prima installazione. Gli aggiornamenti arrivano dall'app già autorizzata, quindi non serve ripetere «Apri» o `xattr`.
+
+### Su Mac è diverso
+
+- Le scorciatoie usano ⌘ al posto di Ctrl (vedi la tabella sopra).
+- I pulsanti della finestra sono quelli nativi a sinistra (i «semafori»).
+- Chiudendo la finestra l'app resta attiva nella barra dei menu; si riapre dall'icona nel Dock o nella barra dei menu.
+- Il tema predefinito per una nuova installazione è «Mail».
 
 ## Sviluppo
 
@@ -125,13 +156,16 @@ git push --follow-tags
 Il tag avvia `.github/workflows/release.yml`, che:
 
 1. esegue i test;
-2. compila l'installer Windows (NSIS) e i pacchetti Linux (rpm per Fedora, più AppImage);
+2. compila l'installer Windows (NSIS), i pacchetti Linux (rpm per Fedora, più AppImage) e l'app macOS universale (`.dmg` e `.app.tar.gz`);
 3. firma gli artefatti di aggiornamento;
-4. pubblica la release su GitHub con `latest.json`.
+4. pubblica la release su GitHub con `latest.json`;
+5. controlla che `latest.json` contenga Windows, Linux e macOS (`darwin-aarch64`, `darwin-x86_64`).
+
+Per firmare e notarizzare l'app Mac servirà un account Apple Developer: i passi sono già pronti, commentati, in `release.yml` (segreti `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`).
 
 Dopo qualche minuto le app installate si aggiornano da sole.
 
-Su Fedora l'rpm si installa con `sudo dnf install ./Fede*.rpm`. L'aggiornamento automatico di Tauri funziona per l'installer Windows e per l'AppImage. L'rpm si aggiorna reinstallando il nuovo pacchetto.
+Su Fedora l'rpm si installa con `sudo dnf install ./Fede*.rpm`. L'aggiornamento automatico di Tauri funziona per l'installer Windows, per l'AppImage e per l'app macOS. L'rpm si aggiorna reinstallando il nuovo pacchetto.
 
 ## Crediti e licenza
 

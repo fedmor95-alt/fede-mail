@@ -4,9 +4,10 @@ import { useThreadStore } from "@/stores/threadStore";
 import { useComposerStore } from "@/stores/composerStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { useShortcutStore } from "@/stores/shortcutStore";
-import { baseActionId } from "@/constants/shortcuts";
+import { baseActionId, splitBinding } from "@/constants/shortcuts";
+import { isMac } from "@/utils/platform";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
-import { navigateToLabel, navigateToThread, navigateBack, getActiveLabel, getSelectedThreadId } from "@/router/navigate";
+import { navigateToLabel, navigateToThread, navigateBack, navigateToSettings, getActiveLabel, getSelectedThreadId } from "@/router/navigate";
 import { archiveThread, trashThread, permanentDeleteThread, starThread, spamThread, markThreadRead, undoLastAction } from "@/services/emailActions";
 import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb, muteThread as muteThreadDb, unmuteThread as unmuteThreadDb } from "@/services/db/threads";
 import { deleteDraftsForThread } from "@/services/gmail/draftDeletion";
@@ -18,16 +19,7 @@ import { triggerSync } from "@/services/gmail/syncManager";
 
 /** Split a binding like "Ctrl+Shift++" into modifiers and the final key. */
 function parseBinding(binding: string): { key: string; ctrl: boolean; shift: boolean; alt: boolean } {
-  let key: string;
-  let mods: string[];
-  if (binding.endsWith("++")) {
-    key = "+";
-    mods = binding.slice(0, -2).split("+").filter(Boolean);
-  } else {
-    const parts = binding.split("+");
-    key = parts.pop() || "+";
-    mods = parts;
-  }
+  const { key, mods } = splitBinding(binding);
   return {
     key,
     ctrl: mods.some((p) => p === "Ctrl" || p === "Cmd"),
@@ -48,14 +40,19 @@ const CODE_ALIASES: Record<string, string[]> = {
  * Supports formats like: "j", "#", "Shift+U", "Ctrl+K", "Ctrl+Shift+E", "Ctrl+Enter", "Ctrl+Shift++".
  * Symbol keys ("#", "!", "?", "/") ignore Shift/AltGr, since on many layouts
  * (Italian included) they can only be typed with a modifier.
+ * "Ctrl" is the primary modifier: ⌘ on macOS, where the physical Control
+ * key is left to the system (Emacs-style text editing) and never matches.
  */
 function matchesKey(binding: string, e: KeyboardEvent): boolean {
   const { key, ctrl, shift, alt } = parseBinding(binding);
   const isSymbol = key.length === 1 && !/[a-z0-9]/i.test(key);
-  const hasCtrl = e.ctrlKey || e.metaKey;
+  const mac = isMac();
+  if (mac && e.ctrlKey) return false;
+  const hasCtrl = mac ? e.metaKey : e.ctrlKey || e.metaKey;
 
   if (isSymbol && !ctrl) {
-    // AltGr arrives as ctrl+alt on Windows: accept it for symbols.
+    // AltGr arrives as ctrl+alt on Windows, Option as alt on macOS: accept
+    // them for symbols.
     if (hasCtrl && !e.altKey) return false;
     return e.key === key;
   }
@@ -119,6 +116,7 @@ const INPUT_SAFE_ACTIONS = new Set([
   "action.compose",
   "app.search",
   "app.commandPalette",
+  "app.settings",
   "app.toggleSidebar",
   "app.fontBigger",
   "app.fontSmaller",
@@ -168,10 +166,13 @@ export function useKeyboardShortcuts() {
           await executeAction(actionId);
           return;
         }
-        // AltGr (ctrl+alt on Windows) types symbols like "?" and "#": let
-        // those reach the single-key shortcuts below.
-        const altGr = e.ctrlKey && e.altKey;
-        if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
+        // AltGr (ctrl+alt on Windows) and Option (alt alone on macOS) type
+        // symbols like "?" and "#": let those reach the single-key shortcuts
+        // below.
+        const symbolMod = isMac()
+          ? e.altKey && !e.ctrlKey && !e.metaKey
+          : e.ctrlKey && e.altKey;
+        if ((e.ctrlKey || e.metaKey || e.altKey) && !symbolMod) return;
       }
 
       // Function keys work even when a text field is focused
@@ -540,6 +541,9 @@ async function executeAction(actionId: string): Promise<void> {
       break;
     case "app.search":
       window.dispatchEvent(new Event("velo-focus-search"));
+      break;
+    case "app.settings":
+      navigateToSettings();
       break;
     case "app.fontBigger":
       stepFontScale(1);

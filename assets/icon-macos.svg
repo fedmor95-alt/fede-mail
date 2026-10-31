@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Fede Mail for macOS: same artwork as icon.svg, scaled into Apple's
+       824px icon grid (100px margin) so it matches the other Dock icons. -->
+  <g transform="translate(100 100) scale(0.844262) translate(-24 -24)">
+    <rect x="24" y="24" width="976" height="976" rx="224" fill="#0067C0"/>
+    <rect x="196" y="312" width="632" height="416" rx="64" fill="#ffffff"/>
+    <path d="M232 356 L482 548 Q512 572 542 548 L792 356" stroke="#0067C0" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>

@@ -1,3 +1,5 @@
+import { isMac } from "@/utils/platform";
+
 export interface ShortcutItem {
   id: string;
   keys: string; // default key binding
@@ -54,6 +56,7 @@ export const SHORTCUTS: ShortcutCategory[] = [
   { category: "App", items: [
     { id: "app.search", keys: "Ctrl+F", alt: "/", desc: "Cerca" },
     { id: "app.commandPalette", keys: "Ctrl+K", desc: "Riquadro comandi" },
+    { id: "app.settings", keys: "Ctrl+,", desc: "Apri le impostazioni" },
     { id: "app.toggleSidebar", keys: "Ctrl+Shift+E", desc: "Mostra/nascondi barra laterale" },
     { id: "app.fontBigger", keys: "Ctrl+Shift++", desc: "Testo più grande" },
     { id: "app.fontSmaller", keys: "Ctrl+Shift+-", desc: "Testo più piccolo" },
@@ -83,4 +86,39 @@ export function getDefaultKeyMap(): Record<string, string> {
 /** Strip the `.alt` suffix so both bindings run the same action. */
 export function baseActionId(id: string): string {
   return id.endsWith(ALT_SUFFIX) ? id.slice(0, -ALT_SUFFIX.length) : id;
+}
+
+/** Split a binding like "Ctrl+Shift++" into its modifiers and final key. */
+export function splitBinding(binding: string): { key: string; mods: string[] } {
+  if (binding.endsWith("++")) {
+    return { key: "+", mods: binding.slice(0, -2).split("+").filter(Boolean) };
+  }
+  const parts = binding.split("+");
+  const key = parts.pop() || "+";
+  return { key, mods: parts };
+}
+
+const MAC_KEYS: Record<string, string> = {
+  Enter: "↩",
+  Backspace: "⌫",
+  Delete: "⌦",
+  Escape: "Esc",
+  ArrowUp: "↑",
+  ArrowDown: "↓",
+};
+
+/**
+ * Binding as shown to the user. "Ctrl" is the primary modifier: on macOS it
+ * is ⌘ and combos use the Apple notation (⌥⇧⌘R); elsewhere the binding is
+ * shown as stored.
+ */
+export function formatShortcut(binding: string, mac = isMac()): string {
+  if (!mac || binding.includes(" then ")) return binding;
+  const { key, mods } = splitBinding(binding);
+  const prefix =
+    (mods.includes("Alt") ? "⌥" : "") +
+    (mods.includes("Shift") ? "⇧" : "") +
+    (mods.some((m) => m === "Ctrl" || m === "Cmd" || m === "CmdOrCtrl") ? "⌘" : "");
+  const label = MAC_KEYS[key] ?? (prefix && key.length === 1 ? key.toUpperCase() : key);
+  return prefix + label;
 }

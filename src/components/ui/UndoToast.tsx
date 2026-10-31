@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { undoLastAction } from "@/services/emailActions";
+import { formatShortcut } from "@/constants/shortcuts";
 
 const LABELS = {
   trash: ["Messaggio eliminato", "messaggi eliminati"],
@@ -33,7 +34,7 @@ export function UndoToast() {
         type="button"
         className="font-semibold text-accent hover:underline"
         onClick={() => undoLastAction()}
-        title="Annulla (Ctrl+Z)"
+        title={`Annulla (${formatShortcut("Ctrl+Z")})`}
       >
         Annulla
       </button>

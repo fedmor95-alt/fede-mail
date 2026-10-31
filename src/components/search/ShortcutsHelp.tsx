@@ -1,4 +1,4 @@
-import { SHORTCUTS, ALT_SUFFIX } from "@/constants/shortcuts";
+import { SHORTCUTS, ALT_SUFFIX, formatShortcut } from "@/constants/shortcuts";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { Modal } from "@/components/ui/Modal";
 
@@ -29,11 +29,11 @@ export function ShortcutsHelp({ isOpen, onClose }: ShortcutsHelpProps) {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <kbd className="text-xs text-text-tertiary bg-bg-tertiary px-2 py-0.5 rounded font-mono">
-                      {keyMap[item.id] ?? item.keys}
+                      {formatShortcut(keyMap[item.id] ?? item.keys)}
                     </kbd>
                     {item.alt && (
                       <kbd className="text-xs text-text-tertiary bg-bg-tertiary px-2 py-0.5 rounded font-mono">
-                        {keyMap[item.id + ALT_SUFFIX] ?? item.alt}
+                        {formatShortcut(keyMap[item.id + ALT_SUFFIX] ?? item.alt)}
                       </kbd>
                     )}
                   </span>

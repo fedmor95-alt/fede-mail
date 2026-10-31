@@ -1,4 +1,5 @@
 import { getDb } from "./connection";
+import { DEFAULT_COLOR_THEME } from "@/constants/themes";
 
 const MIGRATIONS = [
   {
@@ -792,9 +793,11 @@ const MIGRATIONS = [
   },
   {
     version: 26,
-    description: "Windows 11 theme following the system light/dark mode",
+    // Windows 11 theme on Windows/Linux, Mail on macOS (only new installs:
+    // on existing ones this migration has already run).
+    description: "Platform theme following the system light/dark mode",
     sql: `
-      INSERT OR REPLACE INTO settings (key, value) VALUES ('color_theme', 'windows');
+      INSERT OR REPLACE INTO settings (key, value) VALUES ('color_theme', '${DEFAULT_COLOR_THEME}');
       INSERT OR REPLACE INTO settings (key, value) VALUES ('theme', 'system');
     `,
   },
