@@ -4,7 +4,7 @@ import { AccountSwitcher } from "../accounts/AccountSwitcher";
 import { LabelForm } from "../labels/LabelForm";
 import { InputDialog } from "../ui/InputDialog";
 import { useUIStore } from "@/stores/uiStore";
-import { useAccountStore } from "@/stores/accountStore";
+import { useAccountStore, type Account } from "@/stores/accountStore";
 import { useLabelStore, type Label } from "@/stores/labelStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
 import { useSmartFolderStore } from "@/stores/smartFolderStore";
@@ -26,6 +26,7 @@ import {
   Tag,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   HelpCircle,
   Pencil,
   Columns2,
@@ -95,7 +96,7 @@ function DroppableNavItem({
       onClick={onClick}
       onContextMenu={onContextMenu}
       title={title}
-      className={`flex items-center w-full py-2 text-sm transition-colors press-scale ${
+      className={`relative flex items-center w-full py-2 text-sm transition-colors press-scale ${
         collapsed ? "justify-center px-0" : "gap-3 px-3 text-left"
       } ${
         isOver
@@ -202,6 +203,24 @@ function getSmartFolderIcon(iconName: string): LucideIcon {
 
 const LABELS_COLLAPSED_COUNT = 3;
 
+/** Account badge for the rows under Posta in arrivo: photo or initial. */
+function AccountDot({ account, size }: { account: Account; size: number }) {
+  const [imgError, setImgError] = useState(false);
+  const initial = (account.displayName?.[0] ?? account.email[0] ?? "?").toUpperCase();
+  return (
+    <span
+      className="rounded-full bg-accent/15 text-accent flex items-center justify-center shrink-0 font-semibold overflow-hidden"
+      style={{ width: size, height: size, fontSize: size * 0.55 }}
+    >
+      {account.avatarUrl && !imgError ? (
+        <img src={account.avatarUrl} alt="" className="w-full h-full object-cover" onError={() => setImgError(true)} />
+      ) : (
+        initial
+      )}
+    </span>
+  );
+}
+
 export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
   const activeLabel = useActiveLabel();
   const sidebarNavConfig = useUIStore((s) => s.sidebarNavConfig);
@@ -210,6 +229,11 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
   const setInboxViewMode = useUIStore((s) => s.setInboxViewMode);
   const activeCategory = useActiveCategory();
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
+  const accounts = useAccountStore((s) => s.accounts);
+  const unifiedView = useAccountStore((s) => s.unifiedView);
+  // Calendar-only accounts have no mailbox to list under Posta in arrivo
+  const mailAccounts = useMemo(() => accounts.filter((a) => a.provider !== "caldav"), [accounts]);
+  const [accountsExpanded, setAccountsExpanded] = useState(true);
   const labels = useLabelStore((s) => s.labels);
   const loadLabels = useLabelStore((s) => s.loadLabels);
   const deleteLabel = useLabelStore((s) => s.deleteLabel);
@@ -342,8 +366,13 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
         collapsed ? "w-16" : "w-60"
       }`}
     >
-      <div className="pt-2" />
-      <AccountSwitcher collapsed={collapsed} onAddAccount={onAddAccount} />
+      {accounts.length === 0 ? (
+        <div className="pt-2">
+          <AccountSwitcher collapsed={collapsed} onAddAccount={onAddAccount} />
+        </div>
+      ) : (
+        <div className="pt-1" />
+      )}
 
       <nav className="flex-1 overflow-y-auto py-2">
         {visibleNavItems.map((item) => {
@@ -353,9 +382,12 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
             <div key={item.id}>
               <DroppableNavItem
                 id={item.id}
-                isActive={isInbox ? (activeLabel === "inbox" && (inboxViewMode === "unified" || activeCategory === "Primary")) : activeLabel === item.id}
+                isActive={isInbox ? (activeLabel === "inbox" && (unifiedView || mailAccounts.length <= 1) && (inboxViewMode === "unified" || activeCategory === "Primary")) : activeLabel === item.id}
                 collapsed={collapsed}
                 onClick={() => {
+                  if (isInbox && mailAccounts.length > 1 && !unifiedView) {
+                    useAccountStore.getState().setUnifiedView(true);
+                  }
                   if (isInbox && inboxViewMode === "split") {
                     navigateToLabel(item.id, { category: "Primary" });
                   } else {
@@ -367,6 +399,27 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
               >
                 {() => (
                   <>
+                    {isInbox && !collapsed && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAccountsExpanded((v) => !v);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setAccountsExpanded((v) => !v);
+                          }
+                        }}
+                        title={accountsExpanded ? "Nascondi caselle" : "Mostra caselle"}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 p-0.5 text-sidebar-text/40 hover:text-sidebar-text"
+                      >
+                        <ChevronRight size={11} className={`transition-transform duration-150 ${accountsExpanded ? "rotate-90" : ""}`} />
+                      </span>
+                    )}
                     {isSyncingFolder === item.id ? (
                       <Loader2 size={18} className="shrink-0 animate-spin text-accent" />
                     ) : (
@@ -408,6 +461,46 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
                   </>
                 )}
               </DroppableNavItem>
+              {/* One row per mailbox under Posta in arrivo, like Apple Mail */}
+              {isInbox && accountsExpanded && (
+                <div>
+                  {mailAccounts.map((account) => {
+                    const isAccActive = activeLabel === "inbox" && !unifiedView && mailAccounts.length > 1 && activeAccountId === account.id;
+                    const name = account.displayName || account.email.split("@")[0];
+                    return (
+                      <button
+                        key={account.id}
+                        onClick={() => {
+                          const store = useAccountStore.getState();
+                          store.setUnifiedView(false);
+                          store.setActiveAccount(account.id);
+                          navigateToLabel("inbox", inboxViewMode === "split" ? { category: "Primary" } : undefined);
+                        }}
+                        title={collapsed ? name : account.email}
+                        className={`flex items-center w-full text-left transition-colors ${
+                          collapsed ? "justify-center py-1.5" : "gap-2 py-1.5 pl-7 pr-3 text-[0.8125rem]"
+                        } ${
+                          isAccActive
+                            ? "bg-accent/10 text-accent font-medium"
+                            : "text-sidebar-text/80 hover:text-sidebar-text hover:bg-sidebar-hover"
+                        }`}
+                      >
+                        <AccountDot account={account} size={collapsed ? 22 : 16} />
+                        {!collapsed && <span className="flex-1 truncate">{name}</span>}
+                      </button>
+                    );
+                  })}
+                  {!collapsed && (
+                    <button
+                      onClick={onAddAccount}
+                      className="flex items-center gap-2 w-full py-1.5 pl-7 pr-3 text-left text-[0.8125rem] text-sidebar-text/50 hover:text-sidebar-text hover:bg-sidebar-hover transition-colors"
+                    >
+                      <Plus size={14} className="shrink-0 ml-px" />
+                      <span className="flex-1 truncate">Aggiungi account</span>
+                    </button>
+                  )}
+                </div>
+              )}
               {/* Category sub-items when split mode is active */}
               {isInbox && inboxViewMode === "split" && !collapsed && (
                 <div>
