@@ -165,20 +165,35 @@ export function EmailRenderer({
     // Calculate and set height synchronously before paint
     const applyHeight = () => {
       if (!doc.body) return;
-      const h = doc.body.scrollHeight;
+      // Emails often set html/body height:100%, so measure the content too.
+      let h = doc.body.scrollHeight;
+      for (const child of Array.from(doc.body.children)) {
+        const bottom = (child as HTMLElement).getBoundingClientRect().bottom + (doc.defaultView?.scrollY ?? 0);
+        if (bottom > h) h = Math.ceil(bottom);
+      }
       if (h > 0) {
         iframe.style.height = h + "px";
       }
     };
     applyHeight();
-
-    // Watch for dynamic changes (images loading, etc.) — batched with rAF
-    const resizeObserver = new ResizeObserver(() => {
+    const scheduleHeight = () => {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyHeight);
-    });
+    };
+
+    // Watch for dynamic changes. The observer must come from the iframe's own
+    // window: one from the parent doesn't see layout changes inside it.
+    const FrameResizeObserver =
+      (iframe.contentWindow as (Window & { ResizeObserver?: typeof ResizeObserver }) | null)?.ResizeObserver ??
+      ResizeObserver;
+    const resizeObserver = new FrameResizeObserver(scheduleHeight);
     resizeObserver.observe(doc.body);
     observerRef.current = resizeObserver;
+    // Remote images change the height when they arrive; "load" doesn't bubble,
+    // so listen in the capture phase.
+    doc.addEventListener("load", scheduleHeight, true);
+    doc.addEventListener("error", scheduleHeight, true);
+    iframe.contentWindow?.addEventListener("load", scheduleHeight);
 
     // Open links in external browser via Tauri opener
     const handleClick = (e: MouseEvent) => {
@@ -195,6 +210,9 @@ export function EmailRenderer({
 
     return () => {
       doc.removeEventListener("click", handleClick);
+      doc.removeEventListener("load", scheduleHeight, true);
+      doc.removeEventListener("error", scheduleHeight, true);
+      iframe.contentWindow?.removeEventListener("load", scheduleHeight);
       observerRef.current?.disconnect();
       cancelAnimationFrame(rafRef.current);
     };
