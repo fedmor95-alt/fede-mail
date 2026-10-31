@@ -53,6 +53,12 @@ export default function ThreadWindow() {
           setColorTheme(savedColorTheme as ColorThemeId);
         }
 
+        // Restore sender avatar size
+        const savedAvatarSize = await getSetting("avatar_size");
+        if (savedAvatarSize === "default" || savedAvatarSize === "small" || savedAvatarSize === "hidden") {
+          useUIStore.getState().setAvatarSize(savedAvatarSize);
+        }
+
         // Load accounts into store
         const dbAccounts = await getAllAccounts();
         const mapped = dbAccounts.map((a) => ({

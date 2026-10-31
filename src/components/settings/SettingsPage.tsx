@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { SHOW_PEC_RECEIPTS_SETTING, setShowPecReceipts } from "@/services/pec/pecStatus";
 import { useParams } from "@tanstack/react-router";
-import { useUIStore } from "@/stores/uiStore";
+import { useUIStore, type AvatarSize } from "@/stores/uiStore";
 import { navigateToLabel, navigateToSettings } from "@/router/navigate";
 import { useAccountStore } from "@/stores/accountStore";
 import { getSetting, setSetting, getSecureSetting, setSecureSetting } from "@/services/db/settings";
@@ -94,6 +94,8 @@ export function SettingsPage() {
   const setReadingPanePosition = useUIStore((s) => s.setReadingPanePosition);
   const emailDensity = useUIStore((s) => s.emailDensity);
   const setEmailDensity = useUIStore((s) => s.setEmailDensity);
+  const avatarSize = useUIStore((s) => s.avatarSize);
+  const setAvatarSize = useUIStore((s) => s.setAvatarSize);
   const fontScale = useUIStore((s) => s.fontScale);
   const setFontScale = useUIStore((s) => s.setFontScale);
   const colorTheme = useUIStore((s) => s.colorTheme);
@@ -473,6 +475,19 @@ export function SettingsPage() {
                     </SettingRow>
                     <SettingRow label="Dimensione interfaccia">
                       <UiZoomSelect />
+                    </SettingRow>
+                    <SettingRow label="Avatar dei mittenti">
+                      <select
+                        value={avatarSize}
+                        onChange={(e) => {
+                          setAvatarSize(e.target.value as AvatarSize);
+                        }}
+                        className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
+                      >
+                        <option value="default">Normali</option>
+                        <option value="small">Piccoli</option>
+                        <option value="hidden">Nascosti</option>
+                      </select>
                     </SettingRow>
                     <SettingRow label="Dimensione carattere">
                       <select

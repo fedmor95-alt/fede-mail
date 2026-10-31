@@ -6,6 +6,7 @@ type Theme = "light" | "dark" | "system";
 type ReadingPanePosition = "right" | "bottom" | "hidden";
 type ReadFilter = "all" | "read" | "unread";
 export type EmailDensity = "compact" | "default" | "spacious";
+export type AvatarSize = "default" | "small" | "hidden";
 export type DefaultReplyMode = "reply" | "replyAll";
 export type MarkAsReadBehavior = "instant" | "2s" | "manual";
 export type FontScale = "small" | "default" | "large" | "xlarge";
@@ -24,6 +25,7 @@ interface UIState {
   readFilter: ReadFilter;
   emailListWidth: number;
   emailDensity: EmailDensity;
+  avatarSize: AvatarSize;
   defaultReplyMode: DefaultReplyMode;
   markAsReadBehavior: MarkAsReadBehavior;
   fontScale: FontScale;
@@ -45,6 +47,7 @@ interface UIState {
   setReadFilter: (filter: ReadFilter) => void;
   setEmailListWidth: (width: number) => void;
   setEmailDensity: (density: EmailDensity) => void;
+  setAvatarSize: (size: AvatarSize) => void;
   setDefaultReplyMode: (mode: DefaultReplyMode) => void;
   setMarkAsReadBehavior: (behavior: MarkAsReadBehavior) => void;
   setFontScale: (scale: FontScale) => void;
@@ -69,6 +72,7 @@ export const useUIStore = create<UIState>((set) => ({
   readFilter: "all",
   emailListWidth: 320,
   emailDensity: "default",
+  avatarSize: "default",
   defaultReplyMode: "reply",
   markAsReadBehavior: "instant",
   fontScale: "default",
@@ -112,6 +116,10 @@ export const useUIStore = create<UIState>((set) => ({
   setEmailDensity: (emailDensity) => {
     setSetting("email_density", emailDensity).catch(() => {});
     set({ emailDensity });
+  },
+  setAvatarSize: (avatarSize) => {
+    setSetting("avatar_size", avatarSize).catch(() => {});
+    set({ avatarSize });
   },
   setDefaultReplyMode: (defaultReplyMode) => {
     setSetting("default_reply_mode", defaultReplyMode).catch(() => {});

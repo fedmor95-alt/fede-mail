@@ -40,6 +40,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
   const selectThreadRange = useThreadStore((s) => s.selectThreadRange);
   const activeLabel = useActiveLabel();
   const emailDensity = useUIStore((s) => s.emailDensity);
+  const avatarSize = useUIStore((s) => s.avatarSize);
   const isSpam = thread.labelIds.includes("SPAM");
 
   // Read selectedThreadIds lazily for drag — avoids subscribing all cards to the Set reference
@@ -100,16 +101,26 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
       } ${isSpam ? "bg-red-500/8 dark:bg-red-500/10" : ""}`}
     >
       <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div
-          className={`rounded-full flex items-center justify-center shrink-0 font-medium text-white ${
-            emailDensity === "compact" ? "w-7 h-7 text-xs" : emailDensity === "spacious" ? "w-10 h-10 text-sm" : "w-9 h-9 text-sm"
-          } ${
-            isMultiSelected ? "bg-accent" : thread.isRead ? "bg-text-tertiary" : "bg-accent"
-          }`}
-        >
-          {isMultiSelected ? <Check size={emailDensity === "compact" ? 14 : 16} /> : initial}
-        </div>
+        {/* Avatar; when hidden, only a dot marks unread or selected threads */}
+        {avatarSize === "hidden" ? (
+          <span
+            className={`w-2 h-2 mt-1.5 -mr-1 rounded-full shrink-0 ${
+              isMultiSelected || !thread.isRead ? "bg-accent" : "bg-transparent"
+            }`}
+          />
+        ) : (
+          <div
+            className={`rounded-full flex items-center justify-center shrink-0 font-medium text-white ${
+              avatarSize === "small"
+                ? "w-6 h-6 text-[0.6875rem]"
+                : emailDensity === "compact" ? "w-7 h-7 text-xs" : emailDensity === "spacious" ? "w-10 h-10 text-sm" : "w-9 h-9 text-sm"
+            } ${
+              isMultiSelected ? "bg-accent" : thread.isRead ? "bg-text-tertiary" : "bg-accent"
+            }`}
+          >
+            {isMultiSelected ? <Check size={avatarSize === "small" || emailDensity === "compact" ? 13 : 16} /> : initial}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0">

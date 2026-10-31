@@ -1,3 +1,4 @@
+import { useUIStore } from "@/stores/uiStore";
 import { memo, useState, useRef, useEffect, useMemo, forwardRef } from "react";
 import { formatFullDate } from "@/utils/date";
 import { EmailRenderer } from "./EmailRenderer";
@@ -75,6 +76,7 @@ export const MessageItem = memo(forwardRef<HTMLDivElement, MessageItemProps>(fun
   }, [message.body_html]);
 
   const fromDisplay = message.from_name ?? message.from_address ?? "Sconosciuto";
+  const avatarSize = useUIStore((s) => s.avatarSize);
 
   return (
     <div ref={ref} className={`border-b border-border-secondary last:border-b-0 ${isSpam ? "bg-red-500/8 dark:bg-red-500/10" : ""} ${focused ? "ring-2 ring-inset ring-accent/50" : ""}`} onContextMenu={onContextMenu}>
@@ -85,9 +87,15 @@ export const MessageItem = memo(forwardRef<HTMLDivElement, MessageItemProps>(fun
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-accent/20 text-accent flex items-center justify-center shrink-0 text-xs font-medium">
-              {fromDisplay[0]?.toUpperCase()}
-            </div>
+            {avatarSize !== "hidden" && (
+              <div
+                className={`rounded-full bg-accent/20 text-accent flex items-center justify-center shrink-0 font-medium ${
+                  avatarSize === "small" ? "w-5 h-5 text-[0.625rem]" : "w-7 h-7 text-xs"
+                }`}
+              >
+                {fromDisplay[0]?.toUpperCase()}
+              </div>
+            )}
             <div className="min-w-0">
               <span className="text-sm font-medium text-text-primary truncate flex items-center gap-1">
                 {fromDisplay}

@@ -221,6 +221,16 @@ export default function App() {
     return () => { unlisten?.(); };
   }, []);
 
+  // Ctrl/Cmd + "+" / "-" / "0": interface size
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    import("./services/uiZoom").then((m) => {
+      if (!cancelled) cleanup = m.initUiZoomShortcuts();
+    }).catch(() => {});
+    return () => { cancelled = true; cleanup?.(); };
+  }, []);
+
   // Initialize database, load accounts, start sync
   useEffect(() => {
     async function init() {
@@ -271,6 +281,12 @@ export default function App() {
         const savedDensity = await getSetting("email_density");
         if (savedDensity === "compact" || savedDensity === "default" || savedDensity === "spacious") {
           ui.setEmailDensity(savedDensity);
+        }
+
+        // Restore sender avatar size
+        const savedAvatarSize = await getSetting("avatar_size");
+        if (savedAvatarSize === "default" || savedAvatarSize === "small" || savedAvatarSize === "hidden") {
+          ui.setAvatarSize(savedAvatarSize);
         }
 
         // Restore default reply mode
