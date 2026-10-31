@@ -6,8 +6,6 @@ import "./styles/globals.css";
 import { installConsoleToLog } from "./utils/consoleToLog";
 
 installConsoleToLog();
-// Interface size from Settings; DB errors (e.g. first run) just keep 100%.
-import("./services/uiZoom").then((m) => m.initUiZoom()).catch(() => {});
 
 const params = new URLSearchParams(window.location.search);
 const isThreadWindow = params.has("thread") && params.has("account");
@@ -17,6 +15,12 @@ const isComposerWindow = params.has("compose");
 // pull in) out of the main window's startup bundle.
 const ThreadWindow = lazy(() => import("./ThreadWindow"));
 const ComposerWindow = lazy(() => import("./ComposerWindow"));
+
+// Pop-out windows apply the interface size themselves; the main window does
+// it in App, after the migrations, so nothing touches the DB before them.
+if (isThreadWindow || isComposerWindow) {
+  import("./services/uiZoom").then((m) => m.initUiZoom()).catch(() => {});
+}
 
 function Root() {
   if (isThreadWindow) return <Suspense fallback={null}><ThreadWindow /></Suspense>;

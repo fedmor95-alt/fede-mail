@@ -1,12 +1,18 @@
 import Database from "@tauri-apps/plugin-sql";
 
-let db: Database | null = null;
+// Keep the pending load, not just the result: two callers racing at startup
+// would otherwise open two connection pools, and a migration running on one
+// leaves the other stuck on "database is locked".
+let dbPromise: Promise<Database> | null = null;
 
-export async function getDb(): Promise<Database> {
-  if (!db) {
-    db = await Database.load("sqlite:velo.db");
+export function getDb(): Promise<Database> {
+  if (!dbPromise) {
+    dbPromise = Database.load("sqlite:velo.db").catch((err) => {
+      dbPromise = null;
+      throw err;
+    });
   }
-  return db;
+  return dbPromise;
 }
 
 /**

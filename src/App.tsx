@@ -226,6 +226,7 @@ export default function App() {
     async function init() {
       try {
         await runMigrations();
+        import("./services/uiZoom").then((m) => m.initUiZoom()).catch(() => {});
 
         const ui = useUIStore.getState();
 
