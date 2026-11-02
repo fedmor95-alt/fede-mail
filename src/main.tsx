@@ -22,6 +22,17 @@ if (isThreadWindow || isComposerWindow) {
   import("./services/uiZoom").then((m) => m.initUiZoom()).catch(() => {});
 }
 
+// Ctrl+W (Cmd+W on Mac) closes the window it's pressed in, like any other
+// app. The main window then goes to the tray, as with its close button.
+window.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "w") {
+    e.preventDefault();
+    import("@tauri-apps/api/window")
+      .then(({ getCurrentWindow }) => getCurrentWindow().close())
+      .catch(() => {});
+  }
+});
+
 function Root() {
   if (isThreadWindow) return <Suspense fallback={null}><ThreadWindow /></Suspense>;
   if (isComposerWindow) return <Suspense fallback={null}><ComposerWindow /></Suspense>;
