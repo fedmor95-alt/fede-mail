@@ -897,9 +897,11 @@ export async function runMigrations(): Promise<void> {
     // Split SQL into individual statements, respecting BEGIN...END blocks
     const statements = splitStatements(migration.sql);
 
-    // Use a transaction so migrations are all-or-nothing
-    await db.execute("BEGIN");
-    try {
+    // No BEGIN/COMMIT here: the plugin's connection pool can run them on
+    // different connections and leave the database locked (see
+    // withTransaction). Migrations use IF NOT EXISTS and tolerate duplicate
+    // columns, so a half-applied one simply runs again on the next start.
+    {
       for (const statement of statements) {
         try {
           await db.execute(statement);
@@ -919,10 +921,6 @@ export async function runMigrations(): Promise<void> {
         "INSERT OR IGNORE INTO _migrations (version, description) VALUES ($1, $2)",
         [migration.version, migration.description],
       );
-      await db.execute("COMMIT");
-    } catch (err) {
-      await db.execute("ROLLBACK").catch(() => {});
-      throw err;
     }
   }
 

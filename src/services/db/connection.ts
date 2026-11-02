@@ -44,10 +44,14 @@ export function buildDynamicUpdate(
 }
 
 /**
- * Simple async mutex to prevent concurrent SQLite transactions.
- * SQLite only supports one writer at a time; overlapping BEGIN/COMMIT/ROLLBACK
- * on the same connection causes "cannot start a transaction within a transaction"
- * or "database is locked" errors.
+ * Runs `fn` with every other withTransaction call queued behind it.
+ *
+ * It deliberately sends no BEGIN/COMMIT: the SQL plugin hands each statement
+ * to any connection of its pool, so a BEGIN could land on one connection and
+ * the COMMIT on another. The connection left inside the open transaction then
+ * holds the write lock until the app quits, and every write (and every email
+ * body load) fails with "database is locked". The callers' steps are small
+ * and idempotent, so running them in order is enough.
  */
 let txQueue: Promise<void> = Promise.resolve();
 
@@ -66,22 +70,8 @@ export async function withTransaction(fn: (db: Database) => Promise<void>): Prom
     // previous transaction errored — that's fine, we can still proceed
   }
 
-  const database = await getDb();
   try {
-    await database.execute("BEGIN TRANSACTION", []);
-    try {
-      await fn(database);
-      await database.execute("COMMIT", []);
-    } catch (err) {
-      // SQLite may auto-rollback on certain errors — guard against
-      // "cannot rollback - no transaction is active"
-      try {
-        await database.execute("ROLLBACK", []);
-      } catch {
-        // ROLLBACK failed (already rolled back) — safe to ignore
-      }
-      throw err;
-    }
+    await fn(await getDb());
   } finally {
     resolve(); // always unblock the next queued transaction
   }
