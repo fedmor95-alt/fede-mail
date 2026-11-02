@@ -46,6 +46,26 @@ fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
 
+/// True when the app runs straight from a cargo `target` folder: a local
+/// build the updater cannot replace (it installs into the app's own folder),
+/// so offering updates there would loop forever.
+#[tauri::command]
+fn is_local_build() -> bool {
+    std::env::current_exe()
+        .map(|exe| is_cargo_output(&exe))
+        .unwrap_or(false)
+}
+
+fn is_cargo_output(exe: &std::path::Path) -> bool {
+    let path = exe.to_string_lossy().to_lowercase();
+    let parts: Vec<&str> = path.split(['/', '\\']).collect();
+    parts.iter().position(|p| *p == "target").is_some_and(|i| {
+        parts[i + 1..]
+            .iter()
+            .any(|p| *p == "release" || *p == "debug")
+    })
+}
+
 #[tauri::command]
 fn open_devtools(app: tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
@@ -95,6 +115,7 @@ pub fn run() {
         .manage(imap::idle::IdleWatchers::default())
         .invoke_handler(tauri::generate_handler![
             quit_app,
+            is_local_build,
             oauth::start_oauth_server,
             oauth::oauth_exchange_token,
             oauth::oauth_refresh_token,
@@ -292,4 +313,30 @@ pub fn run() {
         });
 
     log::info!("Tauri application exited normally");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_cargo_output;
+    use std::path::Path;
+
+    #[test]
+    fn detects_local_builds() {
+        assert!(is_cargo_output(Path::new(
+            r"C:\Users\me\fede-mail\src-tauri\target\release\velo.exe"
+        )));
+        assert!(is_cargo_output(Path::new(
+            "/home/me/fede-mail/src-tauri/target/x86_64-unknown-linux-gnu/debug/velo"
+        )));
+    }
+
+    #[test]
+    fn installed_app_is_not_a_local_build() {
+        assert!(!is_cargo_output(Path::new(
+            r"C:\Users\me\AppData\Local\Velo Fedmor\velo.exe"
+        )));
+        assert!(!is_cargo_output(Path::new(
+            "/Applications/Velo Fedmor.app/Contents/MacOS/velo"
+        )));
+    }
 }

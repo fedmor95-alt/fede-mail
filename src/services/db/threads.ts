@@ -42,6 +42,19 @@ function threadPageSql(filter: string): string {
 const HAS_LABEL = `EXISTS (SELECT 1 FROM thread_labels tl
   WHERE tl.account_id = t.account_id AND tl.thread_id = t.id AND tl.label_id = $2)`;
 
+/**
+ * Snooze is local: the server still has the thread in the inbox and every
+ * sync writes the INBOX label back (and drops SNOOZED). The is_snoozed flag
+ * is what decides, so a snoozed thread stays out of the inbox until it wakes.
+ */
+const NOT_SNOOZED = "IFNULL(t.is_snoozed, 0) = 0";
+
+function labelFilter(labelId: string): string {
+  if (labelId === "SNOOZED") return "t.is_snoozed = 1 AND $2 = 'SNOOZED'";
+  if (labelId === "INBOX") return `${HAS_LABEL} AND ${NOT_SNOOZED}`;
+  return HAS_LABEL;
+}
+
 /** accountId = null lists threads from every account (unified view). */
 export async function getThreadsForAccount(
   accountId: string | null,
@@ -51,7 +64,7 @@ export async function getThreadsForAccount(
 ): Promise<DbThread[]> {
   const db = await getDb();
   if (labelId) {
-    return db.select<DbThread[]>(threadPageSql(HAS_LABEL), [accountId, labelId, limit, offset]);
+    return db.select<DbThread[]>(threadPageSql(labelFilter(labelId)), [accountId, labelId, limit, offset]);
   }
   return db.select<DbThread[]>(threadPageSql("$2 IS NULL"), [accountId, null, limit, offset]);
 }
@@ -71,7 +84,10 @@ export async function getThreadsForCategory(
         WHERE tc.account_id = t.account_id AND tc.thread_id = t.id AND tc.category IS NOT NULL AND tc.category <> 'Primary')`
     : `EXISTS (SELECT 1 FROM thread_categories tc
         WHERE tc.account_id = t.account_id AND tc.thread_id = t.id AND tc.category = $2)`;
-  return db.select<DbThread[]>(threadPageSql(`${inInbox} AND ${inCategory}`), [accountId, category, limit, offset]);
+  return db.select<DbThread[]>(
+    threadPageSql(`${inInbox} AND ${NOT_SNOOZED} AND ${inCategory}`),
+    [accountId, category, limit, offset],
+  );
 }
 
 export async function upsertThread(thread: {
@@ -170,7 +186,7 @@ export async function getUnreadInboxCount(): Promise<number> {
   const rows = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM threads t
      INNER JOIN thread_labels tl ON tl.account_id = t.account_id AND tl.thread_id = t.id
-     WHERE tl.label_id = 'INBOX' AND t.is_read = 0`,
+     WHERE tl.label_id = 'INBOX' AND t.is_read = 0 AND ${NOT_SNOOZED}`,
   );
   return rows[0]?.count ?? 0;
 }

@@ -14,6 +14,7 @@ vi.mock("@/stores/threadStore", () => ({
       removeThread: vi.fn(),
     })),
   },
+  clearPendingRemovals: vi.fn(),
 }));
 
 vi.mock("@/services/email/providerFactory", () => ({
@@ -40,6 +41,7 @@ vi.mock("@/router/navigate", () => ({
 
 import { useUIStore } from "@/stores/uiStore";
 import { useThreadStore } from "@/stores/threadStore";
+import { useAccountStore } from "@/stores/accountStore";
 import { getEmailProvider } from "@/services/email/providerFactory";
 import { enqueuePendingOperation } from "@/services/db/pendingOperations";
 import {
@@ -52,6 +54,9 @@ import {
   spamThread,
   moveThread,
   executeEmailAction,
+  undoLastAction,
+  recordUndo,
+  _resetUndoForTesting,
 } from "./emailActions";
 import { navigateToThread, getSelectedThreadId } from "@/router/navigate";
 import { createMockEmailProvider, createMockUIStoreState, createMockThreadStoreState } from "@/test/mocks";
@@ -70,6 +75,57 @@ describe("emailActions", () => {
       updateThread: mockUpdateThread,
       removeThread: mockRemoveThread,
     }) as never);
+  });
+
+  describe("undo after the undo window", () => {
+    const account = (id: string, provider: string) =>
+      ({ id, email: `${id}@test.com`, displayName: null, avatarUrl: null, isActive: false, provider });
+
+    beforeEach(() => {
+      _resetUndoForTesting();
+      useAccountStore.setState({ accounts: [account("gmail", "gmail_api"), account("imap", "imap")] });
+    });
+
+    it("puts a committed Gmail archive back in the inbox", async () => {
+      await archiveThread("gmail", "t1", []);
+      await flushPendingUndo();
+      expect(mockProvider.archive).toHaveBeenCalled();
+
+      expect(undoLastAction()).toBe(true);
+      await vi.waitFor(() => expect(mockProvider.addLabel).toHaveBeenCalledWith("t1", "INBOX"));
+      expect(mockProvider.removeLabel).not.toHaveBeenCalled();
+    });
+
+    it("takes a committed Gmail delete out of the trash", async () => {
+      await trashThread("gmail", "t1", []);
+      await flushPendingUndo();
+
+      expect(undoLastAction()).toBe(true);
+      await vi.waitFor(() => expect(mockProvider.removeLabel).toHaveBeenCalledWith("t1", "TRASH"));
+      expect(mockProvider.addLabel).toHaveBeenCalledWith("t1", "INBOX");
+    });
+
+    it("undoes the latest action first", async () => {
+      const older = vi.fn(() => Promise.resolve());
+      const newer = vi.fn(() => Promise.resolve());
+      recordUndo(older);
+      recordUndo(newer);
+
+      undoLastAction();
+      expect(newer).toHaveBeenCalledTimes(1);
+      expect(older).not.toHaveBeenCalled();
+    });
+
+    it("never reverts an older action when the latest cannot be undone (IMAP)", async () => {
+      const older = vi.fn(() => Promise.resolve());
+      recordUndo(older);
+      await archiveThread("imap", "t2", []);
+      await flushPendingUndo();
+
+      expect(undoLastAction()).toBe(false);
+      expect(older).not.toHaveBeenCalled();
+      expect(mockProvider.addLabel).not.toHaveBeenCalled();
+    });
   });
 
   describe("online execution", () => {

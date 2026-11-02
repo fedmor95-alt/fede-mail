@@ -208,8 +208,29 @@ export function EmailRenderer({
     };
     doc.addEventListener("click", handleClick);
 
+    // Keys pressed while the email body has focus stay inside the iframe and
+    // never reached the app shortcuts (Ctrl+Z, Canc, E, J/K...): pass them
+    // on. Copy and select-all keep working on the email text.
+    const forwardKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && /^[ac]$/i.test(e.key)) return;
+      const copy = new KeyboardEvent("keydown", {
+        key: e.key,
+        code: e.code,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        altKey: e.altKey,
+        shiftKey: e.shiftKey,
+        repeat: e.repeat,
+        bubbles: true,
+        cancelable: true,
+      });
+      if (!window.dispatchEvent(copy)) e.preventDefault();
+    };
+    doc.addEventListener("keydown", forwardKey);
+
     return () => {
       doc.removeEventListener("click", handleClick);
+      doc.removeEventListener("keydown", forwardKey);
       doc.removeEventListener("load", scheduleHeight, true);
       doc.removeEventListener("error", scheduleHeight, true);
       iframe.contentWindow?.removeEventListener("load", scheduleHeight);

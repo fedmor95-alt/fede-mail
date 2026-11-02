@@ -1632,6 +1632,7 @@ function DeveloperTab() {
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [updateCheckDone, setUpdateCheckDone] = useState(false);
   const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [localBuild, setLocalBuild] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -1662,7 +1663,8 @@ function DeveloperTab() {
       }
 
       // Check if there's already a known update
-      const { getAvailableUpdate } = await import("@/services/updateManager");
+      const { getAvailableUpdate, isLocalBuild } = await import("@/services/updateManager");
+      setLocalBuild(await isLocalBuild());
       const existing = getAvailableUpdate();
       if (existing) setUpdateVersion(existing.version);
     }
@@ -1718,7 +1720,11 @@ function DeveloperTab() {
                 v{updateVersion} disponibile
               </p>
             )}
-            {updateCheckDone && !updateVersion && (
+            {localBuild ? (
+              <p className="text-xs text-text-tertiary mt-0.5">
+                Build locale (cartella target): si aggiorna ricompilando, non da qui
+              </p>
+            ) : updateCheckDone && !updateVersion && (
               <p className="text-xs text-success mt-0.5">Aggiornato</p>
             )}
           </div>

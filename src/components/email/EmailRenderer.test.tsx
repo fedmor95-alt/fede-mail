@@ -72,6 +72,29 @@ describe("EmailRenderer", () => {
     expect(container.querySelector("iframe")).toBeTruthy();
   });
 
+  it("passes keys pressed in the email body on to the app shortcuts", () => {
+    const { container } = render(
+      <EmailRenderer html="<p>Hello</p>" text={null} />,
+    );
+    const doc = container.querySelector("iframe")!.contentDocument!;
+    const seen: string[] = [];
+    const listener = (e: KeyboardEvent) => {
+      seen.push(`${e.ctrlKey ? "Ctrl+" : ""}${e.key}`);
+      if (e.key === "z") e.preventDefault();
+    };
+    window.addEventListener("keydown", listener);
+
+    const undo = new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
+    doc.dispatchEvent(undo);
+    doc.dispatchEvent(new KeyboardEvent("keydown", { key: "e", bubbles: true }));
+    // Copy stays with the email text
+    doc.dispatchEvent(new KeyboardEvent("keydown", { key: "c", ctrlKey: true, bubbles: true }));
+
+    expect(seen).toEqual(["Ctrl+z", "e"]);
+    expect(undo.defaultPrevented).toBe(true);
+    window.removeEventListener("keydown", listener);
+  });
+
   it("resolves cid: references by fetching inline attachment data", async () => {
     const base64Data = btoa("fake-image-data");
     mockFetchAttachment.mockResolvedValue({ data: base64Data, size: 100 });

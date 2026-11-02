@@ -31,7 +31,7 @@
 | Invio (o O) | ↩ (o O) | Apri conversazione |
 | Canc / Backspace | ⌫ | Elimina |
 | E | E | Archivia |
-| Ctrl+Z | ⌘Z | Annulla l'ultima eliminazione o archiviazione (entro 6 secondi) |
+| Ctrl+Z | ⌘Z | Annulla l'ultima azione: eliminazione, archiviazione o posticipo (funziona anche quando il cursore è nel testo dell'email) |
 | M (o Shift+U) | M (o ⇧U) | Segna come letto / da leggere |
 | Ctrl+N (o C) | ⌘N (o C) | Scrivi nuova email |
 | Ctrl+R (o R) | ⌘R (o R) | Rispondi |
@@ -119,6 +119,8 @@ npm run tauri build    # installer locale
 ```
 
 Su Windows, prima di ricompilare va chiusa del tutto l'app (anche dall'icona di notifica): altrimenti `velo.exe` resta bloccato.
+
+Una build avviata da `src-tauri/target` non propone aggiornamenti automatici: l'aggiornamento installerebbe la nuova versione nella cartella dell'app installata, e la build locale continuerebbe a chiederlo. Si aggiorna ricompilando. Per ricevere gli aggiornamenti usa l'app installata (`%LOCALAPPDATA%\Velo Fedmor\velo.exe` su Windows).
 
 ## Rilascio e aggiornamenti automatici
 

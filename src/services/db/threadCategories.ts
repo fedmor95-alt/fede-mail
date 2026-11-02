@@ -128,6 +128,7 @@ export async function getCategoryUnreadCounts(
      INNER JOIN thread_labels tl ON tl.account_id = t.account_id AND tl.thread_id = t.id
      LEFT JOIN thread_categories tc ON tc.account_id = t.account_id AND tc.thread_id = t.id
      WHERE t.account_id = $1 AND tl.label_id = 'INBOX' AND t.is_read = 0
+       AND IFNULL(t.is_snoozed, 0) = 0
      GROUP BY tc.category`,
     [accountId],
   );

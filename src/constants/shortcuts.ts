@@ -41,7 +41,7 @@ export const SHORTCUTS: ShortcutCategory[] = [
     { id: "action.forward", keys: "Ctrl+L", alt: "f", desc: "Inoltra" },
     { id: "action.archive", keys: "e", desc: "Archivia" },
     { id: "action.delete", keys: "Delete", alt: "Backspace", desc: "Elimina" },
-    { id: "action.undo", keys: "Ctrl+Z", desc: "Annulla l'ultima eliminazione o archiviazione" },
+    { id: "action.undo", keys: "Ctrl+Z", desc: "Annulla l'ultima azione (elimina, archivia, posticipa)" },
     { id: "action.toggleRead", keys: "m", alt: "Shift+U", desc: "Segna come letto / da leggere" },
     { id: "action.spam", keys: "Ctrl+J", alt: "!", desc: "Segnala / Non è posta indesiderata" },
     { id: "action.star", keys: "s", desc: "Aggiungi / Rimuovi da Speciali" },

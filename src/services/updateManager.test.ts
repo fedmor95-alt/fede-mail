@@ -12,6 +12,11 @@ vi.mock("@tauri-apps/plugin-process", () => ({
   relaunch: (...args: unknown[]) => mockRelaunch(...args),
 }));
 
+const mockInvoke = vi.fn();
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (...args: unknown[]) => mockInvoke(...args),
+}));
+
 import {
   checkForUpdateNow,
   installUpdate,
@@ -24,6 +29,8 @@ beforeEach(() => {
   _resetForTesting();
   mockCheck.mockReset();
   mockRelaunch.mockReset();
+  mockInvoke.mockReset();
+  mockInvoke.mockResolvedValue(false);
 });
 
 describe("updateManager", () => {
@@ -91,5 +98,14 @@ describe("updateManager", () => {
 
     _resetForTesting();
     expect(getAvailableUpdate()).toBeNull();
+  });
+
+  it("never offers updates to a local build run from target/", async () => {
+    mockInvoke.mockResolvedValue(true);
+    mockCheck.mockResolvedValue({ version: "9.9.9", body: null });
+    const result = await checkForUpdateNow();
+    expect(result).toBeNull();
+    expect(mockCheck).not.toHaveBeenCalled();
+    expect(mockInvoke).toHaveBeenCalledWith("is_local_build");
   });
 });
