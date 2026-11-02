@@ -49,7 +49,9 @@ jobs:
             bundles: rpm,appimage
           # One universal binary (Apple Silicon + Intel). tauri-action lists
           # it in latest.json as both darwin-aarch64 and darwin-x86_64.
-          - platform: macos-latest
+          # Built on the Intel runner: GitHub's Apple Silicon runners often
+          # have no capacity and the job is cancelled before it starts.
+          - platform: macos-15-intel
             bundles: app,dmg
             args: --target universal-apple-darwin
     runs-on: ${{ matrix.platform }}
@@ -64,7 +66,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Add macOS targets
-        if: matrix.platform == 'macos-latest'
+        if: startsWith(matrix.platform, 'macos')
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
       - uses: Swatinem/rust-cache@v2
