@@ -116,6 +116,52 @@ describe("emailActions", () => {
       expect(older).not.toHaveBeenCalled();
     });
 
+    it("undoes separate archives one at a time, newest first", async () => {
+      vi.useFakeTimers();
+      try {
+        await archiveThread("gmail", "t1", []);
+        vi.advanceTimersByTime(1000);
+        await archiveThread("gmail", "t2", []);
+
+        expect(undoLastAction()).toBe(true);
+        await flushPendingUndo();
+        // Only t1 is committed; t2 was dropped before reaching the server
+        expect(mockProvider.archive).toHaveBeenCalledTimes(1);
+        expect(mockProvider.archive).toHaveBeenCalledWith("t1", expect.anything());
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("undoes a multi-selection archive as one action", async () => {
+      await Promise.all([archiveThread("gmail", "t1", []), archiveThread("gmail", "t2", [])]);
+
+      expect(undoLastAction()).toBe(true);
+      await flushPendingUndo();
+      expect(mockProvider.archive).not.toHaveBeenCalled();
+      expect(undoLastAction()).toBe(false);
+    });
+
+    it("undoes the latest star instead of an older archive", async () => {
+      await archiveThread("gmail", "t1", []);
+      await flushPendingUndo();
+      await new Promise((r) => setTimeout(r, 450));
+      await starThread("gmail", "t2", [], true);
+
+      expect(undoLastAction()).toBe(true);
+      await vi.waitFor(() => expect(mockProvider.star).toHaveBeenLastCalledWith("t2", expect.anything(), false));
+      expect(mockProvider.addLabel).not.toHaveBeenCalled();
+    });
+
+    it("skips automatic actions such as mark-as-read on open", async () => {
+      const older = vi.fn(() => Promise.resolve());
+      recordUndo(older);
+      await markThreadRead("gmail", "t1", [], true, { undoable: false });
+
+      undoLastAction();
+      expect(older).toHaveBeenCalledTimes(1);
+    });
+
     it("never reverts an older action when the latest cannot be undone (IMAP)", async () => {
       const older = vi.fn(() => Promise.resolve());
       recordUndo(older);

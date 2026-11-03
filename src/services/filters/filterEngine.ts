@@ -131,20 +131,20 @@ export async function applyFiltersToMessages(
       try {
         // Apply label changes via provider
         for (const labelId of addLabels) {
-          await addThreadLabel(accountId, threadId, labelId);
+          await addThreadLabel(accountId, threadId, labelId, { undoable: false });
         }
         for (const labelId of removeLabels) {
-          await removeThreadLabel(accountId, threadId, labelId);
+          await removeThreadLabel(accountId, threadId, labelId, { undoable: false });
         }
 
         // Mark as read via provider
         if (result.markRead) {
-          await markThreadRead(accountId, threadId, [], true);
+          await markThreadRead(accountId, threadId, [], true, { undoable: false });
         }
 
         // Star via provider
         if (result.star) {
-          await starThread(accountId, threadId, [], true);
+          await starThread(accountId, threadId, [], true, { undoable: false });
         }
       } catch (err) {
         console.error(`Failed to apply filter actions to thread ${threadId}:`, err);

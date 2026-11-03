@@ -78,7 +78,7 @@ export async function backfillSmartLabels(
     await Promise.allSettled(
       matches.flatMap(({ threadId, labelIds }) =>
         labelIds.map((labelId) =>
-          addThreadLabel(accountId, threadId, labelId).catch((err) => {
+          addThreadLabel(accountId, threadId, labelId, { undoable: false }).catch((err) => {
             console.error(`Backfill: failed to apply label ${labelId} to ${threadId}:`, err);
           }),
         ),

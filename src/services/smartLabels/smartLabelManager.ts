@@ -16,7 +16,7 @@ export async function applySmartLabelsToMessages(
     await Promise.allSettled(
       matches.flatMap(({ threadId, labelIds }) =>
         labelIds.map((labelId) =>
-          addThreadLabel(accountId, threadId, labelId).catch((err) => {
+          addThreadLabel(accountId, threadId, labelId, { undoable: false }).catch((err) => {
             console.error(`Failed to apply smart label ${labelId} to thread ${threadId}:`, err);
           }),
         ),

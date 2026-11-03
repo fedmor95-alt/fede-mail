@@ -323,6 +323,7 @@ async function executeViaProvider(
 export async function executeEmailAction(
   callerAccountId: string,
   initialAction: EmailAction,
+  options: ActionOptions = {},
 ): Promise<ActionResult> {
   let action = initialAction;
   // Unified view: a multi-selection can span accounts, so thread actions run
@@ -357,6 +358,7 @@ export async function executeEmailAction(
     );
     return { success: true };
   }
+  if (options.undoable !== false) recordInverse(accountId, action);
   return commitEmailAction(accountId, action);
 }
 
@@ -364,33 +366,43 @@ export async function executeEmailAction(
 // Undo (Ctrl+Z)
 // ---------------------------------------------------------------------------
 //
+// Every user action becomes one entry on undoStack, and Ctrl+Z takes back
+// the newest entry only. Calls that arrive together (a multi-selection, or a
+// quick step over several threads) share an entry; separate key presses
+// never do, so archiving three emails one after the other needs three
+// Ctrl+Z, newest first.
+//
 // Delete/archive wait UNDO_WINDOW_MS before reaching the DB and server, so
-// Ctrl+Z simply drops them. Once done, Ctrl+Z can still take back the latest
-// actions with their opposite (undoStack): Gmail threads go back to the inbox
-// through labels, snoozed threads wake up. IMAP moves change the messages'
-// UIDs, so a committed IMAP delete/archive cannot be reverted from here.
+// undoing them inside that window just drops them. Once committed, Gmail
+// threads go back through labels; IMAP moves change the messages' UIDs and
+// cannot be reverted, so such an entry stops Ctrl+Z instead of letting it
+// silently revert something older. Star, read, spam and labels are undone
+// with their opposite action.
 
 const UNDO_WINDOW_MS = 6000;
+/** Calls closer than this belong to the same user action. */
+const UNDO_GROUP_GAP_MS = 400;
 const MAX_UNDO_STEPS = 20;
 type DeferredRun = () => Promise<ActionResult>;
 type UndoStep = () => Promise<void>;
-let undoBatch: {
-  kind: "trash" | "archive";
-  runs: DeferredRun[];
-  items: { accountId: string; threadId: string }[];
-  timer: ReturnType<typeof setTimeout>;
-} | null = null;
-const undoStack: UndoStep[] = [];
 
-function pushUndo(step: UndoStep | null): void {
-  // A step that cannot be undone still ends the chain: Ctrl+Z must never
-  // skip it and silently revert something older instead.
-  if (!step) {
-    undoStack.length = 0;
-    return;
-  }
-  undoStack.push(step);
-  if (undoStack.length > MAX_UNDO_STEPS) undoStack.shift();
+interface UndoEntry {
+  kind: string;
+  items: { accountId: string; threadId: string }[];
+  /** Delete/archive runs still waiting for the undo window to close. */
+  runs: DeferredRun[];
+  timer: ReturnType<typeof setTimeout> | null;
+  steps: UndoStep[];
+  /** false once any part of the entry cannot be taken back. */
+  undoable: boolean;
+  lastAt: number;
+}
+
+let undoStack: UndoEntry[] = [];
+
+export interface ActionOptions {
+  /** false for automatic actions (filters, mark-as-read on open): Ctrl+Z skips them. */
+  undoable?: boolean;
 }
 
 function isGmailAccount(accountId: string): boolean {
@@ -398,37 +410,91 @@ function isGmailAccount(accountId: string): boolean {
   return (account?.provider ?? "gmail_api") === "gmail_api";
 }
 
+function newEntry(kind: string): UndoEntry {
+  const entry: UndoEntry = { kind, items: [], runs: [], timer: null, steps: [], undoable: true, lastAt: Date.now() };
+  undoStack.push(entry);
+  if (undoStack.length > MAX_UNDO_STEPS) {
+    const dropped = undoStack.shift()!;
+    void commitEntry(dropped);
+  }
+  return entry;
+}
+
+/** The newest entry if this call is part of the same user action, else a new one. */
+function entryFor(kind: string, deferred: boolean): UndoEntry {
+  const top = undoStack[undoStack.length - 1];
+  const now = Date.now();
+  if (top && top.kind === kind && now - top.lastAt < UNDO_GROUP_GAP_MS && (top.timer !== null) === deferred) {
+    top.lastAt = now;
+    return top;
+  }
+  return newEntry(kind);
+}
+
 /** Opposite of a committed delete/archive: back to the inbox (Gmail only). */
-function restoreStep(kind: "trash" | "archive", items: { accountId: string; threadId: string }[]): UndoStep | null {
+function restoreStep(kind: string, items: { accountId: string; threadId: string }[]): UndoStep | null {
   if (items.length === 0 || !items.every((i) => isGmailAccount(i.accountId))) return null;
   return async () => {
     clearPendingRemovals(items.map((i) => i.threadId));
     await Promise.all(items.map(async ({ accountId, threadId }) => {
-      await executeEmailAction(accountId, { type: "addLabel", threadId, labelId: "INBOX" });
+      await executeEmailAction(accountId, { type: "addLabel", threadId, labelId: "INBOX" }, { undoable: false });
       if (kind === "trash") {
-        await executeEmailAction(accountId, { type: "removeLabel", threadId, labelId: "TRASH" });
+        await executeEmailAction(accountId, { type: "removeLabel", threadId, labelId: "TRASH" }, { undoable: false });
       }
     }));
   };
 }
 
-function flushUndoBatch(): Promise<ActionResult[]> {
-  if (!undoBatch) return Promise.resolve([]);
-  clearTimeout(undoBatch.timer);
-  const { runs, kind, items } = undoBatch;
-  undoBatch = null;
-  window.dispatchEvent(new Event("velo-undo-done"));
-  pushUndo(restoreStep(kind, items));
+function commitEntry(entry: UndoEntry): Promise<ActionResult[]> {
+  if (entry.timer === null) return Promise.resolve([]);
+  clearTimeout(entry.timer);
+  entry.timer = null;
+  const runs = entry.runs;
+  entry.runs = [];
+  const step = restoreStep(entry.kind, entry.items);
+  if (step) entry.steps.push(step);
+  else entry.undoable = false;
+  // The toast tracks the newest action only
+  if (undoStack[undoStack.length - 1] === entry) window.dispatchEvent(new Event("velo-undo-done"));
   return Promise.all(runs.map((run) => run()));
 }
 
 /**
- * Remember how to take back an action that is already done (e.g. snooze).
- * A pending delete/archive is older, so it is committed first.
+ * The action that takes back `action`: undefined when it isn't a user-visible
+ * change (sending, drafts), null when it cannot be reverted.
  */
+function inverseOf(accountId: string, action: EmailAction): EmailAction | null | undefined {
+  switch (action.type) {
+    case "star":
+      return { ...action, starred: !action.starred };
+    case "markRead":
+      return { ...action, read: !action.read };
+    case "spam":
+      return isGmailAccount(accountId) ? { ...action, isSpam: !action.isSpam } : null;
+    case "addLabel":
+      return isGmailAccount(accountId) ? { ...action, type: "removeLabel" } : null;
+    case "removeLabel":
+      return isGmailAccount(accountId) ? { ...action, type: "addLabel" } : null;
+    case "moveToFolder":
+    case "permanentDelete":
+      return null;
+    default:
+      return undefined;
+  }
+}
+
+function recordInverse(accountId: string, action: EmailAction): void {
+  const inverse = inverseOf(accountId, action);
+  if (inverse === undefined) return;
+  const entry = entryFor(action.type, false);
+  if ("threadId" in action && action.threadId) entry.items.push({ accountId, threadId: action.threadId });
+  if (inverse === null) entry.undoable = false;
+  else entry.steps.push(() => executeEmailAction(accountId, inverse, { undoable: false }).then(() => {}));
+}
+
+/** Remember how to take back an action that is already done (e.g. snooze). */
 export function recordUndo(step: UndoStep): void {
-  if (undoBatch) void flushUndoBatch();
-  pushUndo(step);
+  newEntry("custom").steps.push(step);
 }
 
 function scheduleUndoable(
@@ -436,35 +502,34 @@ function scheduleUndoable(
   action: EmailAction & { type: "trash" | "archive" },
   run: DeferredRun,
 ): void {
-  // A different kind of action starts a new batch; the old one commits now.
-  if (undoBatch && undoBatch.kind !== action.type) flushUndoBatch();
-  if (!undoBatch) {
-    undoBatch = { kind: action.type, runs: [], items: [], timer: setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS) };
-  } else {
-    clearTimeout(undoBatch.timer);
-    undoBatch.timer = setTimeout(() => void flushUndoBatch(), UNDO_WINDOW_MS);
-  }
-  undoBatch.runs.push(run);
-  undoBatch.items.push({ accountId, threadId: action.threadId });
+  const entry = entryFor(action.type, true);
+  if (entry.timer !== null) clearTimeout(entry.timer);
+  entry.timer = setTimeout(() => void commitEntry(entry), UNDO_WINDOW_MS);
+  entry.runs.push(run);
+  entry.items.push({ accountId, threadId: action.threadId });
   window.dispatchEvent(
-    new CustomEvent("velo-undo-available", { detail: { kind: action.type, count: undoBatch.runs.length } }),
+    new CustomEvent("velo-undo-available", { detail: { kind: action.type, count: entry.runs.length } }),
   );
 }
 
 /** Take back the latest action. Returns false if there is nothing to undo. */
 export function undoLastAction(): boolean {
-  if (undoBatch) {
-    clearTimeout(undoBatch.timer);
-    clearPendingRemovals(undoBatch.items.map((i) => i.threadId));
-    undoBatch = null;
+  const entry = undoStack[undoStack.length - 1];
+  if (!entry) return false;
+  if (entry.timer !== null) {
+    clearTimeout(entry.timer);
+    entry.timer = null;
+    undoStack.pop();
+    clearPendingRemovals(entry.items.map((i) => i.threadId));
     window.dispatchEvent(new Event("velo-undo-done"));
     // Nothing reached the DB yet, so reloading the list brings the threads back.
     window.dispatchEvent(new Event("velo-sync-done"));
     return true;
   }
-  const step = undoStack.pop();
-  if (!step) return false;
-  step()
+  // Never skip an action that can't be undone to revert an older one
+  if (!entry.undoable) return false;
+  undoStack.pop();
+  Promise.all(entry.steps.map((step) => step()))
     .catch((err) => console.error("Undo failed:", err))
     .finally(() => window.dispatchEvent(new Event("velo-sync-done")));
   return true;
@@ -472,14 +537,14 @@ export function undoLastAction(): boolean {
 
 /** Reset the undo state for testing. */
 export function _resetUndoForTesting(): void {
-  if (undoBatch) clearTimeout(undoBatch.timer);
-  undoBatch = null;
-  undoStack.length = 0;
+  for (const entry of undoStack) if (entry.timer !== null) clearTimeout(entry.timer);
+  undoStack = [];
 }
 
 /** Commit any pending delete/archive right away (e.g. before the window closes). */
-export function flushPendingUndo(): Promise<ActionResult[]> {
-  return flushUndoBatch();
+export async function flushPendingUndo(): Promise<ActionResult[]> {
+  const results = await Promise.all(undoStack.map(commitEntry));
+  return results.flat();
 }
 
 async function commitEmailAction(accountId: string, action: EmailAction): Promise<ActionResult> {
@@ -585,13 +650,14 @@ export function markThreadRead(
   threadId: string,
   messageIds: string[],
   read: boolean,
+  options?: ActionOptions,
 ): Promise<ActionResult> {
   return executeEmailAction(accountId, {
     type: "markRead",
     threadId,
     messageIds,
     read,
-  });
+  }, options);
 }
 
 export function starThread(
@@ -599,13 +665,14 @@ export function starThread(
   threadId: string,
   messageIds: string[],
   starred: boolean,
+  options?: ActionOptions,
 ): Promise<ActionResult> {
   return executeEmailAction(accountId, {
     type: "star",
     threadId,
     messageIds,
     starred,
-  });
+  }, options);
 }
 
 export function spamThread(
@@ -613,13 +680,14 @@ export function spamThread(
   threadId: string,
   messageIds: string[],
   isSpam: boolean,
+  options?: ActionOptions,
 ): Promise<ActionResult> {
   return executeEmailAction(accountId, {
     type: "spam",
     threadId,
     messageIds,
     isSpam,
-  });
+  }, options);
 }
 
 export function moveThread(
@@ -640,24 +708,26 @@ export function addThreadLabel(
   accountId: string,
   threadId: string,
   labelId: string,
+  options?: ActionOptions,
 ): Promise<ActionResult> {
   return executeEmailAction(accountId, {
     type: "addLabel",
     threadId,
     labelId,
-  });
+  }, options);
 }
 
 export function removeThreadLabel(
   accountId: string,
   threadId: string,
   labelId: string,
+  options?: ActionOptions,
 ): Promise<ActionResult> {
   return executeEmailAction(accountId, {
     type: "removeLabel",
     threadId,
     labelId,
-  });
+  }, options);
 }
 
 export async function sendEmail(

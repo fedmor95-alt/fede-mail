@@ -55,9 +55,9 @@ describe("applySmartLabelsToMessages", () => {
     await applySmartLabelsToMessages("acc-1", [makeMessage("t1"), makeMessage("t2")]);
 
     expect(addThreadLabel).toHaveBeenCalledTimes(3);
-    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t1", "label-a");
-    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t1", "label-b");
-    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t2", "label-c");
+    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t1", "label-a", { undoable: false });
+    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t1", "label-b", { undoable: false });
+    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t2", "label-c", { undoable: false });
   });
 
   it("does not throw when matchSmartLabels returns empty", async () => {

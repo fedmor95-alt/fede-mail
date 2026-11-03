@@ -53,7 +53,7 @@ describe("backfillSmartLabels", () => {
 
     expect(count).toBe(1);
     expect(matchSmartLabels).toHaveBeenCalledTimes(1);
-    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t0", "label-1");
+    expect(addThreadLabel).toHaveBeenCalledWith("acc-1", "t0", "label-1", { undoable: false });
   });
 
   it("returns 0 when no threads in inbox", async () => {

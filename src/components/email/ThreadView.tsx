@@ -142,7 +142,7 @@ export function ThreadView({ thread }: ThreadViewProps) {
     const markRead = () => {
       markedReadRef.current = { id: thread.id, attempts: attempts + 1 };
       console.info(`[markRead] ${thread.accountId} ${thread.id} attempt ${attempts + 1}`);
-      markThreadRead(thread.accountId, thread.id, [], true)
+      markThreadRead(thread.accountId, thread.id, [], true, { undoable: false })
         .then((r) => {
           if (!r.success) console.warn(`[markRead] ${thread.id} failed: ${r.error}`);
           else if (r.queued) console.warn(`[markRead] ${thread.id} queued for retry`);
