@@ -71,6 +71,13 @@ export function ContextMenuPortal() {
   const closeMenu = useContextMenuStore((s) => s.closeMenu);
   const [snoozeTarget, setSnoozeTarget] = useState<{ threadIds: string[]; accountId: string } | null>(null);
 
+  // Snooze asked for outside a menu (swipe on a list row)
+  useEffect(() => {
+    const onRequest = (e: Event) => setSnoozeTarget((e as CustomEvent<{ threadIds: string[]; accountId: string }>).detail);
+    window.addEventListener("velo-snooze-request", onRequest);
+    return () => window.removeEventListener("velo-snooze-request", onRequest);
+  }, []);
+
   if (!menuType) {
     if (snoozeTarget) {
       return (

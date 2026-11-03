@@ -3,6 +3,7 @@ import { useUIStore, SWIPE_ACTIONS, type SwipeAction } from "@/stores/uiStore";
 const LABELS: Record<SwipeAction, string> = {
   archive: "Archivia",
   trash: "Elimina",
+  snooze: "Posticipa",
   read: "Letta / non letta",
   star: "Speciale",
   none: "Nessuna azione",

@@ -7,8 +7,8 @@ type ReadingPanePosition = "right" | "bottom" | "hidden";
 type ReadFilter = "all" | "read" | "unread";
 export type EmailDensity = "compact" | "default" | "spacious";
 export type AvatarSize = "default" | "small" | "hidden";
-export type SwipeAction = "archive" | "trash" | "read" | "star" | "none";
-export const SWIPE_ACTIONS: readonly SwipeAction[] = ["archive", "trash", "read", "star", "none"];
+export type SwipeAction = "archive" | "trash" | "snooze" | "read" | "star" | "none";
+export const SWIPE_ACTIONS: readonly SwipeAction[] = ["archive", "trash", "snooze", "read", "star", "none"];
 export type DefaultReplyMode = "reply" | "replyAll";
 export type MarkAsReadBehavior = "instant" | "2s" | "manual";
 export type FontScale = "small" | "default" | "large" | "xlarge";
@@ -80,7 +80,7 @@ export const useUIStore = create<UIState>((set) => ({
   emailDensity: "default",
   avatarSize: "default",
   swipeLeftAction: "archive",
-  swipeRightAction: "read",
+  swipeRightAction: "snooze",
   defaultReplyMode: "reply",
   markAsReadBehavior: "instant",
   fontScale: "default",

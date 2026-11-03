@@ -8,7 +8,7 @@ import { archiveThread, trashThread, markThreadRead, starThread } from "@/servic
 import { useActiveLabel } from "@/hooks/useRouteNavigation";
 import { formatRelativeDate } from "@/utils/date";
 import { PecStatusBadge } from "./PecBadge";
-import { Paperclip, Star, Check, Pin, BellRing, VolumeX, Archive, Trash2, Mail, MailOpen } from "lucide-react";
+import { Paperclip, Star, Check, Pin, BellRing, VolumeX, Archive, Trash2, Mail, MailOpen, Clock } from "lucide-react";
 import type { DragData } from "@/components/dnd/DndProvider";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -28,14 +28,16 @@ const CATEGORY_LABELS: Record<string, string> = {
 const SWIPE_COLORS: Record<Exclude<SwipeAction, "none">, string> = {
   archive: "bg-emerald-600",
   trash: "bg-red-600",
+  snooze: "bg-orange-500",
   read: "bg-sky-600",
-  star: "bg-amber-500",
+  star: "bg-yellow-500",
 };
 
 function swipeLook(action: Exclude<SwipeAction, "none">, thread: Thread) {
   switch (action) {
     case "archive": return { Icon: Archive, label: "Archivia" };
     case "trash": return { Icon: Trash2, label: "Elimina" };
+    case "snooze": return { Icon: Clock, label: "Posticipa" };
     case "read": return thread.isRead ? { Icon: Mail, label: "Non letta" } : { Icon: MailOpen, label: "Letta" };
     case "star": return { Icon: Star, label: thread.isStarred ? "Togli speciale" : "Speciale" };
   }
@@ -78,6 +80,10 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
       switch (actionFor(d)) {
         case "archive": void archiveThread(accountId, id, []); break;
         case "trash": void trashThread(accountId, id, []); break;
+        // The row comes back; it leaves the list once a time is picked
+        case "snooze":
+          window.dispatchEvent(new CustomEvent("velo-snooze-request", { detail: { accountId, threadIds: [id] } }));
+          break;
         case "read": void markThreadRead(accountId, id, [], !thread.isRead); break;
         case "star": void starThread(accountId, id, [], !thread.isStarred); break;
       }
