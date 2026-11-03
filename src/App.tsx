@@ -25,7 +25,7 @@ import { UndoSendToast } from "./components/composer/UndoSendToast";
 import { CommandPalette } from "./components/search/CommandPalette";
 import { ShortcutsHelp } from "./components/search/ShortcutsHelp";
 import { AskInbox } from "./components/search/AskInbox";
-import { useUIStore } from "./stores/uiStore";
+import { useUIStore, SWIPE_ACTIONS, type SwipeAction } from "./stores/uiStore";
 import { startPush, stopPush } from "./services/push/pushManager";
 import { useAccountStore } from "./stores/accountStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -288,6 +288,14 @@ export default function App() {
         const savedAvatarSize = await getSetting("avatar_size");
         if (savedAvatarSize === "default" || savedAvatarSize === "small" || savedAvatarSize === "hidden") {
           ui.setAvatarSize(savedAvatarSize);
+        }
+
+        // Restore swipe gesture actions
+        for (const direction of ["left", "right"] as const) {
+          const saved = await getSetting(`swipe_${direction}_action`);
+          if (saved && (SWIPE_ACTIONS as readonly string[]).includes(saved)) {
+            ui.setSwipeAction(direction, saved as SwipeAction);
+          }
         }
 
         // Restore default reply mode

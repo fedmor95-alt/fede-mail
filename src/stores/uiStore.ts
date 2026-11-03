@@ -7,6 +7,8 @@ type ReadingPanePosition = "right" | "bottom" | "hidden";
 type ReadFilter = "all" | "read" | "unread";
 export type EmailDensity = "compact" | "default" | "spacious";
 export type AvatarSize = "default" | "small" | "hidden";
+export type SwipeAction = "archive" | "trash" | "read" | "star" | "none";
+export const SWIPE_ACTIONS: readonly SwipeAction[] = ["archive", "trash", "read", "star", "none"];
 export type DefaultReplyMode = "reply" | "replyAll";
 export type MarkAsReadBehavior = "instant" | "2s" | "manual";
 export type FontScale = "small" | "default" | "large" | "xlarge";
@@ -26,6 +28,9 @@ interface UIState {
   emailListWidth: number;
   emailDensity: EmailDensity;
   avatarSize: AvatarSize;
+  /** Trackpad/touch swipe on a list row, by direction the row moves. */
+  swipeLeftAction: SwipeAction;
+  swipeRightAction: SwipeAction;
   defaultReplyMode: DefaultReplyMode;
   markAsReadBehavior: MarkAsReadBehavior;
   fontScale: FontScale;
@@ -48,6 +53,7 @@ interface UIState {
   setEmailListWidth: (width: number) => void;
   setEmailDensity: (density: EmailDensity) => void;
   setAvatarSize: (size: AvatarSize) => void;
+  setSwipeAction: (direction: "left" | "right", action: SwipeAction) => void;
   setDefaultReplyMode: (mode: DefaultReplyMode) => void;
   setMarkAsReadBehavior: (behavior: MarkAsReadBehavior) => void;
   setFontScale: (scale: FontScale) => void;
@@ -73,6 +79,8 @@ export const useUIStore = create<UIState>((set) => ({
   emailListWidth: 320,
   emailDensity: "default",
   avatarSize: "default",
+  swipeLeftAction: "archive",
+  swipeRightAction: "read",
   defaultReplyMode: "reply",
   markAsReadBehavior: "instant",
   fontScale: "default",
@@ -120,6 +128,10 @@ export const useUIStore = create<UIState>((set) => ({
   setAvatarSize: (avatarSize) => {
     setSetting("avatar_size", avatarSize).catch(() => {});
     set({ avatarSize });
+  },
+  setSwipeAction: (direction, action) => {
+    setSetting(`swipe_${direction}_action`, action).catch(() => {});
+    set(direction === "left" ? { swipeLeftAction: action } : { swipeRightAction: action });
   },
   setDefaultReplyMode: (defaultReplyMode) => {
     setSetting("default_reply_mode", defaultReplyMode).catch(() => {});

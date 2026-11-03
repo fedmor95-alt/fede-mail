@@ -65,6 +65,7 @@ import { TextField } from "@/components/ui/TextField";
 import appIcon from "@/assets/icon.png";
 import { UiZoomSelect } from "./UiZoomSelect";
 import { SyncIntervalSelect } from "./SyncIntervalSelect";
+import { SwipeActionSelect } from "./SwipeActionSelect";
 
 type SettingsTab = "general" | "notifications" | "composing" | "mail-rules" | "people" | "accounts" | "shortcuts" | "ai" | "about";
 
@@ -476,6 +477,12 @@ export function SettingsPage() {
                     </SettingRow>
                     <SettingRow label="Dimensione interfaccia">
                       <UiZoomSelect />
+                    </SettingRow>
+                    <SettingRow label="Scorri verso sinistra">
+                      <SwipeActionSelect direction="left" />
+                    </SettingRow>
+                    <SettingRow label="Scorri verso destra">
+                      <SwipeActionSelect direction="right" />
                     </SettingRow>
                     <SettingRow label="Avatar dei mittenti">
                       <select
