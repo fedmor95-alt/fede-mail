@@ -64,6 +64,7 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import appIcon from "@/assets/icon.png";
 import { UiZoomSelect } from "./UiZoomSelect";
+import { SyncIntervalSelect } from "./SyncIntervalSelect";
 
 type SettingsTab = "general" | "notifications" | "composing" | "mail-rules" | "people" | "accounts" | "shortcuts" | "ai" | "about";
 
@@ -1034,6 +1035,9 @@ export function SettingsPage() {
                         {isSyncing ? "Sincronizzazione..." : "Sincronizza ora"}
                       </Button>
                     </div>
+                    <SettingRow label="Controlla nuova posta ogni">
+                      <SyncIntervalSelect />
+                    </SettingRow>
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-sm text-text-secondary">

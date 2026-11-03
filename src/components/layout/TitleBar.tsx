@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useRouterState } from "@tanstack/react-router";
-import { Minus, Square, X, Copy, PanelLeftClose, PanelLeftOpen, PenSquare } from "lucide-react";
+import { Minus, Square, X, Copy, PanelLeftClose, PanelLeftOpen, PenSquare, RefreshCw } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
 import { useComposerStore } from "@/stores/composerStore";
+import { useAccountStore } from "@/stores/accountStore";
+import { triggerSync } from "@/services/gmail/syncManager";
 import { SearchBar } from "../search/SearchBar";
 import appIcon from "@/assets/icon.png";
 
@@ -25,6 +27,18 @@ export function TitleBar() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const openComposer = useComposerStore((s) => s.openComposer);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    const ids = useAccountStore.getState().accounts.filter((a) => a.isActive).map((a) => a.id);
+    if (ids.length === 0) return;
+    setSyncing(true);
+    try {
+      await triggerSync(ids);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const appWindow = getCurrentWindow();
@@ -70,6 +84,15 @@ export function TitleBar() {
         >
           <PenSquare size={14} />
           Scrivi
+        </button>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="p-1.5 text-sidebar-text/70 hover:text-sidebar-text hover:bg-sidebar-hover rounded-md transition-colors disabled:pointer-events-none"
+          title="Controlla nuova posta (F5)"
+          aria-label="Controlla nuova posta"
+        >
+          <RefreshCw size={16} className={syncing ? "animate-spin text-accent" : ""} />
         </button>
       </div>
 

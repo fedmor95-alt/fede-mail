@@ -53,6 +53,7 @@ import {
   stopBackgroundSync,
   triggerSync,
   onSyncStatus,
+  parseSyncInterval,
 } from "./syncManager";
 import { getAccount } from "../db/accounts";
 import { getGmailClient } from "./tokenManager";
@@ -297,5 +298,17 @@ describe("syncManager", () => {
       expect(errors).toHaveLength(1);
       expect(errors[0]).toBe("Unknown error");
     });
+  });
+});
+
+describe("parseSyncInterval", () => {
+  it("accepts the offered minutes", () => {
+    expect(parseSyncInterval("5")).toBe(5);
+    expect(parseSyncInterval("30")).toBe(30);
+  });
+
+  it("falls back to 1 minute for missing or unknown values", () => {
+    expect(parseSyncInterval(null)).toBe(1);
+    expect(parseSyncInterval("7")).toBe(1);
   });
 });

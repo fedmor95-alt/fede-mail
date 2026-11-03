@@ -11,7 +11,18 @@ import { hasCalendarSupport, getCalendarProvider } from "../calendar/providerFac
 import { getVisibleCalendars, upsertCalendar, updateCalendarSyncToken } from "../db/calendars";
 import { upsertCalendarEvent, deleteEventByRemoteId } from "../db/calendarEvents";
 
-const SYNC_INTERVAL_MS = 60_000; // 60 seconds — delta syncs are lightweight (single API call when idle)
+/** "Controlla nuova posta ogni" choices, in minutes; delta syncs are one cheap API call when idle. */
+export const SYNC_INTERVAL_CHOICES = [1, 2, 5, 10, 15, 30] as const;
+export const SYNC_INTERVAL_SETTING = "sync_interval_minutes";
+const DEFAULT_SYNC_INTERVAL_MIN = 1;
+
+export function parseSyncInterval(value: string | null | undefined): number {
+  const n = Number(value);
+  return (SYNC_INTERVAL_CHOICES as readonly number[]).includes(n) ? n : DEFAULT_SYNC_INTERVAL_MIN;
+}
+
+let syncIntervalMs = DEFAULT_SYNC_INTERVAL_MIN * 60_000;
+let backgroundAccountIds: string[] = [];
 
 /** Map IMAP sync phases to the SyncProgress phases the UI understands. */
 function mapImapPhase(phase: string): "labels" | "threads" | "messages" | "done" {
@@ -23,6 +34,19 @@ function mapImapPhase(phase: string): "labels" | "threads" | "messages" | "done"
 }
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Read the saved interval; call before startBackgroundSync. */
+export async function loadSyncInterval(): Promise<number> {
+  const minutes = parseSyncInterval(await getSetting(SYNC_INTERVAL_SETTING).catch(() => null));
+  syncIntervalMs = minutes * 60_000;
+  return minutes;
+}
+
+/** Change the interval; a running background sync switches to it right away. */
+export function setSyncIntervalMinutes(minutes: number): void {
+  syncIntervalMs = parseSyncInterval(String(minutes)) * 60_000;
+  if (syncTimer) startBackgroundSync(backgroundAccountIds, true);
+}
 let syncPromise: Promise<void> | null = null;
 let pendingAccountIds: string[] | null = null;
 
@@ -302,6 +326,7 @@ export async function syncAccount(accountId: string): Promise<void> {
  */
 export function startBackgroundSync(accountIds: string[], skipImmediateSync = false): void {
   stopBackgroundSync();
+  backgroundAccountIds = accountIds;
 
   if (!skipImmediateSync) {
     // Immediate sync
@@ -311,7 +336,7 @@ export function startBackgroundSync(accountIds: string[], skipImmediateSync = fa
   // Periodic sync
   syncTimer = setInterval(() => {
     runSync(accountIds);
-  }, SYNC_INTERVAL_MS);
+  }, syncIntervalMs);
 }
 
 /**

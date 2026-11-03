@@ -37,6 +37,7 @@ import {
   stopBackgroundSync,
   syncAccount,
   triggerSync,
+  loadSyncInterval,
   onSyncStatus,
 } from "./services/gmail/syncManager";
 import { initializeClients } from "./services/gmail/tokenManager";
@@ -380,6 +381,7 @@ export default function App() {
 
         // Start background sync for active accounts
         if (activeIds.length > 0) {
+          await loadSyncInterval();
           startBackgroundSync(activeIds);
           startPush(emailAccountIds).catch((err) => console.warn("[push] start failed:", err));
         }
