@@ -9,7 +9,7 @@ const COMMIT_MAX_PX = 120;
 const WHEEL_END_MS = 120;
 /** Horizontal movement needed before a touch drag counts as a swipe. */
 const TOUCH_SLOP_PX = 10;
-export const SWIPE_SETTLE_MS = 90;
+export const SWIPE_SETTLE_MS = 170;
 
 // Trackpad momentum keeps sending wheel events after a swipe has fired. Once
 // the row is gone they would land on the next one and swipe it too, so every

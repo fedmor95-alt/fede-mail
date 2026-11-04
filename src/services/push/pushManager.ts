@@ -4,7 +4,7 @@ import { getAccount } from "../db/accounts";
 import { buildImapConfig } from "../imap/imapConfigBuilder";
 import type { ImapConfig } from "../imap/tauriCommands";
 import { getGmailClient } from "../gmail/tokenManager";
-import { syncAccount } from "../gmail/syncManager";
+import { setAccountOnPush, syncAccount } from "../gmail/syncManager";
 
 /**
  * Push notifications for new mail.
@@ -12,10 +12,12 @@ import { syncAccount } from "../gmail/syncManager";
  * Every account gets an IMAP IDLE watcher on INBOX (Rust side, see
  * src-tauri/src/imap/idle.rs). Gmail API accounts use IDLE on imap.gmail.com
  * with their OAuth token purely as a doorbell; the actual data still comes
- * from the Gmail History API delta sync. When IDLE is not available (server
- * without IDLE, token without the https://mail.google.com/ scope) the account
- * falls back to fast polling. The regular 60s background sync keeps running
- * as a safety net either way.
+ * from the Gmail History API delta sync.
+ *
+ * An account is either on push or on the interval set in Settings, never both:
+ * while its watcher is connected the background sync skips its mail, and when
+ * IDLE is not available (server without IDLE, token without the
+ * https://mail.google.com/ scope) or is reconnecting the interval takes over.
  */
 
 interface IdleEvent {
@@ -27,18 +29,19 @@ interface IdleEvent {
 
 export type PushState = "push" | "polling" | "connecting";
 
-const FALLBACK_POLL_MS = 20_000;
 const CHANGE_DEBOUNCE_MS = 1_500;
+/** Gmail rings for every flag change too, including our own: don't sync on each one. */
+const MIN_SYNC_GAP_MS = 15_000;
 const MAX_AUTH_RETRIES = 2;
 /** While polling, try to get back to push this often (e.g. after re-authorizing). */
 const PUSH_RETRY_MS = 10 * 60_000;
 
 let unlisten: UnlistenFn | null = null;
-let pollTimer: ReturnType<typeof setInterval> | null = null;
 let pushRetryTimer: ReturnType<typeof setInterval> | null = null;
 const fallbackAccounts = new Set<string>();
 const authRetries = new Map<string, number>();
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const lastPushSyncAt = new Map<string, number>();
 const states = new Map<string, PushState>();
 let activeAccountIds: string[] = [];
 /**
@@ -57,6 +60,7 @@ function serialized<T>(fn: () => Promise<T>): Promise<T> {
 
 function setState(accountId: string, state: PushState): void {
   states.set(accountId, state);
+  setAccountOnPush(accountId, state === "push");
   window.dispatchEvent(new CustomEvent("velo-push-state", { detail: { accountId, state } }));
 }
 
@@ -107,13 +111,6 @@ async function startWatcher(accountId: string, forceRefresh = false): Promise<vo
 function enableFallback(accountId: string): void {
   fallbackAccounts.add(accountId);
   setState(accountId, "polling");
-  if (!pollTimer) {
-    pollTimer = setInterval(() => {
-      for (const id of fallbackAccounts) {
-        syncAccount(id).catch(() => {});
-      }
-    }, FALLBACK_POLL_MS);
-  }
   if (!pushRetryTimer) {
     pushRetryTimer = setInterval(() => {
       for (const id of fallbackAccounts) {
@@ -127,12 +124,14 @@ function enableFallback(accountId: string): void {
 function scheduleSync(accountId: string): void {
   const existing = debounceTimers.get(accountId);
   if (existing) clearTimeout(existing);
+  const sinceLast = Date.now() - (lastPushSyncAt.get(accountId) ?? 0);
   debounceTimers.set(
     accountId,
     setTimeout(() => {
       debounceTimers.delete(accountId);
+      lastPushSyncAt.set(accountId, Date.now());
       syncAccount(accountId).catch((err) => console.warn(`[push] sync failed for ${accountId}:`, err));
-    }, CHANGE_DEBOUNCE_MS),
+    }, Math.max(CHANGE_DEBOUNCE_MS, MIN_SYNC_GAP_MS - sinceLast)),
   );
 }
 
@@ -160,7 +159,7 @@ async function handleEvent(ev: IdleEvent): Promise<void> {
       if (tries <= MAX_AUTH_RETRIES) {
         await startWatcher(accountId, true);
       } else {
-        console.warn(`[push] IDLE auth keeps failing for ${accountId}, polling every ${FALLBACK_POLL_MS / 1000}s`);
+        console.warn(`[push] IDLE auth keeps failing for ${accountId}, using the sync interval`);
         enableFallback(accountId);
       }
       break;
@@ -218,15 +217,15 @@ async function stopPushNow(): Promise<void> {
   window.removeEventListener("online", restartPush);
   unlisten?.();
   unlisten = null;
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = null;
   if (pushRetryTimer) clearInterval(pushRetryTimer);
   pushRetryTimer = null;
   for (const t of debounceTimers.values()) clearTimeout(t);
   debounceTimers.clear();
   fallbackAccounts.clear();
   authRetries.clear();
+  for (const id of states.keys()) setAccountOnPush(id, false);
   states.clear();
+  lastPushSyncAt.clear();
   activeAccountIds = [];
   await invoke("imap_idle_stop_all").catch(() => {});
 }

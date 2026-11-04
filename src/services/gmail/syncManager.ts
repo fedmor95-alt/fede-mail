@@ -23,6 +23,13 @@ export function parseSyncInterval(value: string | null | undefined): number {
 
 let syncIntervalMs = DEFAULT_SYNC_INTERVAL_MIN * 60_000;
 let backgroundAccountIds: string[] = [];
+/** Accounts whose push connection is up: the interval leaves their mail alone. */
+const pushAccounts = new Set<string>();
+
+export function setAccountOnPush(accountId: string, onPush: boolean): void {
+  if (onPush) pushAccounts.add(accountId);
+  else pushAccounts.delete(accountId);
+}
 
 /** Map IMAP sync phases to the SyncProgress phases the UI understands. */
 function mapImapPhase(phase: string): "labels" | "threads" | "messages" | "done" {
@@ -335,7 +342,12 @@ export function startBackgroundSync(accountIds: string[], skipImmediateSync = fa
 
   // Periodic sync
   syncTimer = setInterval(() => {
-    runSync(accountIds);
+    const polled = accountIds.filter((id) => !pushAccounts.has(id));
+    if (polled.length > 0) runSync(polled);
+    // Push only rings for mail, so calendars still follow the interval
+    for (const id of accountIds) {
+      if (pushAccounts.has(id)) void syncCalendarForAccount(id);
+    }
   }, syncIntervalMs);
 }
 

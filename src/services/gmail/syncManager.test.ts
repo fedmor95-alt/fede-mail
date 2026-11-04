@@ -54,6 +54,7 @@ import {
   triggerSync,
   onSyncStatus,
   parseSyncInterval,
+  setAccountOnPush,
 } from "./syncManager";
 import { getAccount } from "../db/accounts";
 import { getGmailClient } from "./tokenManager";
@@ -166,6 +167,26 @@ describe("syncManager", () => {
   });
 
   describe("startBackgroundSync", () => {
+    it("leaves accounts on push to their push connection", async () => {
+      vi.useFakeTimers();
+      try {
+        mockGetAccount.mockResolvedValue(makeGmailAccount("a1", "100"));
+        setAccountOnPush("a1", true);
+        startBackgroundSync(["a1"], true);
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(mockDeltaSync).not.toHaveBeenCalled();
+
+        // Connection lost: the interval takes over
+        setAccountOnPush("a1", false);
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(mockDeltaSync).toHaveBeenCalledTimes(1);
+      } finally {
+        stopBackgroundSync();
+        setAccountOnPush("a1", false);
+        vi.useRealTimers();
+      }
+    });
+
     it("triggers an immediate sync by default", async () => {
       mockGetAccount.mockResolvedValue(makeGmailAccount("a1", "100"));
 

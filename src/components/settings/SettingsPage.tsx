@@ -1042,7 +1042,7 @@ export function SettingsPage() {
                         {isSyncing ? "Sincronizzazione..." : "Sincronizza ora"}
                       </Button>
                     </div>
-                    <SettingRow label="Controlla nuova posta ogni">
+                    <SettingRow label="Senza push, controlla la posta ogni">
                       <SyncIntervalSelect />
                     </SettingRow>
                     <div className="flex items-center justify-between">

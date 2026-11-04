@@ -1,5 +1,5 @@
 import { render, act } from "@testing-library/react";
-import { useSwipeActions, type SwipeDirection } from "./useSwipeActions";
+import { useSwipeActions, SWIPE_SETTLE_MS, type SwipeDirection } from "./useSwipeActions";
 
 function Row({ onSwipe, removes = true }: { onSwipe: (d: SwipeDirection) => void; removes?: boolean }) {
   const swipe = useSwipeActions(() => true, () => removes, onSwipe);
@@ -23,7 +23,7 @@ describe("useSwipeActions", () => {
     expect(row.dataset.offset).toBe("-80");
     act(() => { wheel(row, 80); });
     expect(row.dataset.offset).toBe("-400");
-    act(() => { vi.advanceTimersByTime(100); });
+    act(() => { vi.advanceTimersByTime(SWIPE_SETTLE_MS); });
     expect(onSwipe).toHaveBeenCalledWith("left");
   });
 
