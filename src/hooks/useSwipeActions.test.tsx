@@ -14,15 +14,16 @@ describe("useSwipeActions", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it("fires a two-finger swipe to the left once it is released past the threshold", () => {
+  it("fires a two-finger swipe as soon as it crosses the threshold, without waiting for the wheel to stop", () => {
     const onSwipe = vi.fn();
     const { getByTestId } = render(<Row onSwipe={onSwipe} />);
     const row = getByTestId("row");
 
-    act(() => { wheel(row, 80); wheel(row, 80); });
-    expect(row.dataset.offset).toBe("-160");
-    act(() => { vi.advanceTimersByTime(130); });
-    act(() => { vi.advanceTimersByTime(200); });
+    act(() => { wheel(row, 80); });
+    expect(row.dataset.offset).toBe("-80");
+    act(() => { wheel(row, 80); });
+    expect(row.dataset.offset).toBe("-400");
+    act(() => { vi.advanceTimersByTime(100); });
     expect(onSwipe).toHaveBeenCalledWith("left");
   });
 

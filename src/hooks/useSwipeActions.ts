@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type SwipeDirection = "left" | "right";
 
-/** Past this share of the row's width (or 120px) a released swipe triggers its action. */
+/** Past this share of the row's width (or 120px) a swipe triggers its action. */
 const COMMIT_RATIO = 0.3;
 const COMMIT_MAX_PX = 120;
 /** A trackpad swipe ends after this long without wheel events. */
 const WHEEL_END_MS = 120;
 /** Horizontal movement needed before a touch drag counts as a swipe. */
 const TOUCH_SLOP_PX = 10;
-const SETTLE_MS = 180;
+export const SWIPE_SETTLE_MS = 90;
 
 // Trackpad momentum keeps sending wheel events after a swipe has fired. Once
 // the row is gone they would land on the next one and swipe it too, so every
@@ -23,9 +23,11 @@ function commitDistance(width: number): number {
 
 /**
  * Horizontal swipe on a list row, by two-finger trackpad scroll or touch drag
- * (mouse drags stay with drag-and-drop). `onSwipe` runs when the row is let go
- * past the threshold; `removes` says whether that action takes the row away
- * (archive, delete) or leaves it in place (read, star).
+ * (mouse drags stay with drag-and-drop). A trackpad swipe fires as soon as it
+ * crosses the threshold, since its momentum would otherwise hold the row in
+ * place until the wheel events stop; a touch swipe fires when the finger lifts.
+ * `removes` says whether the action takes the row away (archive, delete) or
+ * leaves it in place (read, star).
  */
 export function useSwipeActions(
   enabled: (direction: SwipeDirection) => boolean,
@@ -64,7 +66,7 @@ export function useSwipeActions(
     if (fire) {
       wheelBlocked = true;
       // Let the row finish sliding out before it disappears
-      setTimeout(() => onSwipe(direction), goesAway ? SETTLE_MS : 0);
+      setTimeout(() => onSwipe(direction), goesAway ? SWIPE_SETTLE_MS : 0);
     }
   }, [onSwipe, removes]);
 
@@ -94,6 +96,11 @@ export function useSwipeActions(
       e.preventDefault();
       moveRef.current(offsetRef.current - e.deltaX);
       if (wheelTimer.current) clearTimeout(wheelTimer.current);
+      if (Math.abs(offsetRef.current) >= commitDistance(el.offsetWidth || 400)) {
+        wheelTimer.current = null;
+        releaseRef.current();
+        return;
+      }
       wheelTimer.current = setTimeout(() => {
         wheelTimer.current = null;
         releaseRef.current();

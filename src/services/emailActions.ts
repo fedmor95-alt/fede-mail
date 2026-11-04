@@ -332,6 +332,9 @@ export async function executeEmailAction(
   const accountId =
     (threadId && useThreadStore.getState().threadMap?.get(threadId)?.accountId) || callerAccountId;
 
+  // 1. Optimistic UI update, before anything async so the list reacts at once
+  applyOptimisticUpdate(action);
+
   // IMAP needs the message ids (folder + UID) to act on the server; callers
   // such as keyboard shortcuts only pass the thread id.
   if ("messageIds" in action && action.messageIds.length === 0 && threadId) {
@@ -342,9 +345,6 @@ export async function executeEmailAction(
     );
     action = { ...action, messageIds: rows.map((r) => r.id) };
   }
-
-  // 1. Optimistic UI update
-  applyOptimisticUpdate(action);
 
   // Delete/archive wait a few seconds before touching the DB and server, so
   // Ctrl+Z (or the toast's "Annulla") can still take them back.

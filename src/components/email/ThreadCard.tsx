@@ -3,7 +3,7 @@ import { useDraggable } from "@dnd-kit/core";
 import type { Thread } from "@/stores/threadStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useUIStore, type SwipeAction } from "@/stores/uiStore";
-import { useSwipeActions, type SwipeDirection } from "@/hooks/useSwipeActions";
+import { useSwipeActions, SWIPE_SETTLE_MS, type SwipeDirection } from "@/hooks/useSwipeActions";
 import { archiveThread, trashThread, markThreadRead, starThread } from "@/services/emailActions";
 import { useActiveLabel } from "@/hooks/useRouteNavigation";
 import { formatRelativeDate } from "@/utils/date";
@@ -154,7 +154,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
         className={swipe.offset !== 0 ? "relative bg-bg-primary" : "relative"}
         style={{
           transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined,
-          transition: swipe.settling ? "transform 180ms ease-out" : undefined,
+          transition: swipe.settling ? `transform ${SWIPE_SETTLE_MS}ms ease-out` : undefined,
         }}
       >
         <button
