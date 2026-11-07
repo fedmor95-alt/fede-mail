@@ -721,6 +721,13 @@ const MIGRATIONS = [
   },
   {
     version: 20,
+    description: "Contact source (local / google address book)",
+    sql: `
+      ALTER TABLE contacts ADD COLUMN source TEXT NOT NULL DEFAULT 'local';
+    `,
+  },
+  {
+    version: 20,
     description: "Fix IMAP attachment part IDs and trigger resync",
     sql: `
       -- Delete IMAP attachment records that have wrong sequential part IDs.

@@ -124,7 +124,9 @@ export async function reauthorizeAccount(
   }, clientSecret);
   clients.set(accountId, client);
 
-  // The new token may carry scopes the old one lacked (IMAP push).
+  // The new token may carry scopes the old one lacked (IMAP push, contacts).
   const { restartWatcher } = await import("../push/pushManager");
   restartWatcher(accountId);
+  const { setSetting } = await import("../db/settings");
+  await setSetting(`contacts_synced_at_${accountId}`, "0");
 }

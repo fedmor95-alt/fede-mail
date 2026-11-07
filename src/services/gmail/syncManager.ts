@@ -1,7 +1,7 @@
 import { getGmailClient } from "./tokenManager";
 import { initialSync, deltaSync, type SyncProgress } from "./sync";
 import { getAccount, clearAccountHistoryId } from "../db/accounts";
-import { getSetting } from "../db/settings";
+import { getSetting, setSetting } from "../db/settings";
 import { getThreadCountForAccount, deleteAllThreadsForAccount } from "../db/threads";
 import { deleteAllMessagesForAccount } from "../db/messages";
 import { imapInitialSync, imapDeltaSync } from "../imap/imapSync";
@@ -10,6 +10,8 @@ import { ensureFreshToken } from "../oauth/oauthTokenManager";
 import { hasCalendarSupport, getCalendarProvider } from "../calendar/providerFactory";
 import { getVisibleCalendars, upsertCalendar, updateCalendarSyncToken } from "../db/calendars";
 import { upsertCalendarEvent, deleteEventByRemoteId } from "../db/calendarEvents";
+import { fetchGoogleContacts, PeopleScopeError } from "../google/people";
+import { importContacts } from "../db/contacts";
 
 /** "Controlla nuova posta ogni" choices, in minutes; delta syncs are one cheap API call when idle. */
 export const SYNC_INTERVAL_CHOICES = [1, 2, 5, 10, 15, 30] as const;
@@ -172,6 +174,40 @@ async function syncImapAccount(accountId: string): Promise<void> {
  * Sync calendars for a single account via the CalendarProvider abstraction.
  * Discovers calendars, syncs events for each visible calendar, stores results in DB.
  */
+/** The Google address book changes rarely: refresh it a few times a day. */
+const CONTACTS_SYNC_EVERY_MS = 6 * 60 * 60 * 1000;
+const contactsNeedingReauth = new Set<string>();
+
+/** Gmail accounts whose token predates the contacts scopes; Settings offers re-authorization. */
+export function accountNeedsContactsReauth(accountId: string): boolean {
+  return contactsNeedingReauth.has(accountId);
+}
+
+async function syncContactsForAccount(accountId: string): Promise<void> {
+  const account = await getAccount(accountId);
+  if (!account || account.provider !== "gmail_api") return;
+  const key = `contacts_synced_at_${accountId}`;
+  const last = Number(await getSetting(key)) || 0;
+  if (Date.now() - last < CONTACTS_SYNC_EVERY_MS) return;
+  try {
+    const client = await getGmailClient(accountId);
+    const contacts = await fetchGoogleContacts(client);
+    await importContacts(contacts, "google");
+    contactsNeedingReauth.delete(accountId);
+    await setSetting(key, String(Date.now()));
+    console.log(`[syncManager] Imported ${contacts.length} Google contacts for ${accountId}`);
+  } catch (err) {
+    if (err instanceof PeopleScopeError) {
+      contactsNeedingReauth.add(accountId);
+      // Don't retry every sync: the user has to re-authorize first
+      await setSetting(key, String(Date.now()));
+      console.warn(`[syncManager] Google contacts for ${accountId} need re-authorization`);
+      return;
+    }
+    throw err;
+  }
+}
+
 async function syncCalendarForAccount(accountId: string): Promise<void> {
   try {
     const supported = await hasCalendarSupport(accountId);
@@ -282,6 +318,9 @@ async function syncAccountInternal(accountId: string): Promise<void> {
     syncCalendarForAccount(accountId).catch((err) => {
       console.warn(`[syncManager] Calendar sync error for ${accountId}:`, err);
     });
+    syncContactsForAccount(accountId).catch((err) => {
+      console.warn(`[syncManager] Contacts sync error for ${accountId}:`, err);
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err ?? "Unknown error");
     console.error(`[syncManager] Sync failed for account ${accountId}:`, message);
@@ -344,9 +383,11 @@ export function startBackgroundSync(accountIds: string[], skipImmediateSync = fa
   syncTimer = setInterval(() => {
     const polled = accountIds.filter((id) => !pushAccounts.has(id));
     if (polled.length > 0) runSync(polled);
-    // Push only rings for mail, so calendars still follow the interval
+    // Push only rings for mail, so calendars and contacts still follow the interval
     for (const id of accountIds) {
-      if (pushAccounts.has(id)) void syncCalendarForAccount(id);
+      if (!pushAccounts.has(id)) continue;
+      void syncCalendarForAccount(id);
+      syncContactsForAccount(id).catch(() => {});
     }
   }, syncIntervalMs);
 }

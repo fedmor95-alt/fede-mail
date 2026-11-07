@@ -137,7 +137,15 @@ export const ThreadCard = memo(function ThreadCard({ thread, isSelected, onClick
   };
 
   return (
-    <div ref={swipe.rowRef} className="relative overflow-hidden" style={{ touchAction: "pan-y" }} {...swipe.handlers}>
+    // select-none and the dragstart guard keep WebView2 from drawing its own
+    // (black) drag image of selected text when a click wobbles into a drag
+    <div
+      ref={swipe.rowRef}
+      className="relative overflow-hidden select-none"
+      style={{ touchAction: "pan-y" }}
+      onDragStart={(e) => e.preventDefault()}
+      {...swipe.handlers}
+    >
       {shownAction !== "none" && look && (
         <div
           className={`absolute inset-0 flex items-center px-5 text-white text-sm font-medium ${SWIPE_COLORS[shownAction]} ${

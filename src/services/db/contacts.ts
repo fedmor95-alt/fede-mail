@@ -9,6 +9,14 @@ export interface DbContact {
   frequency: number;
   last_contacted_at: number | null;
   notes: string | null;
+  /** 'local' for addresses written to or added here, 'google' for the Google address book */
+  source: string;
+}
+
+export interface AddressSuggestion {
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
 }
 
 export interface ContactAttachment {
@@ -40,6 +48,58 @@ export async function searchContacts(
      LIMIT $2`,
     [pattern, limit],
   );
+}
+
+/**
+ * Recipient autocomplete: saved contacts (address book included) and the
+ * senders of every message in the local store. Contacts the user has
+ * written to rank first, then senders by how many messages they sent.
+ */
+export async function searchAddressSuggestions(
+  query: string,
+  limit = 5,
+): Promise<AddressSuggestion[]> {
+  const db = await getDb();
+  const pattern = `%${query.trim()}%`;
+  return db.select<AddressSuggestion[]>(
+    `SELECT email, MAX(display_name) AS display_name, MAX(avatar_url) AS avatar_url, SUM(score) AS score
+     FROM (
+       SELECT email, display_name, avatar_url, 1000 * frequency AS score
+       FROM contacts
+       WHERE email LIKE $1 OR display_name LIKE $1
+       UNION ALL
+       SELECT from_address AS email, from_name AS display_name, NULL AS avatar_url, 1 AS score
+       FROM messages
+       WHERE from_address LIKE $1 OR from_name LIKE $1
+     )
+     WHERE email IS NOT NULL AND email != ''
+     GROUP BY email
+     ORDER BY score DESC, display_name ASC
+     LIMIT $2`,
+    [pattern, limit],
+  );
+}
+
+/**
+ * Save address-book contacts without touching frequency, so imported
+ * entries don't outrank the people the user actually writes to.
+ */
+export async function importContacts(
+  contacts: { email: string; displayName: string | null; avatarUrl: string | null }[],
+  source: string,
+): Promise<void> {
+  const db = await getDb();
+  for (const c of contacts) {
+    await db.execute(
+      `INSERT INTO contacts (id, email, display_name, avatar_url, frequency, source)
+       VALUES ($1, $2, $3, $4, 0, $5)
+       ON CONFLICT(email) DO UPDATE SET
+         display_name = COALESCE(display_name, $3),
+         avatar_url = COALESCE(avatar_url, $4),
+         updated_at = unixepoch()`,
+      [crypto.randomUUID(), normalizeEmail(c.email), c.displayName, c.avatarUrl, source],
+    );
+  }
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { searchContacts, type DbContact } from "@/services/db/contacts";
+import { searchAddressSuggestions, type AddressSuggestion } from "@/services/db/contacts";
 
 interface AddressInputProps {
   label: string;
@@ -15,7 +15,7 @@ export function AddressInput({
   placeholder = "Aggiungi destinatari...",
 }: AddressInputProps) {
   const [inputValue, setInputValue] = useState("");
-  const [suggestions, setSuggestions] = useState<DbContact[]>([]);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +35,7 @@ export function AddressInput({
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       if (value.length >= 2) {
         searchTimerRef.current = setTimeout(async () => {
-          const results = await searchContacts(value, 5);
+          const results = await searchAddressSuggestions(value, 6);
           setSuggestions(results);
           setShowSuggestions(results.length > 0);
           setSelectedIdx(-1);
@@ -132,7 +132,7 @@ export function AddressInput({
           <div className="absolute top-full left-0 mt-1 w-full bg-bg-primary border border-border-primary rounded-md shadow-lg z-50 py-1">
             {suggestions.map((contact, i) => (
               <button
-                key={contact.id}
+                key={contact.email}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => addAddress(contact.email)}
                 className={`w-full text-left px-3 py-1.5 text-sm hover:bg-bg-hover ${
