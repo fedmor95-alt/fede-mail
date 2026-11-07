@@ -721,13 +721,6 @@ const MIGRATIONS = [
   },
   {
     version: 20,
-    description: "Contact source (local / google address book)",
-    sql: `
-      ALTER TABLE contacts ADD COLUMN source TEXT NOT NULL DEFAULT 'local';
-    `,
-  },
-  {
-    version: 20,
     description: "Fix IMAP attachment part IDs and trigger resync",
     sql: `
       -- Delete IMAP attachment records that have wrong sequential part IDs.
@@ -814,6 +807,13 @@ const MIGRATIONS = [
     // this the page query sorts the whole table on each reload.
     description: "Index for the unified thread list order",
     sql: `CREATE INDEX IF NOT EXISTS idx_threads_order ON threads(is_pinned DESC, last_message_at DESC);`,
+  },
+  {
+    version: 28,
+    description: "Contact source (local / google address book)",
+    sql: `
+      ALTER TABLE contacts ADD COLUMN source TEXT NOT NULL DEFAULT 'local';
+    `,
   },
 ];
 
