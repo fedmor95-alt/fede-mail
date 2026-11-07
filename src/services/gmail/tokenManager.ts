@@ -129,4 +129,6 @@ export async function reauthorizeAccount(
   restartWatcher(accountId);
   const { setSetting } = await import("../db/settings");
   await setSetting(`contacts_synced_at_${accountId}`, "0");
+  const { retryContactsSync } = await import("./syncManager");
+  retryContactsSync(accountId);
 }

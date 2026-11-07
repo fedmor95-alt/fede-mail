@@ -183,7 +183,13 @@ export function accountNeedsContactsReauth(accountId: string): boolean {
   return contactsNeedingReauth.has(accountId);
 }
 
+/** After a re-authorization the next sync tries the address book again. */
+export function retryContactsSync(accountId: string): void {
+  contactsNeedingReauth.delete(accountId);
+}
+
 async function syncContactsForAccount(accountId: string): Promise<void> {
+  if (contactsNeedingReauth.has(accountId)) return;
   const account = await getAccount(accountId);
   if (!account || account.provider !== "gmail_api") return;
   const key = `contacts_synced_at_${accountId}`;
@@ -198,10 +204,9 @@ async function syncContactsForAccount(accountId: string): Promise<void> {
     console.log(`[syncManager] Imported ${contacts.length} Google contacts for ${accountId}`);
   } catch (err) {
     if (err instanceof PeopleScopeError) {
+      // Don't retry every sync: the user has to re-authorize (or enable the API) first
       contactsNeedingReauth.add(accountId);
-      // Don't retry every sync: the user has to re-authorize first
-      await setSetting(key, String(Date.now()));
-      console.warn(`[syncManager] Google contacts for ${accountId} need re-authorization`);
+      console.warn(`[syncManager] Google contacts for ${accountId} refused: ${err.reason}`);
       return;
     }
     throw err;

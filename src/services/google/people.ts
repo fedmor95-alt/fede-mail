@@ -20,10 +20,14 @@ interface PeopleListResponse {
   nextPageToken?: string;
 }
 
-/** Thrown when the token predates the contacts scopes: the account needs re-authorizing. */
+/**
+ * Google refused the call: the token predates the contacts scopes (the
+ * account needs re-authorizing) or the People API is disabled in the
+ * Cloud project. `reason` carries Google's own message.
+ */
 export class PeopleScopeError extends Error {
-  constructor() {
-    super("Google contacts need the account to be re-authorized");
+  constructor(public readonly reason: string) {
+    super(`Google contacts refused: ${reason}`);
     this.name = "PeopleScopeError";
   }
 }
@@ -65,7 +69,7 @@ async function listAll(
     } catch (err) {
       const text = err instanceof Error ? err.message : String(err);
       if (/error: 403\b|insufficient|PERMISSION_DENIED/i.test(text)) {
-        throw new PeopleScopeError();
+        throw new PeopleScopeError(text.replace(/^Gmail API error: /, "").slice(0, 400));
       }
       throw err;
     }
